@@ -9,6 +9,16 @@
 	}
 }(function ($) {
 
+	// MV3 CSP compliance: eval() is blocked. Parse attribute values as JSON and fall back to raw string.
+	function __outiiil_safeParseAttr(value) {
+		if (typeof value !== 'string') return value;
+		try {
+			return JSON.parse(value);
+		} catch (e) {
+			return value;
+		}
+	}
+
 	/*
 	* Lets not redefine timepicker, Prevent "Uncaught RangeError: Maximum call stack size exceeded"
 	*/
@@ -177,7 +187,7 @@
 					var attrValue = $input.attr('time:' + attrName);
 					if (attrValue) {
 						try {
-							inlineSettings[attrName] = eval(attrValue);
+							inlineSettings[attrName] = __outiiil_safeParseAttr(attrValue);
 						} catch (err) {
 							inlineSettings[attrName] = attrValue;
 						}

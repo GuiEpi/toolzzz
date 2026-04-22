@@ -1,32 +1,45 @@
-# Outiiil - Extension pour Fourmizzz
+# Toolzzz
 
-<br/>
+Extension navigateur pour [Fourmizzz.fr](http://www.fourmizzz.fr), fork et maintenance de [Outiiil](https://github.com/Hraesvelg/Outiiil).
 
-[![Outiiil logo](./img/header.png)](http://outiiil.fr)
+L'objectif reste identique à celui du projet d'origine : intégrer directement dans le jeu des outils libres et transparents, sans stocker de données personnelles ailleurs que sur la machine du joueur. Le code source est lisible, auditable et modifiable par quiconque.
 
-<br/>
+## Installation
 
-## Outiiil ##
+- **Chrome / Chromium / Edge** : télécharger le zip `toolzzz-X.Y.Z-chrome.zip` depuis la page [Releases](https://github.com/GuiEpi/toolzzz/releases), le dézipper, puis dans `chrome://extensions` activer le mode développeur et cliquer sur *Charger l'extension non empaquetée* en sélectionnant le dossier dézippé.
+- **Firefox** : télécharger le `.xpi` signé depuis la page [Releases](https://github.com/GuiEpi/toolzzz/releases) — un clic suffit pour installer.
 
-Outiiil est un projet destiné à ameliorer la qualité du jeu [Fourmizzz](http://fourmizzz.fr). Fourmizzz
-est un jeu par navigateur dont le but est de developper sa fourmilière. Dans la lignée des jeux par navigateur 
-comme Ogame, Fourmizzz s'est aproprié un monde à part et perdure depuis plusieurs années.
+## Développement
 
-Le projet est né d'une volonté de proposer une solution **libre** et de proposer des outils directement sur le jeu.
-De plus Outiiil a l'ambition d'être complétement **transparent** : tout les joueurs qui utilisent cette extension peuvent
-lire le code et savent exactement ce que fait l'extension !
+Prérequis : [Bun](https://bun.sh).
 
-Le projet attache également une grande importance quant à l'utilisation de vos données lié au jeu. 
-Outiiil fonctionne localement, il récupére des données de fàçon securisée seulement pour l'historique des joueurs et 
-pour gérer un eventuel utilitaire. **Aucunes** Données personnelles n'est stockées ailleurs que chez vous !
+```bash
+bun install
+```
 
-## Contribuer ##
+### Scripts
 
-Si Outiiil est à présent sur Github c'est pour la communauté : beaucoup participe de prés et de loin à ce projet et je me devais 
-de proposer une solution digne de ce nom pour faire evoluer ce projet, celui qui veut faire sa propre version parce qu'il voit les choses 
-autrement ou celui qui veut vraiment participer peut desormais le faire plus facilement !
+| Commande                | Description                                        |
+| ----------------------- | -------------------------------------------------- |
+| `bun run dev`           | Lance l'extension en mode dev (Chrome)             |
+| `bun run dev:firefox`   | Lance l'extension en mode dev (Firefox)            |
+| `bun run build`         | Build de production (Chrome)                       |
+| `bun run build:firefox` | Build de production (Firefox)                      |
+| `bun run zip`           | Génère le zip à distribuer pour Chrome             |
+| `bun run zip:firefox`   | Génère le zip à signer sur AMO                     |
+| `bun run compile`       | Vérification TypeScript                            |
 
-### Comment ? ###
+### Charger l'extension en local depuis les sources
 
-Le projet disponible ci dessus présente les sources en javascript pouvant être intégré à une extension ou un userscript.
+**Chrome** : `chrome://extensions` → activer le mode développeur → *Charger l'extension non empaquetée* → sélectionner `.output/chrome-mv3/`.
 
+**Firefox** : `about:debugging#/runtime/this-firefox` → *Charger un module complémentaire temporaire* → sélectionner `.output/firefox-mv3/manifest.json`.
+
+## Crédits
+
+- **Projet original** : [Outiiil](https://github.com/Hraesvelg/Outiiil) par [Hraesvelg](https://github.com/Hraesvelg) (Freddy)
+- **Mainteneur du fork** : [GuiEpi](https://github.com/GuiEpi)
+
+## Licence
+
+[GPL-3.0](./LICENSE) — conformément à la licence du projet d'origine.

@@ -46,13 +46,9 @@ class PageProfil
             Utils.incrementTime(monProfil.getTempsParcours2(this._profil), "o_tempsRetour", "o_tempsRetourRapport");
         }
 
-        // Ajout des options pour ajouter au radar et utiliser l'historique
-        $(".boite_membre:eq(1) table tr td:eq(0)").append(`${Utils.comptePlus ? "<br/>" : ""}- <span id='o_surveiller' class='cursor gras'>${this._boiteRadar.joueurs.hasOwnProperty(this._profil.pseudo) ? "Supprimer la surveillance" : "Surveiller ce joueur"}</span><br/>- <span id='o_historique' class='cursor gras'>Historique</span>`);
+        // Ajout de l'option pour ajouter au radar
+        $(".boite_membre:eq(1) table tr td:eq(0)").append(`${Utils.comptePlus ? "<br/>" : ""}- <span id='o_surveiller' class='cursor gras'>${this._boiteRadar.joueurs.hasOwnProperty(this._profil.pseudo) ? "Supprimer la surveillance" : "Surveiller ce joueur"}</span>`);
 
-        $("#o_historique").click((e) => {
-			$(e.currentTarget).off().css("color", "#555555");
-			this.historique();
-		});
 		$("#o_surveiller").click((e) => {
 			if(!this._boiteRadar.joueurs.hasOwnProperty(this._profil.pseudo)){
 				$(e.currentTarget).text("Supprimer la surveillance");
@@ -65,20 +61,6 @@ class PageProfil
 		});
         return this;
     }
-	/**
-	* Récupére et Affiche l'historique du joueur.
-    *
-	* @private
-	* @method historique
-	*/
-	historique()
-	{
-        $("#centre center .boite_membre:eq(1)").after(`<div class='boite_membre' id='o_boiteHistorique'>
-            <div id='o_bouton_range' class='o_group_bouton'><span id='o_selectHisto_1' class='active option_gestion ligne_paire' data='30'>30J</span><span id='o_selectHisto_2' class='option_gestion' data='90'>90J</span><span id='o_selectHisto_3' class='option_gestion' data='180'>180J</span><span id='o_selectHisto_4' class='option_gestion' data='all'>Tout</span></div>
-            <div id='o_chartJoueur'></div></div>`);
-        this._profil.getHistorique("o_chartJoueur");
-        return this;
-	}
     /**
     *
     */

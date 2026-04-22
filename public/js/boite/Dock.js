@@ -16,8 +16,6 @@ class Dock
             <div id="o_toolbarItem1" class="o_toolbarItem" title="Ponte"><span id="o_itemPonte" style="background-image: url(${IMG_SPRITE_MENU})"/></div>
             <div id="o_toolbarItem2" class="o_toolbarItem" title="Chasse"><span id="o_itemChasse" style="background-image: url(${IMG_SPRITE_MENU})"/></div>
             <div id="o_toolbarItem3" class="o_toolbarItem" title="Combat"><span id="o_itemCombat" style="background-image: url(${IMG_SPRITE_MENU})"/></div>
-            <div id="o_toolbarItem4" class="o_toolbarItem" title="Traceur"><span id="o_itemTraceur" style="background-image: url(${IMG_SPRITE_MENU})"/></div>
-            <div id="o_toolbarItem5" class="o_toolbarItem" title="Carte"><span id="o_itemMap" style="background-image: url(${IMG_SPRITE_MENU})"/></div>
             <div id="o_toolbarItem6" class="o_toolbarItem" title="Préférence"><span id="o_itemParametre" style="background-image: url(${IMG_SPRITE_MENU})"/></div>
             </div>`;
         /**
@@ -32,14 +30,6 @@ class Dock
         *
         */
         this._boiteCombat = new BoiteCombat();
-        /**
-        *
-        */
-        this._boiteTraceur = new BoiteTraceur();
-        /**
-        *
-        */
-        this._boiteMap = new BoiteMap();
         /**
         *
         */
@@ -94,12 +84,6 @@ class Dock
                     break;
                 case "o_itemCombat" :
                     this._boiteCombat.afficher();
-                    break;
-                case "o_itemTraceur" :
-                    this._boiteTraceur.afficher();
-                    break;
-                case "o_itemMap" :
-                    this._boiteMap.afficher();
                     break;
                 case "o_itemParametre" :
                     this._boiteParametre.afficher();

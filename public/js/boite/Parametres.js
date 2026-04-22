@@ -17,7 +17,7 @@ class BoiteParametre extends Boite
     */
     constructor()
     {
-        super("o_boiteParametre", "Paramètres", `<div id='o_tabsParametre' class='o_tabs'><ul><li><a href='#o_tabsParametre1'>Général</a></li><li><a href='#o_tabsParametre2'>Utilitaire</a></li><li><a href='#o_tabsParametre3'>Apparence</a></li><li><a href='#o_tabsParametre4'>Traceur</a></li></ul><div id='o_tabsParametre1'/><div id='o_tabsParametre2'/><div id='o_tabsParametre3'/><div id='o_tabsParametre4'/></div>`);
+        super("o_boiteParametre", "Paramètres", `<div id='o_tabsParametre' class='o_tabs'><ul><li><a href='#o_tabsParametre1'>Général</a></li><li><a href='#o_tabsParametre2'>Utilitaire</a></li><li><a href='#o_tabsParametre3'>Apparence</a></li></ul><div id='o_tabsParametre1'/><div id='o_tabsParametre2'/><div id='o_tabsParametre3'/></div>`);
         /**
         *
         */
@@ -30,10 +30,6 @@ class BoiteParametre extends Boite
         *
         */
         this._paramGeneral = ["affectationRessource", "methodeFlood", "uniteAntisondeTerrain", "uniteAntisondeDome", "uniteSonde"];
-        /**
-        *
-        */
-        this._paramTraceur = ["etatTraceurJoueur", "intervalleTraceurJoueur", "nbPageTraceurJoueur", "etatTraceurAlliance", "intervalleTraceurAlliance"];
     }
 	/**
     * Affiche la boite.
@@ -45,8 +41,7 @@ class BoiteParametre extends Boite
 	{
         if(super.afficher()){
             $("#o_tabsParametre").tabs({activate : (e, ui) => {this.css();}}).removeClass("ui-widget");
-            if(!monProfil.parametre["cleTraceur"].valeur) $("#o_tabsParametre").tabs("disable", 3);
-            this.parametreStyle().parametreUtilitaire().parametreGeneral().parametreTraceur().css().event();
+            this.parametreStyle().parametreUtilitaire().parametreGeneral().css().event();
         }
 	}
 	/**
@@ -81,7 +76,6 @@ class BoiteParametre extends Boite
         for(let param of this._paramStyle) monProfil.parametre[param].ajouterEvent();
         for(let param of this._paramUtilitaire) monProfil.parametre[param].ajouterEvent();
         for(let param of this._paramGeneral) monProfil.parametre[param].ajouterEvent();
-        for(let param of this._paramTraceur) monProfil.parametre[param].ajouterEvent();
         return this;
 	}
     /**
@@ -117,19 +111,6 @@ class BoiteParametre extends Boite
             <p class='left reduce gras'>Indiquez le nombre d'unité selon l'objectif</p>
             <p class='left small'><em>Le nombre est choisi aléatoirement entre 90% du max et le max.</em></p>
             ${monProfil.parametre[this._paramGeneral[2]].getForm() + monProfil.parametre[this._paramGeneral[3]].getForm() + monProfil.parametre[this._paramGeneral[4]].getForm()}
-        </form>`);
-        return this;
-    }
-    /**
-    *
-    */
-    parametreTraceur()
-    {
-        $("#o_tabsParametre4").append(`<form>
-            <p class='left reduce gras'>Paramètres pour le traçage des joueurs</p>
-            ${monProfil.parametre[this._paramTraceur[0]].getForm() + monProfil.parametre[this._paramTraceur[1]].getForm() + monProfil.parametre[this._paramTraceur[2]].getForm()}
-            <p class='left reduce gras'>Paramètres pour le traçage des alliances</p>
-            ${monProfil.parametre[this._paramTraceur[3]].getForm() + monProfil.parametre[this._paramTraceur[4]].getForm()}
         </form>`);
         return this;
     }
