@@ -21,15 +21,27 @@ Cette commande build l'extension, lance un navigateur avec l'extension déjà ch
 
 ## Scripts
 
-| Commande                | Description                                        |
-| ----------------------- | -------------------------------------------------- |
-| `bun run dev`           | Mode dev avec auto-reload (Chrome)                 |
-| `bun run dev:firefox`   | Mode dev avec auto-reload (Firefox)                |
-| `bun run build`         | Build de production (Chrome)                       |
-| `bun run build:firefox` | Build de production (Firefox)                      |
-| `bun run zip`           | Génère le zip à distribuer pour Chrome             |
-| `bun run zip:firefox`   | Génère le zip à signer sur AMO                     |
-| `bun run compile`       | Vérification TypeScript                            |
+| Commande                | Description                                            |
+| ----------------------- | ------------------------------------------------------ |
+| `bun run dev`           | Mode dev avec auto-reload (Chrome)                     |
+| `bun run dev:firefox`   | Mode dev avec auto-reload (Firefox)                    |
+| `bun run build`         | Build de production (Chrome)                           |
+| `bun run build:firefox` | Build de production (Firefox)                          |
+| `bun run zip`           | Génère le zip à distribuer pour Chrome                 |
+| `bun run zip:firefox`   | Génère le zip à signer sur AMO                         |
+| `bun run compile`       | Vérification TypeScript                                |
+| `bun run format`        | Formate tous les fichiers avec [oxfmt](https://oxc.rs) |
+| `bun run format:check`  | Vérifie le formatage sans modifier les fichiers        |
+
+## Formatage
+
+Le projet utilise [oxfmt](https://oxc.rs) pour le formatage. La config est dans `oxfmt.config.ts` et les libs vendorées (`public/js/lib/`) sont exclues.
+
+**Hook pre-commit** : [husky](https://typicode.github.io/husky/) + [lint-staged](https://github.com/lint-staged/lint-staged) formatent automatiquement les fichiers stagés à chaque `git commit`. Rien à installer manuellement — le hook est posé à l'exécution de `bun install` (via le script `prepare`).
+
+Si tu utilises Zed, le formatage au Ctrl+S est déjà configuré via `.zed/settings.json`. Sinon, configure ton éditeur pour appeler `oxfmt --stdin-filepath=<file>` à la sauvegarde, ou lance `bun run format` manuellement.
+
+Côté CI, chaque push et PR sur `master` lance `bun run format:check` — un PR non formaté échoue.
 
 ## Tester un build de production
 
@@ -40,6 +52,6 @@ bun run build            # Chrome  →  .output/chrome-mv3/
 bun run build:firefox    # Firefox →  .output/firefox-mv3/
 ```
 
-**Chrome** : `chrome://extensions` → activer le mode développeur → *Charger l'extension non empaquetée* → sélectionner `.output/chrome-mv3/`.
+**Chrome** : `chrome://extensions` → activer le mode développeur → _Charger l'extension non empaquetée_ → sélectionner `.output/chrome-mv3/`.
 
-**Firefox** : `about:debugging#/runtime/this-firefox` → *Charger un module complémentaire temporaire* → sélectionner `.output/firefox-mv3/manifest.json`.
+**Firefox** : `about:debugging#/runtime/this-firefox` → _Charger un module complémentaire temporaire_ → sélectionner `.output/firefox-mv3/manifest.json`.

@@ -105,12 +105,14 @@ Format: `<type>(<optional scope>): <description>`
 **Types:** `feat` (new feature), `fix` (bug fix), `refactor`, `perf`, `style`, `test`, `docs`, `build`, `ops`, `chore`
 
 **Rules:**
+
 - Use imperative present tense: "add" not "added"
 - Do not capitalize first letter
 - No period at the end
 - Breaking changes: add `!` before `:` (e.g., `feat!: remove endpoint`) and `BREAKING CHANGE:` in footer
 
 **Examples:**
+
 - `feat: add email notifications on new direct messages`
 - `fix(popup): prevent save when not connected`
 - `build: update dependencies`
