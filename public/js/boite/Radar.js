@@ -153,7 +153,7 @@ class BoiteRadar {
     if (Object.keys(this._joueurs).length || Object.keys(this._alliances).length) {
       // Modification de la boite compte plus pour faire apparaitre la boite radar
       $("#boiteComptePlus .titre_colonne_cliquable").replaceWith(() => {
-        return `<div class='titre_colonne_cliquable'>${IMG_FLECHE} <span class='titre_compte_plus'>Outiiil ${VERSION.substring(0, 2)}<span class='reduce'>${VERSION.substring(2)}</span></span> ${IMG_FLECHE}</div>`;
+        return `<div class='titre_colonne_cliquable'>${IMG_FLECHE} <span class='titre_compte_plus'>Toolzzz ${VERSION.substring(0, 2)}<span class='reduce'>${VERSION.substring(2)}</span></span> ${IMG_FLECHE}</div>`;
       });
       // Event sur le titre si on utilise le radar
       $("#boiteComptePlus .titre_colonne_cliquable").click((e) => {
