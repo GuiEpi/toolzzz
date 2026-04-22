@@ -35,7 +35,7 @@ Cette commande build l'extension, lance un navigateur avec l'extension déjà ch
 
 ## Formatage
 
-Le projet utilise [oxfmt](https://oxc.rs) pour le formatage. La config est dans `oxfmt.config.ts` et les libs vendorées (`public/js/lib/`) sont exclues.
+Le projet utilise [oxfmt](https://oxc.rs) pour le formatage. La config est dans `.oxfmtrc.json` et les libs vendorées (`public/js/lib/`) sont exclues.
 
 **Hook pre-commit** : [husky](https://typicode.github.io/husky/) + [lint-staged](https://github.com/lint-staged/lint-staged) formatent automatiquement les fichiers stagés à chaque `git commit`. Rien à installer manuellement — le hook est posé à l'exécution de `bun install` (via le script `prepare`).
 
