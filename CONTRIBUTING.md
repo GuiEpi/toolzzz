@@ -39,7 +39,7 @@ Le projet utilise [oxfmt](https://oxc.rs) pour le formatage. La config est dans 
 
 **Hook pre-commit** : [husky](https://typicode.github.io/husky/) + [lint-staged](https://github.com/lint-staged/lint-staged) formatent automatiquement les fichiers stagés à chaque `git commit`. Rien à installer manuellement — le hook est posé à l'exécution de `bun install` (via le script `prepare`).
 
-Si tu utilises Zed, le formatage au Ctrl+S est déjà configuré via `.zed/settings.json`. Sinon, configure ton éditeur pour appeler `oxfmt --stdin-filepath=<file>` à la sauvegarde, ou lance `bun run format` manuellement.
+Pour le formatage à la sauvegarde dans ton éditeur, consulte la [doc officielle d'oxfmt](https://oxc.rs/docs/guide/usage/formatter/editors.html). Sinon, lance `bun run format` manuellement.
 
 Côté CI, chaque push et PR sur `master` lance `bun run format:check` — un PR non formaté échoue.
 
