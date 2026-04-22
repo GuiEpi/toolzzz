@@ -11,7 +11,7 @@ All user-facing strings are in French (game domain vocabulary: ponte, chasse, co
 ## Commands
 
 ```bash
-bun install               # postinstall runs `wxt prepare`
+bun install               # postinstall runs `wxt prepare` + installs husky hook
 bun run dev               # dev mode, Chrome
 bun run dev:firefox       # dev mode, Firefox
 bun run build             # production build → .output/chrome-mv3/
@@ -19,9 +19,11 @@ bun run build:firefox     # production build → .output/firefox-mv3/
 bun run zip               # zip for Chrome Web Store
 bun run zip:firefox       # zip for Firefox AMO
 bun run compile           # tsc --noEmit (typecheck only, no emitted files)
+bun run format            # oxfmt — writes changes in place
+bun run format:check      # oxfmt --check — CI uses this
 ```
 
-There is no test suite and no linter configured.
+There is no test suite and no linter configured. Formatting is handled by oxfmt.
 
 ## Architecture — read this before touching WXT or the manifest
 
@@ -73,6 +75,18 @@ Firefox exposes `chrome.*` as an alias for `browser.*`, so `chrome.runtime.*` wo
 - AMO requires non-minified sources for review — keep the vendored libs in `public/js/lib/` readable (they currently are).
 - AMO requires `browser_specific_settings.gecko.data_collection_permissions` since November 2025 (will be enforced for all extensions in 2026). Currently declared as `required: ["none"]` which is accurate — the extension only reads fourmizzz.fr pages locally. If you add a feature that transmits data to an external server, you MUST update this declaration (values like `websiteContent`, `websiteActivity`, etc.) or AMO will reject the submission.
 - `manifest.author` must be a **string** on AMO (not the `{ email: string }` object form that Chrome accepts). WXT's TS types enforce the object form, so the config has a targeted `@ts-expect-error` directive on that line.
+
+## Formatting
+
+oxfmt (Rust-based, Prettier-compatible output) is configured via `.oxfmtrc.json`. Key points:
+
+- **`public/js/lib/` is excluded** — vendored upstream code (jQuery, Highcharts, DataTables, etc.) must not be reformatted. This ties into the AMO requirement for non-minified, auditable sources and preserves the `__outiiil_safeParseAttr` patch in `jquery-datetimepicker_1.6.3.js`.
+- **Pre-commit hook** (husky + lint-staged, config in `package.json`) auto-formats staged files on `git commit`. Installed automatically via the `prepare` script when contributors run `bun install`.
+- **CI** (`.github/workflows/ci.yml`) runs `format:check` + `compile` on every push and PR to `master`. Unformatted code fails the check and blocks merge (if branch protection is enabled).
+
+If you modify files that oxfmt would reformat, let the pre-commit hook handle it — don't skip it with `--no-verify`.
+
+Note: oxfmt's `.ts` config loader breaks in CI due to a Node version-check bug (detects 20.20.2 as not matching `^20.19.0`). Stick with `.oxfmtrc.json` unless that's fixed upstream.
 
 ## Release pipeline
 
