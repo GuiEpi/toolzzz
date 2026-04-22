@@ -148,40 +148,15 @@ class Parametre
     {
         switch(this._type){
             case "number" :
-                if(this._id == "intervalleTraceurJoueur" || this._id == "intervalleTraceurAlliance"){
-                    $("#" + this._id).spinner({
-                        min : 5,
-                        max : 1440,
-                        step : 5,
-                        classes : {"ui-spinner" : "o_number ui-corner-all"},
-                        numberFormat: "i",
-                        stop : (event, ui) => {
-                            this._valeur = numeral(event.target.value).value();
-                            this.sauvegarde();
-                        }
-                    });
-                }else if(this._id == "nbPageTraceurJoueur"){
-                    $("#" + this._id).spinner({
-                        min : 1,
-                        max : 5,
-                        classes : {"ui-spinner" : "o_number ui-corner-all"},
-                        numberFormat: "i",
-                        stop : (event, ui) => {
-                            this._valeur = numeral(event.target.value).value();
-                            this.sauvegarde();
-                        }
-                    });
-                }else{
-                    $("#" + this._id).spinner({
-                        min : 0,
-                        classes : {"ui-spinner" : "o_number ui-corner-all"},
-                        numberFormat: "i",
-                        stop : (event, ui) => {
-                            this._valeur = numeral(event.target.value).value();
-                            this.sauvegarde();
-                        }
-                    });
-                }
+                $("#" + this._id).spinner({
+                    min : 0,
+                    classes : {"ui-spinner" : "o_number ui-corner-all"},
+                    numberFormat: "i",
+                    stop : (event, ui) => {
+                        this._valeur = numeral(event.target.value).value();
+                        this.sauvegarde();
+                    }
+                });
                 $("#" + this._id).on("input", (e, ui) => {
                     this._valeur = numeral(e.currentTarget.value).value();
                     $(e.currentTarget).spinner("value", this._valeur);

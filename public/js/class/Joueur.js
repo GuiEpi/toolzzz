@@ -98,13 +98,6 @@ class Joueur
         this._parametre["couleurChat"] = new Parametre("couleurChat", "Couleur chat", "color", "#000000");
         this._parametre["couleurMessagerie"] = new Parametre("couleurMessagerie", "Couleur messagerie", "color", "#000000");
         this._parametre["affectationRessource"] = new Parametre("affectationRessource", "Affectation des ressources", "select", 0, ["Non", "Materiaux", "Nourriture"]);
-        // parametres pour traceur
-        this._parametre["cleTraceur"] = new Parametre("cleTraceur", "Cle pour le serveur", "input");
-        this._parametre["etatTraceurJoueur"] = new Parametre("etatTraceurJoueur", "Traceur joueur actif ?", "checkbox", false);
-        this._parametre["intervalleTraceurJoueur"] = new Parametre("intervalleTraceurJoueur", "Intervalle entre chaque relevé (en mn)", "number", 5);
-        this._parametre["nbPageTraceurJoueur"] = new Parametre("nbPageTraceurJoueur", "Nombre de page à relever", "number", 1);
-        this._parametre["etatTraceurAlliance"] = new Parametre("etatTraceurAlliance", "Traceur alliance actif ?", "checkbox", false);
-        this._parametre["intervalleTraceurAlliance"] = new Parametre("intervalleTraceurAlliance", "Intervalle entre chaque relevé (en mn)", "number", 5);
         return this;
 
     }
@@ -392,7 +385,8 @@ class Joueur
         let data = JSON.parse(localStorage.getItem("outiiil_parametre")) || {};
 		// Si des données sont deja presente et à jour on les charges
         for(let cle in data)
-            this._parametre[cle].valeur = data[cle];
+            if(this._parametre[cle])
+                this._parametre[cle].valeur = data[cle];
         return this;
     }
     /**
@@ -535,104 +529,6 @@ class Joueur
         }
         this.sauvegarder();
         return this;
-    }
-    /**
-    *
-    */
-    getHistorique(id)
-    {
-        $.get("http://outiiil.fr/fzzz/" + Utils.serveur + "/player/" + $("a[href^='commerce.php?ID=']").attr("href").match(/\d+/g)[0], (data) => {
-            // Creation du graphique
-            let histoAlliance = new Array(), histoDate = new Array(), donnees = JSON.parse(data);
-            let chart = new Highcharts.Chart({
-                chart : {
-                    renderTo : id,
-                    type : "spline",
-                    backgroundColor : null,
-                    height : 320
-                },
-                data : {
-                    csv : donnees.message,
-                    itemDelimiter : ';',
-                    parsed : (columns) => {
-                        histoDate = columns.slice().splice(0, 1)[0];
-                        histoAlliance = columns.splice(1, 1)[0];
-                    },
-                    firstRowAsNames : false
-                },
-                title : {text: ''},
-                credits : {enabled : false},
-                tooltip : {
-                    crosshairs : [true],
-                    formatter : function(){
-                        let s = Highcharts.dateFormat("%A %e %b", this.x);
-                        $.each(this.points, function(){s += "<br/><span style='color:" + this.series.color + "'>\u25CF</span> " + this.series.name + ": <b>" + numeral(this.y).format() + "</b>";});
-                        return s;
-                    },
-                    shared : true,
-                    useHTML : true,
-                },
-                plotOptions : {
-                    series : {
-                        marker : {
-                            radius : 3
-                        }
-                    }
-                },
-                xAxis : {
-                    lineColor : "#333333",
-                    startOnTick : true,
-                    labels : {style : {color : "#222222"}},
-                    min : moment().subtract(30, "days").valueOf()
-                },
-                yAxis : {
-                    title : {text : null},
-                    lineColor : "#333333",
-                    gridLineColor : "#333333",
-                    labels : {align : "left", x : 0, y : -2, style : {color : "#222222"}}
-                },
-                series : [
-                    {name : "Terrain", color : "#21610B", type : "areaspline"},
-                    {name : "Fourmilière", color : "#DF7401", type : "areaspline", visible : false},
-                    {name : "Technologie", color : "#FF0000", type : "areaspline", visible : false},
-                    {name : "Banni", color : "#6E6E6E", visible : false},
-                    {name : "Vacance", color : "#013ADF", visible : false}
-                ]
-            });
-            $("span[id^=o_selectHisto]").click((e) => {
-                let chart = $("#o_chartJoueur").highcharts(), histo = $(e.currentTarget).attr("data");
-                $("span[id^=o_selectHisto]").removeClass("active");
-                $(e.currentTarget).addClass("active");
-                if(histo == "all")
-                    chart.xAxis[0].update({min : moment("2016-01-01").valueOf()});
-                else
-                    chart.xAxis[0].update({min : moment().subtract(histo, "days").valueOf()});
-                // Style
-                $("#o_bouton_range span.active").addClass("ligne_paire");
-                $("#o_bouton_range span:not(.active)").removeClass("ligne_paire");
-            });
-            // ajout d'un tableau pour l'historique des alliance
-            if(histoDate.length){
-                let html = "", ligne = "", i = 0, nbJour = 0, cDate = moment(histoDate[0]), cTeam = histoAlliance[0], fDate = moment(cDate);
-                while(!moment().isSame(cDate, "day")){ // tant qu'on est pas arrivé à aujourd'hui
-                    if(moment(histoDate[i]).isSame(cDate, "day")){ // si les dates sont continue
-                        if(cTeam != histoAlliance[i]){ // si on a changé d'alli
-                            html += `<tr><td class='left'>${fDate.format("DD/MM/YYYY")} -> ${cDate.format("DD/MM/YYYY")} (${(nbJour > 1 ? nbJour + " jours" : nbJour + " jour")})</td><td class='centre'>${cTeam != "0" ? `<a href='/classementAlliance.php?alliance=${cTeam}'>${cTeam}` : "Sans alliance"}</a></td></tr>`;
-                            nbJour = 1;
-                            cTeam = histoAlliance[i];
-                            fDate = moment(cDate).add(1, "days");
-                        }else
-                            nbJour++;
-                        i++;
-                    }
-                    cDate.add(1, "days");
-                }
-                if(nbJour != 1)
-                    html += `<tr><td class='left'>${fDate.format("DD/MM/YYYY")} -> ${cDate.format("DD/MM/YYYY")} (${(nbJour > 1 ? nbJour + " jours" : nbJour + " jour")})</td><td class='centre'>${cTeam != "0" ? `<a href='/classementAlliance.php?alliance=${cTeam}'>${cTeam}` : "Sans alliance"}</a></td></tr>`;
-                $("#" + id).after("<table id='o_historiqueAlliance' cellspacing=0><thead><tr class='gras even'><th>Date</th><th>Alliance</th></tr></thead><tbody>" + html + "</tbody></table>");
-                $("#o_historiqueAlliance tr:even").addClass("ligne_paire");
-            }
-        });
     }
     /**
     *

@@ -361,14 +361,6 @@ input:required, select:required {box-shadow:none;}
 {
     background-position:0 -160px;
 }
-#o_toolbarOutiiil .o_toolbarItem #o_itemTraceur
-{
-    background-position:-32px -238px;
-}
-#o_toolbarOutiiil .o_toolbarItem #o_itemMap
-{
-    background-position:0 -278px;
-}
 #o_toolbarOutiiil .o_toolbarItem #o_itemParametre
 {
     background-position:-32px -278px;
@@ -450,13 +442,6 @@ input:required, select:required {box-shadow:none;}
 #o_positionJoueur{width:50px;margin:auto;}
 #o_calculatriceCombat {width : 100%;}
 #o_calculatriceCombat tr {height: 22px}
-
-/* Traceur */
-#o_infosTraceurJoueur.dataTable td, #o_infosTraceurAlliance.dataTable td {padding : 4px 10px;}
-
-/* Map */
-#o_boiteMap {min-width:70%;min-height:60%}
-#o_recupererMap {margin-top:20%;}
 
 /* Parametre */
 #o_boiteParametre {min-width:40%;}
