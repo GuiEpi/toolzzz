@@ -74,6 +74,28 @@ Firefox exposes `chrome.*` as an alias for `browser.*`, so `chrome.runtime.*` wo
 - AMO requires `browser_specific_settings.gecko.data_collection_permissions` since November 2025 (will be enforced for all extensions in 2026). Currently declared as `required: ["none"]` which is accurate — the extension only reads fourmizzz.fr pages locally. If you add a feature that transmits data to an external server, you MUST update this declaration (values like `websiteContent`, `websiteActivity`, etc.) or AMO will reject the submission.
 - `manifest.author` must be a **string** on AMO (not the `{ email: string }` object form that Chrome accepts). WXT's TS types enforce the object form, so the config has a targeted `@ts-expect-error` directive on that line.
 
+## Release pipeline
+
+`.github/workflows/release.yml` builds both zips, signs the Firefox xpi for self-distribution, and attaches all four artefacts (Chrome zip, Firefox zip, sources zip, signed Firefox xpi) to a GitHub Release on tag push.
+
+Signing uses **`web-ext sign`** (Mozilla's official tool) — not `wxt submit` / `publish-browser-extension`. The distinction matters:
+
+- `wxt submit` is built for **listed** publication: it uploads the zip to AMO for review and walks away. The signed xpi stays on AMO and users install it from the store listing. No local artefact to grab.
+- `web-ext sign` is built for **self-distribution / unlisted**: it uploads, waits for signing, and downloads the signed xpi locally via `--artifacts-dir`. That xpi is what we attach to the GitHub Release so Firefox users can install in one click without a store listing.
+
+If this project ever goes to a listed AMO listing, `wxt submit` becomes the right choice. Until then, `web-ext sign` is what the pipeline needs.
+
+Required GitHub Secrets: `AMO_JWT_ISSUER` and `AMO_JWT_SECRET` (from https://addons.mozilla.org/developers/addon/api/key/).
+
+## AI-assisted work on WXT
+
+WXT publishes LLM-friendly documentation dumps:
+
+- https://wxt.dev/llms.txt — indexed pointer file
+- https://wxt.dev/llms-full.txt — full documentation in a single file, optimized for LLM context windows
+
+When a WXT-specific question comes up (config options, CLI flags, lifecycle, module APIs), prefer fetching `llms-full.txt` over scraping individual doc pages — it's the authoritative source in one shot and avoids the cost of multiple fetches.
+
 ## Commit Convention
 
 This project follows [Conventional Commits](https://www.conventionalcommits.org/).
