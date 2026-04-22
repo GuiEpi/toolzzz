@@ -13,7 +13,7 @@ L'objectif reste identique à celui du projet d'origine : intégrer directement 
 
 ## Installation
 
-- **Chrome / Chromium / Edge** : télécharger le zip `toolzzz-X.Y.Z-chrome.zip` depuis la page [Releases](https://github.com/GuiEpi/toolzzz/releases), le dézipper, puis dans `chrome://extensions` activer le mode développeur et cliquer sur *Charger l'extension non empaquetée* en sélectionnant le dossier dézippé.
+- **Chrome / Chromium / Edge** : télécharger le zip `toolzzz-X.Y.Z-chrome.zip` depuis la page [Releases](https://github.com/GuiEpi/toolzzz/releases), le dézipper, puis dans `chrome://extensions` activer le mode développeur et cliquer sur _Charger l'extension non empaquetée_ en sélectionnant le dossier dézippé.
 - **Firefox** : télécharger le `.xpi` signé depuis la page [Releases](https://github.com/GuiEpi/toolzzz/releases) — un clic suffit pour installer.
 
 ## Contribuer
