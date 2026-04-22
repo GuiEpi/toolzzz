@@ -74,6 +74,27 @@ Firefox exposes `chrome.*` as an alias for `browser.*`, so `chrome.runtime.*` wo
 - AMO requires `browser_specific_settings.gecko.data_collection_permissions` since November 2025 (will be enforced for all extensions in 2026). Currently declared as `required: ["none"]` which is accurate — the extension only reads fourmizzz.fr pages locally. If you add a feature that transmits data to an external server, you MUST update this declaration (values like `websiteContent`, `websiteActivity`, etc.) or AMO will reject the submission.
 - `manifest.author` must be a **string** on AMO (not the `{ email: string }` object form that Chrome accepts). WXT's TS types enforce the object form, so the config has a targeted `@ts-expect-error` directive on that line.
 
+## Commit Convention
+
+This project follows [Conventional Commits](https://www.conventionalcommits.org/).
+
+Format: `<type>(<optional scope>): <description>`
+
+**Types:** `feat` (new feature), `fix` (bug fix), `refactor`, `perf`, `style`, `test`, `docs`, `build`, `ops`, `chore`
+
+**Rules:**
+- Use imperative present tense: "add" not "added"
+- Do not capitalize first letter
+- No period at the end
+- Breaking changes: add `!` before `:` (e.g., `feat!: remove endpoint`) and `BREAKING CHANGE:` in footer
+
+**Examples:**
+- `feat: add email notifications on new direct messages`
+- `fix(popup): prevent save when not connected`
+- `build: update dependencies`
+- `chore: init`
+- `build(release): bump version to 0.2.2`
+
 ## License
 
 GPL-3.0, inherited from upstream. Any derivative work (including further forks) must remain GPL-3.0 and preserve attribution to the original author (Hraesvelg / Freddy) in the manifest's `author` field and in the README credits.
