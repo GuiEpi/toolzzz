@@ -39,6 +39,9 @@ web-ext.config.ts
 # Local exploration / scenario reports — workspace personnel, pas pour le repo
 docs/
 
+# Userscripts tiers de référence (Calystène, etc.) — leur propre licence, on ne les redistribue pas
+temp/
+
 # Local screenshots / personal artefacts at repo root (contain in-game state)
 /*.png
 /*.jpg
