@@ -30,4 +30,16 @@ web-ext.config.ts
 *:Zone.Identifier
 
 # AI
-.claude
+.claude/*
+!.claude/skills/
+
+# Fourmizzz scenario captures (contain session cookies)
+*.har
+
+# Local exploration / scenario reports — workspace personnel, pas pour le repo
+docs/
+
+# Local screenshots / personal artefacts at repo root (contain in-game state)
+/*.png
+/*.jpg
+/*.jpeg

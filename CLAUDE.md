@@ -101,6 +101,15 @@ If this project ever goes to a listed AMO listing, `wxt submit` becomes the righ
 
 Required GitHub Secrets: `AMO_JWT_ISSUER` and `AMO_JWT_SECRET` (from https://addons.mozilla.org/developers/addon/api/key/).
 
+## Project-specific Claude skills
+
+Two skills sont versionnés dans `.claude/skills/` et s'auto-chargent quand pertinent :
+
+- **`analyze-fourmizzz`** — méthodologie pour analyser un scénario du jeu via capture HAR : guide la capture côté navigateur, puis génère un rapport structuré du protocole client/serveur. À déclencher quand tu veux comprendre comment une feature du jeu communique avec le backend.
+- **`ui-primitives`** — inventaire des classes CSS et patterns réutilisables (tableaux, boutons, jQuery UI widgets, toasts, données globales `monProfil`/`Utils`/`Joueur.rechercher`). À consulter avant d'écrire du HTML/CSS dans une Boite ou une Page — la plupart des choses qu'on serait tenté d'ajouter existent déjà.
+
+Le dossier `docs/` est gitignored (workspace personnel d'exploration : HAR, scenario reports). Tout ce qui a une valeur durable est promu en skill ou intégré ici.
+
 ## AI-assisted work on WXT
 
 WXT publishes LLM-friendly documentation dumps:
