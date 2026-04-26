@@ -32,13 +32,12 @@ class BoiteCombat extends Boite {
     if (super.afficher()) {
       $("#o_tabsCombat")
         .tabs({
-          disabled: [2],
           activate: (e, ui) => {
             this.css();
           },
         })
         .removeClass("ui-widget");
-      this.analyser().simuler().calculatrice().css().event();
+      this.analyser().simuler().multiFlood().calculatrice().css().event();
     }
     return this;
   }
@@ -51,7 +50,7 @@ class BoiteCombat extends Boite {
   css() {
     super.css();
     $(
-      "#o_resultatCombat tr:even, .o_tabs .ui-widget-header .ui-tabs-anchor, #o_calculatriceCombat tr:even",
+      "#o_resultatCombat tr:even, .o_tabs .ui-widget-header .ui-tabs-anchor, #o_calculatriceCombat tr:even, .o_mfResultatCible tr:even",
     ).css("background-color", monProfil.parametre["couleur2"].valeur);
     $(".o_tabs .ui-widget-header .ui-tabs-anchor").css(
       "background-color",
@@ -82,7 +81,10 @@ class BoiteCombat extends Boite {
         $(e.currentTarget).css("color", "inherit");
       },
     );
-    $(".o_content .ui-state-disabled a").css({ cursor: "not-allowed", "pointer-events": "all" });
+    $(".o_content .ui-state-disabled a").css({
+      cursor: "not-allowed",
+      "pointer-events": "all",
+    });
     return this;
   }
   /**
@@ -117,7 +119,11 @@ class BoiteCombat extends Boite {
       if (combat.analyse()) {
         $("#o_resultatCombat").html(combat.toHTMLBoite());
         this.css();
-      } else $.toast({ ...TOAST_WARNING, text: "Le rapport de combat ne peut pas être analysé." });
+      } else
+        $.toast({
+          ...TOAST_WARNING,
+          text: "Le rapport de combat ne peut pas être analysé.",
+        });
     });
     return this;
   }
@@ -174,7 +180,11 @@ class BoiteCombat extends Boite {
       max: 50,
       numberFormat: "d2",
     });
-    $("#o_logeNiveau, #o_domeNiveau").spinner({ min: 0, max: 50, numberFormat: "d2" });
+    $("#o_logeNiveau, #o_domeNiveau").spinner({
+      min: 0,
+      max: 50,
+      numberFormat: "d2",
+    });
     $("#o_positionJoueur").slider({
       min: 0,
       max: 1,
@@ -458,7 +468,11 @@ class BoiteCombat extends Boite {
         })
         .parent()
         .show();
-    } else $.toast({ ...TOAST_ERROR, text: "Le combat ne peut pas etre simulé : aucune unité." });
+    } else
+      $.toast({
+        ...TOAST_ERROR,
+        text: "Le combat ne peut pas etre simulé : aucune unité.",
+      });
     return this;
   }
   /**
@@ -634,6 +648,666 @@ class BoiteCombat extends Boite {
     }
   }
   /**
+   * Affiche le simulateur multi-flood (onglet 3).
+   *
+   * @private
+   * @method multiFlood
+   */
+  multiFlood() {
+    $("#o_tabsCombat3").append(`<div id="o_multiFlood" class="centre">
+            <div id="o_mfFormWrap"></div>
+            <div id="o_mfResultats" class="o_marginT15"></div>
+            <p id="o_mfRecap" class="o_marginT15"></p>
+            <button id="o_mfLancer" class="o_button f_success o_marginT15" type="button" disabled>Lancer ces attaques</button>
+        </div>`);
+    /**
+     * Cibles sélectionnées par l'utilisateur. Chaque entrée :
+     * { pseudo, id, terrain, type, x, y, tempsParcours }
+     */
+    this._mfCibles = [];
+    this._mfAttaquantOpts = { terrainFinal: null, priseMax: null };
+    this._mfTotalUnites = null; // chargé lazy via Armee.getArmee()
+    this._mfRenderForm();
+    // Pré-charge l'armée pour le check garnison ; ne bloque pas l'UI
+    if (!this._mfArmee) this._mfArmee = new Armee();
+    this._mfArmee.getArmee().then((data) => {
+      this._mfArmee.chargeData(data);
+      this._mfTotalUnites = (this._mfArmee.unite || []).reduce((s, n) => s + (n || 0), 0);
+      this.simulerMultiFlood();
+    });
+    return this;
+  }
+  /**
+   * Rend le tableau-formulaire au look natif :
+   * Attaquant | label | cible1 | cible2 | … | "+" (slot d'ajout).
+   * Re-rend complètement à chaque add/remove → re-bind autocomplete derrière.
+   *
+   * @private
+   * @method _mfRenderForm
+   */
+  _mfRenderForm() {
+    let cibles = [...this._mfCibles].sort((a, b) => a.tempsParcours - b.tempsParcours),
+      arrondirOptions = [0, 5, 10, 100, 1000],
+      // Pour chaque cible : 5 cellules (une par ligne du form)
+      pseudoRow = cibles
+        .map(
+          (c) =>
+            `<td><input type="text" class="o_mfPseudoCell cursor" data-pseudo="${c.pseudo}" value="${c.pseudo}" readonly title="Cliquer pour retirer"/></td>`,
+        )
+        .join(""),
+      terrainRow = cibles
+        .map(
+          (c) =>
+            `<td><input type="text" value="${numeral(c.terrain).format()} cm²" disabled/></td>`,
+        )
+        .join(""),
+      terrainFinalRow = cibles
+        .map(
+          (c) =>
+            `<td><input type="text" class="o_mfOpt" data-pseudo="${c.pseudo}" data-opt="terrainFinal" value="${c.terrainFinal ?? ""}" placeholder="—"/></td>`,
+        )
+        .join(""),
+      priseMaxRow = cibles
+        .map(
+          (c) =>
+            `<td><input type="text" class="o_mfOpt" data-pseudo="${c.pseudo}" data-opt="priseMax" value="${c.priseMax ?? ""}" placeholder="—"/></td>`,
+        )
+        .join(""),
+      arrondirRow = cibles
+        .map((c) => {
+          let opts = arrondirOptions
+            .map(
+              (v) =>
+                `<option value="${v}"${(c.arrondir ?? 0) == v ? " selected" : ""}>${v === 0 ? "Aucun" : v}</option>`,
+            )
+            .join("");
+          return `<td><select class="o_mfOpt" data-pseudo="${c.pseudo}" data-opt="arrondir">${opts}</select></td>`;
+        })
+        .join(""),
+      // Cellule "vide" si aucune cible — pour que le tableau ait quand même la bonne forme
+      empty = cibles.length ? "" : `<td></td>`;
+    $("#o_mfFormWrap").html(`
+        <table id="o_mfForm" class="o_maxWidth centre" cellspacing="0">
+          <thead>
+            <tr>
+              <th>Attaquant</th>
+              <th></th>
+              <th colspan="${cibles.length || 1}">Cibles</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><input type="text" value="${monProfil.pseudo}" disabled/></td>
+              <td class="right">Pseudo</td>
+              ${pseudoRow}${empty}
+              <td><input type="text" id="o_mfPseudoCible" placeholder="Pseudo…"/></td>
+            </tr>
+            <tr>
+              <td><input type="text" value="${numeral(Utils.terrain).format()}" disabled/></td>
+              <td class="right">Terrain</td>
+              ${terrainRow}${empty}
+              <td><input type="text" disabled placeholder="—"/></td>
+            </tr>
+            <tr>
+              <td><input type="text" class="o_mfAttOpt" data-opt="terrainFinal" value="${this._mfAttaquantOpts?.terrainFinal ?? ""}" placeholder="—"/></td>
+              <td class="right reduce">Terrain Final</td>
+              ${terrainFinalRow}${empty}
+              <td><input type="text" disabled placeholder="—"/></td>
+            </tr>
+            <tr>
+              <td><input type="text" class="o_mfAttOpt" data-opt="priseMax" value="${this._mfAttaquantOpts?.priseMax ?? ""}" placeholder="—"/></td>
+              <td class="right reduce">Prise Max</td>
+              ${priseMaxRow}${empty}
+              <td><input type="text" disabled placeholder="—"/></td>
+            </tr>
+            <tr>
+              <td></td>
+              <td class="right reduce">Arrondir</td>
+              ${arrondirRow}${empty}
+              <td><select disabled><option>Aucun</option></select></td>
+            </tr>
+          </tbody>
+        </table>`);
+    this._mfBindForm();
+  }
+  /**
+   *
+   */
+  _mfBindForm() {
+    $("#o_mfPseudoCible")
+      .autocomplete({
+        minLength: 1,
+        source: (request, response) => {
+          Joueur.rechercher(request.term).then(
+            (data) => {
+              let items = Utils.extraitRecherche(data, true, false);
+              response(
+                items.map((it) => ({
+                  label: it.value_avec_html,
+                  value: it.value,
+                })),
+              );
+            },
+            () => response([]),
+          );
+        },
+        select: (event, ui) => {
+          this._mfAjouterParPseudo(ui.item.value);
+          return false;
+        },
+      })
+      .on("keydown", (e) => {
+        if (e.key === "Enter") {
+          let pseudo = $("#o_mfPseudoCible").val().trim();
+          if (pseudo) this._mfAjouterParPseudo(pseudo);
+          e.preventDefault();
+        }
+      });
+    $("#o_mfForm .o_mfPseudoCell").click((e) => {
+      let pseudo = $(e.currentTarget).data("pseudo");
+      this._mfCibles = this._mfCibles.filter((c) => c.pseudo !== pseudo);
+      this._mfRenderForm();
+      this.simulerMultiFlood();
+    });
+    // Options par cible (Terrain Final / Prise Max / Arrondir) — re-simu sur change
+    $("#o_mfForm .o_mfOpt").on("change", (e) => {
+      let $el = $(e.currentTarget),
+        pseudo = $el.data("pseudo"),
+        opt = $el.data("opt"),
+        cible = this._mfCibles.find((c) => c.pseudo === pseudo);
+      if (!cible) return;
+      let raw = $el.val();
+      cible[opt] = raw === "" || raw === "0" ? null : parseInt(raw);
+      this.simulerMultiFlood();
+    });
+    // Options globales attaquant (Terrain Final / Prise Max) — re-simu sur change
+    $("#o_mfForm .o_mfAttOpt").on("change", (e) => {
+      let $el = $(e.currentTarget),
+        opt = $el.data("opt"),
+        raw = $el.val();
+      this._mfAttaquantOpts[opt] = raw === "" || raw === "0" ? null : parseInt(raw);
+      this.simulerMultiFlood();
+    });
+  }
+  /**
+   * Pipeline d'ajout d'une cible par son pseudo :
+   * 1. Tente d'abord de la trouver dans le radar local (immédiat, pas de réseau).
+   * 2. Sinon, fetch `Membre.php?Pseudo=...` pour extraire id/terrain/x/y.
+   * `classementAlliance.php` (utilisé pour l'autocomplete) ne renvoie que
+   * `{value, url}` — pas assez pour la simulation, d'où l'enrichissement.
+   *
+   * @private
+   * @method _mfAjouterParPseudo
+   * @param {String} pseudo
+   */
+  _mfAjouterParPseudo(pseudo) {
+    if (!this._mfRadar) this._mfRadar = new BoiteRadar();
+    let local = this._mfRadar.joueurs[pseudo];
+    if (local) {
+      this.ajouterCibleMultiFlood({
+        pseudo: local.pseudo,
+        id: local.id,
+        terrain: local.terrain,
+        type: "radar",
+        x: local.x,
+        y: local.y,
+      });
+      return;
+    }
+    this._mfFetchProfil(pseudo).then(
+      (cible) => this.ajouterCibleMultiFlood(cible),
+      (err) => {
+        console.error("[multiFlood] enrichissement profil échoué", err);
+        $.toast({
+          ...TOAST_WARNING,
+          text: `Impossible de récupérer les infos de ${pseudo}.`,
+        });
+      },
+    );
+  }
+  /**
+   * Fetch et parse la page profil pour extraire les champs nécessaires à la
+   * simulation. Sélecteurs alignés sur ce que fait déjà `Profil.js:30-39` —
+   * cf. docs/scenarios/consulter-profil/report.md.
+   *
+   * @private
+   * @method _mfFetchProfil
+   * @param {String} pseudo
+   * @return {Promise<Object>}
+   */
+  _mfFetchProfil(pseudo) {
+    let url = `http://${Utils.serveur}.fourmizzz.fr/Membre.php?Pseudo=${encodeURIComponent(pseudo)}`;
+    return $.get(url).then((html) => {
+      let $page = $("<div/>").append(html),
+        coords = $page.find(".boite_membre a[href^='carte2.php?']").text(),
+        m = coords.match(/x=(\d+) et y=(\d+)/),
+        idLink = $page.find("a[href^='commerce.php?ID=']").attr("href") || "",
+        idMatch = idLink.match(/\d+/);
+      return {
+        pseudo,
+        id: idMatch ? parseInt(idMatch[0]) : 0,
+        terrain: numeral($page.find(".tableau_score tr:eq(1) td:eq(1)").text()).value() || 0,
+        type: "profil",
+        x: m ? parseInt(m[1]) : 0,
+        y: m ? parseInt(m[2]) : 0,
+      };
+    });
+  }
+  /**
+   *
+   */
+  _mfNormaliserCible(d) {
+    return {
+      pseudo: d.value,
+      id: parseInt(d.id),
+      terrain: parseInt(d.terrain),
+      type: d.type,
+      x: parseInt(d.x),
+      y: parseInt(d.y),
+    };
+  }
+  /**
+   *
+   */
+  ajouterCibleMultiFlood(cible) {
+    if (this._mfCibles.some((c) => c.pseudo === cible.pseudo)) {
+      $.toast({
+        ...TOAST_WARNING,
+        text: `${cible.pseudo} est déjà dans la liste.`,
+      });
+      return;
+    }
+    cible.tempsParcours = monProfil.getTempsParcours2(cible);
+    this._mfCibles.push(cible);
+    this._mfRenderForm();
+    this.simulerMultiFlood();
+  }
+  /**
+   * Orchestre la simulation multi-cibles : chaîne `Armee.optimiserFlood`
+   * sur chaque cible (triée par distance) en propageant `tdcAtt`.
+   * Détecte les cibles "trop hautes" (terrain > mon terrain × SEUIL_TROP_HAUT).
+   *
+   * @private
+   * @method simulerMultiFlood
+   */
+  simulerMultiFlood() {
+    if (!this._mfArmee) this._mfArmee = new Armee();
+    // Seuils alignés sur le natif (Attaquer.js:231 → tdcCible ∈ [tdcAtt × 0.5, tdcAtt × 3])
+    const SEUIL_TROP_HAUT = 3;
+    const SEUIL_TROP_BAS = 2;
+    const MAX_ATTAQUES_PAR_CIBLE = 10;
+    const UNITE_INFINIE = 1e9; // simu purement terrain — la contrainte d'armée est appliquée globalement (recap) pas par cible
+    let cibles = [...this._mfCibles].sort((a, b) => a.tempsParcours - b.tempsParcours),
+      mfTerrain = Utils.terrain,
+      // map des états cochés précédents (par pseudo+i) pour préserver les choix utilisateur
+      previous = {};
+    (this._mfResultats || []).forEach((r) => {
+      r.attaques?.forEach((a, i) => {
+        previous[r.cible.pseudo + ":" + i] = a.checked !== false;
+      });
+    });
+    let resultats = [];
+    cibles.forEach((cible) => {
+      if (cible.terrain > mfTerrain * SEUIL_TROP_HAUT) {
+        resultats.push({
+          cible,
+          tropHaute: true,
+          tdcAttDebut: mfTerrain,
+          tdcAttFin: mfTerrain,
+        });
+        return;
+      }
+      if (mfTerrain > cible.terrain * SEUIL_TROP_BAS) {
+        resultats.push({
+          cible,
+          tropBasse: true,
+          tdcAttDebut: mfTerrain,
+          tdcAttFin: mfTerrain,
+        });
+        return;
+      }
+      this._mfArmee.floods = [];
+      let donneesFlood = {
+        tdcAtt: mfTerrain,
+        tdcCible: cible.terrain,
+        unite: UNITE_INFINIE,
+        reste: MAX_ATTAQUES_PAR_CIBLE,
+        attaques: [],
+      };
+      this._mfArmee.optimiserFlood(donneesFlood);
+      let prises = this._mfArmee.floods.slice();
+      // Post-traitement avec les options (par cible + globales attaquant)
+      // Prise Max : cap par attaque (cible OU attaquant, le plus restrictif)
+      let priseMax = Math.min(
+        cible.priseMax ?? Infinity,
+        this._mfAttaquantOpts.priseMax ?? Infinity,
+      );
+      if (priseMax !== Infinity) prises = prises.map((p) => Math.min(p, priseMax));
+      // Arrondir : sur la valeur (par cible)
+      if (cible.arrondir)
+        prises = prises.map((p) => Math.round(p / cible.arrondir) * cible.arrondir);
+      // Terrain Final cible : faire tomber le terrain de la cible JUSQU'À cette valeur
+      if (cible.terrainFinal != null) {
+        let cumulCible = cible.terrain,
+          tronquees = [];
+        for (let p of prises) {
+          if (cumulCible <= cible.terrainFinal) break;
+          let allowed = cumulCible - cible.terrainFinal;
+          let truncated = Math.min(p, allowed);
+          tronquees.push(truncated);
+          cumulCible -= truncated;
+        }
+        prises = tronquees.filter((p) => p > 0);
+      }
+      // Terrain Final attaquant : stoppe quand mon terrain a atteint le plafond
+      if (this._mfAttaquantOpts.terrainFinal != null) {
+        let cumulAtt = mfTerrain,
+          plafond = this._mfAttaquantOpts.terrainFinal,
+          tronquees = [];
+        for (let p of prises) {
+          if (cumulAtt >= plafond) break;
+          let truncated = Math.min(p, plafond - cumulAtt);
+          tronquees.push(truncated);
+          cumulAtt += truncated;
+        }
+        prises = tronquees.filter((p) => p > 0);
+      }
+      let attaques = [],
+        tdcAttC = mfTerrain,
+        tdcCibleC = cible.terrain;
+      prises.forEach((p, i) => {
+        attaques.push({
+          prise: p,
+          tdcAttAvant: tdcAttC,
+          tdcCibleAvant: tdcCibleC,
+          pct: tdcCibleC > 0 ? Math.round((p / tdcCibleC) * 100) : 0,
+          checked: previous[cible.pseudo + ":" + i] !== false,
+        });
+        tdcAttC += p;
+        tdcCibleC -= p;
+      });
+      resultats.push({
+        cible,
+        attaques,
+        tdcAttDebut: mfTerrain,
+        tdcAttFin: tdcAttC,
+        tdcCibleFin: tdcCibleC,
+      });
+      mfTerrain = tdcAttC;
+    });
+    this._mfResultats = resultats;
+    this.afficherResultatsMultiFlood(resultats);
+  }
+  /**
+   * Rend le tableau dynamique des résultats (un sous-tableau par cible).
+   *
+   * @private
+   * @method afficherResultatsMultiFlood
+   * @param {Array} resultats
+   */
+  afficherResultatsMultiFlood(resultats) {
+    let html = "";
+    resultats.forEach((r) => {
+      html += `<table class="o_mfResultatCible o_maxWidth o_marginT15 centre" cellspacing="0">
+                <thead>
+                    <tr><th>${r.cible.pseudo} <span class="reduce">(${Utils.intToTime(r.cible.tempsParcours)})</span></th><th class="right">Mon Terrain</th><th class="right">Terrain de ${r.cible.pseudo}</th><th class="right">Prise</th></tr>
+                </thead>
+                <tbody>`;
+      if (r.tropHaute) {
+        html += `<tr><td colspan="4" class="centre red"><em>Le terrain de la cible est trop haut</em></td></tr>`;
+      } else if (r.tropBasse) {
+        html += `<tr><td colspan="4" class="centre red"><em>Le terrain de la cible est trop bas</em></td></tr>`;
+      } else {
+        r.attaques.forEach((a, i) => {
+          html += `<tr>
+                    <td class="left"><label><input type="checkbox" class="o_mfAttaqueCheck" data-pseudo="${r.cible.pseudo}" data-i="${i}"${a.checked ? " checked" : ""}/> Attaque ${i + 1} <span class="reduce">(${a.pct}%)</span></label></td>
+                    <td class="right">${numeral(a.tdcAttAvant).format()}</td>
+                    <td class="right">${numeral(a.tdcCibleAvant).format()}</td>
+                    <td class="right">${numeral(a.prise).format()}</td>
+                </tr>`;
+        });
+        let totalPrise = r.attaques.reduce((s, a) => s + a.prise, 0);
+        html += `<tr class="gras">
+                    <td class="left">Résultat</td>
+                    <td class="right">${numeral(r.tdcAttFin).format()}</td>
+                    <td class="right">${numeral(r.tdcCibleFin).format()}</td>
+                    <td class="right green">+${numeral(totalPrise).format()}</td>
+                </tr>`;
+      }
+      html += `</tbody></table>`;
+    });
+    $("#o_mfResultats").html(html);
+    // Toggle checkbox → màj instantanée du récap (ne re-simule pas, garde l'état utilisateur)
+    $("#o_mfResultats .o_mfAttaqueCheck").on("change", (e) => {
+      let $el = $(e.currentTarget),
+        pseudo = $el.data("pseudo"),
+        i = parseInt($el.data("i")),
+        r = this._mfResultats.find((x) => x.cible.pseudo === pseudo);
+      if (r && r.attaques[i]) {
+        r.attaques[i].checked = $el.is(":checked");
+        this.afficherRecapMultiFlood(this._mfResultats);
+      }
+    });
+    this.afficherRecapMultiFlood(resultats);
+    this.css(); // ré-applique couleur2 sur les nouvelles tables
+  }
+  /**
+   * Récap global : nombre d'attaques, total fourmis, prise totale.
+   * Pas de % de capacité (vitesse d'attaque, garnison) tant qu'on n'a pas
+   * de source fiable pour ces valeurs — à ajouter en v2.
+   *
+   * @private
+   * @method afficherRecapMultiFlood
+   * @param {Array} resultats
+   */
+  afficherRecapMultiFlood(resultats) {
+    let totalAttaques = 0,
+      totalFourmis = 0,
+      totalPrise = 0,
+      cibles = new Set();
+    resultats.forEach((r) => {
+      if (r.tropHaute || r.tropBasse) return;
+      r.attaques.forEach((a) => {
+        if (a.checked === false) return; // attaques décochées exclues
+        cibles.add(r.cible.pseudo);
+        totalAttaques++;
+        totalFourmis += a.prise; // approximation 1cm² ≈ 1 unité (cohérent avec le natif sur JSN)
+        totalPrise += a.prise;
+      });
+    });
+    cibles = cibles.size;
+    if (!totalAttaques) {
+      let msg = "";
+      if (resultats.length) {
+        let allHaut = resultats.every((r) => r.tropHaute),
+          allBas = resultats.every((r) => r.tropBasse),
+          allOob = resultats.every((r) => r.tropHaute || r.tropBasse);
+        if (allHaut) msg = "Aucune attaque possible — toutes les cibles sont trop hautes.";
+        else if (allBas) msg = "Aucune attaque possible — toutes les cibles sont trop basses.";
+        else if (allOob)
+          msg =
+            "Aucune attaque possible — toutes les cibles sont hors-portée (trop hautes ou trop basses).";
+        else msg = "Aucune attaque planifiée (cibles bornées par les options ou décochées).";
+      }
+      $("#o_mfRecap").html(msg ? `<em>${msg}</em>` : "");
+      $("#o_mfLancer").prop("disabled", true);
+      return;
+    }
+    // Check capacité armée (garnison). 3 états :
+    //   null  → armée pas encore chargée (Armee.getArmee en cours)
+    //   0     → armée vide → flood impossible
+    //   > 0   → calcul du % (peut largement dépasser 100% — le natif affiche 6595%, etc.)
+    let pctGarnisonHtml = "",
+      armeeOk = true;
+    if (this._mfTotalUnites === 0) {
+      pctGarnisonHtml = `, soit <span class="gras red">∞%</span> de votre armée (garnison vide)`;
+      armeeOk = false;
+    } else if (this._mfTotalUnites > 0) {
+      let pct = Math.round((totalFourmis / this._mfTotalUnites) * 100);
+      armeeOk = totalFourmis <= this._mfTotalUnites;
+      pctGarnisonHtml = `, soit <span class="gras${armeeOk ? "" : " red"}">${pct}%</span> de votre armée en garnison`;
+    }
+    let fourmisCls = armeeOk ? "" : " red",
+      recap = `Ce flood demande <span class="gras">${totalAttaques} attaque${totalAttaques > 1 ? "s" : ""}</span> sur ${cibles} cible${cibles > 1 ? "s" : ""} et <span class="gras${fourmisCls}">${numeral(totalFourmis).format()} fourmis</span>${pctGarnisonHtml} pour <span class="gras green">+${numeral(totalPrise).format()} cm²</span>.`;
+    $("#o_mfRecap").html(recap);
+    $("#o_mfLancer").prop("disabled", !armeeOk);
+    $("#o_mfLancer")
+      .off("click")
+      .one("click", () => this._mfLancer());
+  }
+  /**
+   * Lance la séquence multi-flood : pour chaque cible (dans l'ordre de distance),
+   * GET `ennemie.php?Attaquer=<id>` pour récupérer le token de sécurité, puis POST
+   * chaque attaque cochée séquentiellement avec 1s d'intervalle.
+   * Implémentation parallèle à `Armee.envoyerFlood` parce que celui-ci finit par
+   * `location.reload()` (incompatible multi-cible) et lit `pseudoCible` depuis le
+   * DOM de `ennemie.php` (que nous n'avons pas dans la BoiteCombat).
+   *
+   * @private
+   * @method _mfLancer
+   */
+  _mfLancer() {
+    let totalAttaques = 0,
+      aLancer = [];
+    this._mfResultats.forEach((r) => {
+      if (r.tropHaute || r.tropBasse) return;
+      let prises = [],
+        indices = [];
+      r.attaques.forEach((a, i) => {
+        if (a.checked !== false && a.prise > 0) {
+          prises.push(a.prise);
+          indices.push(i);
+          totalAttaques++;
+        }
+      });
+      if (prises.length) aLancer.push({ cible: r.cible, prises, indices });
+    });
+    if (!totalAttaques) return;
+    if (
+      !confirm(
+        `Lancer ${totalAttaques} attaque(s) sur ${aLancer.length} cible(s) ? Cette action est irréversible.`,
+      )
+    )
+      return;
+    $("#o_mfLancer").prop("disabled", true).text("Lancement…");
+    // S'assurer que l'armée est chargée (sinon `repartirUniteFlood` n'aura rien à distribuer)
+    let prep =
+      this._mfArmee && this._mfArmee.unite.some((u) => u > 0)
+        ? Promise.resolve()
+        : this._mfArmee.getArmee().then((d) => this._mfArmee.chargeData(d));
+    prep.then(() => this._mfLancerCibleSuivante(aLancer, 0));
+  }
+  /**
+   *
+   */
+  _mfLancerCibleSuivante(aLancer, idx) {
+    if (idx >= aLancer.length) {
+      $.toast({ ...TOAST_SUCCESS, text: "Multi-flood terminé." });
+      $("#o_mfLancer").text("Lancer ces attaques");
+      return;
+    }
+    let { cible, prises, indices } = aLancer[idx];
+    $.get(`http://${Utils.serveur}.fourmizzz.fr/ennemie.php?Attaquer=${cible.id}`)
+      .then((html) => {
+        let $page = $("<div/>").append(html),
+          tInput = $page.find("input#t").last();
+        if (!tInput.length) {
+          $.toast({
+            ...TOAST_ERROR,
+            text: `Token introuvable pour ${cible.pseudo}, séquence stoppée.`,
+          });
+          $("#o_mfLancer").text("Lancer ces attaques");
+          return;
+        }
+        let securite = tInput.attr("name") + "=" + tInput.attr("value");
+        // Construit la répartition pour les SEULES attaques cochées de cette cible
+        this._mfArmee.floods = prises.slice();
+        this._mfArmee.repartirUniteFlood();
+        this._mfEnvoyerAttaqueSuivante(cible, securite, indices, 0, () => {
+          // Décompte local des unités envoyées (pour les cibles suivantes)
+          this._mfArmee.repartition.forEach((rep) => {
+            rep.forEach((n, j) => {
+              this._mfArmee.unite[j] = Math.max(0, this._mfArmee.unite[j] - n);
+            });
+          });
+          this._mfLancerCibleSuivante(aLancer, idx + 1);
+        });
+      })
+      .fail(() => {
+        $.toast({
+          ...TOAST_ERROR,
+          text: `Échec récupération page ennemie pour ${cible.pseudo}, séquence stoppée.`,
+        });
+        $("#o_mfLancer").text("Lancer ces attaques");
+      });
+  }
+  /**
+   *
+   */
+  _mfEnvoyerAttaqueSuivante(cible, securite, indices, k, onComplete) {
+    if (k >= indices.length) {
+      onComplete();
+      return;
+    }
+    let i = indices[k],
+      donnees = this._mfBuildPayload(securite, this._mfArmee.repartition[k], cible.pseudo);
+    $.post(
+      `http://${Utils.serveur}.fourmizzz.fr/ennemie.php?Attaquer=${cible.id}`,
+      donnees,
+      (data) => {
+        let txt = $("<div/>").append(data).find("center:last").text(),
+          ok = txt.indexOf("Vos troupes sont en marche") !== -1;
+        this._mfMarquerAttaque(cible.pseudo, i, ok);
+        setTimeout(
+          () => this._mfEnvoyerAttaqueSuivante(cible, securite, indices, k + 1, onComplete),
+          1000,
+        );
+      },
+    );
+  }
+  /**
+   * Construit le payload `application/x-www-form-urlencoded` attendu par `ennemie.php`.
+   * Le mapping unite11/12/13/14 ↔ index 12/13/11/6 du tableau `repartition` reproduit
+   * exactement celui de `Armee.envoyerFlood:1010-1023` (ordre non-séquentiel hérité du
+   * jeu, où Concierge d'élite/Tank d'élite/Tueuse[E] ont été ajoutés a posteriori).
+   *
+   * @private
+   * @method _mfBuildPayload
+   */
+  _mfBuildPayload(securite, repartition, pseudoCible) {
+    let donnees = {},
+      [name, value] = securite.split("=");
+    donnees[name] = value;
+    donnees["ChoixArmee"] = "1";
+    donnees["lieu"] = "1";
+    donnees["pseudoCible"] = pseudoCible;
+    donnees["unite1"] = repartition[0];
+    donnees["unite2"] = repartition[1];
+    donnees["unite3"] = repartition[2];
+    donnees["unite4"] = repartition[3];
+    donnees["unite5"] = repartition[4];
+    donnees["unite6"] = repartition[5];
+    donnees["unite7"] = repartition[7];
+    donnees["unite8"] = repartition[8];
+    donnees["unite9"] = repartition[9];
+    donnees["unite10"] = repartition[10];
+    donnees["unite11"] = repartition[12];
+    donnees["unite12"] = repartition[13];
+    donnees["unite13"] = repartition[11];
+    donnees["unite14"] = repartition[6];
+    return donnees;
+  }
+  /**
+   *
+   */
+  _mfMarquerAttaque(pseudo, i, ok) {
+    $(`.o_mfResultatCible .o_mfAttaqueCheck[data-pseudo="${pseudo}"][data-i="${i}"]`)
+      .closest("tr")
+      .removeClass("red green")
+      .addClass(ok ? "green" : "red");
+  }
+  /**
    * Affiche une calculatrice pour calculer les temps de trajets, les horraires.
    *
    * @private
@@ -711,7 +1385,10 @@ class BoiteCombat extends Boite {
       ref.niveauRecherche[6] = $("#o_vaTemps").val();
       // si pas de referentiel on ne peut rien calculer
       if (!ref.pseudo) {
-        $.toast({ ...TOAST_ERROR, text: "Le joueur 1 n'est pas renseigné." });
+        $.toast({
+          ...TOAST_ERROR,
+          text: "Le joueur 1 n'est pas renseigné.",
+        });
         return false;
       }
       // preparation des joueurs
