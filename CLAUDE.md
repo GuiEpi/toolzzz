@@ -142,6 +142,10 @@ Format: `<type>(<optional scope>): <description>`
 - `chore: init`
 - `build(release): bump version to 0.2.2`
 
+## Pull request body
+
+Solo project — pas de section « Test plan » dans le body. Les vérifs se font de vive voix entre Claude et le mainteneur avant l'ouverture de la PR. Garder uniquement la section `## Summary` (2-3 bullets concis).
+
 ## License
 
 GPL-3.0, inherited from upstream. Any derivative work (including further forks) must remain GPL-3.0 and preserve attribution to the original author (Hraesvelg / Freddy) in the manifest's `author` field and in the README credits.
