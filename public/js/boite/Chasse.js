@@ -47,7 +47,13 @@ class BoiteChasse extends Boite {
     $(
       "#o_resultatChasse tr:even, .o_tabs .ui-widget-header .ui-tabs-anchor, #o_bestiaireTable tr:even",
     ).css("background-color", monProfil.parametre["couleur2"].valeur);
-    $(".o_content a").css("color", monProfil.parametre["couleurTexte"].valeur);
+    $(".o_tabs .ui-widget-header .ui-tabs-anchor").css(
+      "background-color",
+      monProfil.parametre["couleur2"].valeur,
+    );
+    $(".o_content a")
+      .unbind("mouseenter mouseleave")
+      .css("color", monProfil.parametre["couleurTexte"].valeur);
     $(".o_content li:not(.ui-state-active) a").css("color", "inherit");
     let matches = monProfil.parametre["couleurTexte"].valeur.match(
       /#([\da-f]{2})([\da-f]{2})([\da-f]{2})/i,
