@@ -180,13 +180,24 @@ class BoiteChasse extends Boite {
         <div class="centre">
             <p class="reduce"><em>Simule un combat type natif : ton armée vs une faune auto-générée à partir du terrain à conquérir. Stats issues du <a href="http://alliancead2.free.fr/Bestiaire.html" target="_blank">Bestiaire</a>.</em></p>
             <table class="o_maxWidth centre o_marginT15" cellspacing="0"><tr>
-                <td valign="top" style="width:55%">
+                <td valign="top" style="width:40%">
                     <table id="o_simuChasseArmee" class="o_maxWidth centre" cellspacing="0">
-                        <thead><tr><th colspan="2">Chasseurs <span id="o_simuChasseLoadArmee" class="reduce souligne cursor">[charger mon armée]</span></th></tr></thead>
+                        <thead><tr><th colspan="2">Chasseurs <span id="o_simuChasseLoadArmee" class="reduce souligne cursor">[charger]</span></th></tr></thead>
                         <tbody>${armeeRows}</tbody>
                     </table>
                 </td>
-                <td valign="top" style="width:45%">
+                <td valign="top" style="width:30%">
+                    <table id="o_simuChasseTech" class="o_maxWidth centre" cellspacing="0">
+                        <thead><tr><th colspan="2">Technologies <span id="o_simuChasseLoadTech" class="reduce souligne cursor">[charger]</span></th></tr></thead>
+                        <tbody>
+                            <tr><td class="right reduce">${RECHERCHE[1]}</td><td><input type="text" id="o_simuChasseTechBouclier" value="0" size="6"/></td></tr>
+                            <tr><td class="right reduce">${RECHERCHE[2]}</td><td><input type="text" id="o_simuChasseTechArmes" value="0" size="6"/></td></tr>
+                            <tr><td class="right reduce">${RECHERCHE[5]}</td><td><input type="text" id="o_simuChasseTechVitesse" value="0" size="6"/></td></tr>
+                            <tr><td class="right reduce">${CONSTRUCTION[12]}</td><td><input type="text" id="o_simuChasseTechCochenille" value="0" size="6"/></td></tr>
+                        </tbody>
+                    </table>
+                </td>
+                <td valign="top" style="width:30%">
                     <table id="o_simuChasseTdc" class="o_maxWidth centre" cellspacing="0">
                         <thead><tr><th colspan="2">Quantités de terrain de chasse</th></tr></thead>
                         <tbody>
@@ -199,10 +210,9 @@ class BoiteChasse extends Boite {
             <button id="o_simuChasseGo" class="o_button f_success o_marginT15" type="button">Fight !</button>
             <div id="o_simuChasseResult" class="o_marginT15"></div>
         </div>`);
-    $("#o_simuChasseArmee input.o_simuChasseUnit, #o_simuChasseTdc input").spinner({
-      min: 0,
-      numberFormat: "i",
-    });
+    $(
+      "#o_simuChasseArmee input.o_simuChasseUnit, #o_simuChasseTech input, #o_simuChasseTdc input",
+    ).spinner({ min: 0, numberFormat: "i" });
     $("#o_simuChasseTdcAct").spinner("value", Utils.terrain || 0);
     $("#o_simuChasseLoadArmee").click(() => {
       let armee = new Armee();
@@ -211,6 +221,12 @@ class BoiteChasse extends Boite {
         for (let i = 0; i < 14; i++)
           $(`#o_simuChasseArmee input[data-i="${i}"]`).spinner("value", armee.unite[i] || 0);
       });
+    });
+    $("#o_simuChasseLoadTech").click(() => {
+      $("#o_simuChasseTechBouclier").spinner("value", monProfil.niveauRecherche[1] || 0);
+      $("#o_simuChasseTechArmes").spinner("value", monProfil.niveauRecherche[2] || 0);
+      $("#o_simuChasseTechVitesse").spinner("value", monProfil.niveauRecherche[5] || 0);
+      $("#o_simuChasseTechCochenille").spinner("value", monProfil.niveauConstruction[12] || 0);
     });
     $("#o_simuChasseGo").click(() => this._simuChasseLancer());
     return this;
@@ -235,10 +251,12 @@ class BoiteChasse extends Boite {
       // calculDifficulte donne ~5% près de la valeur natif
       targetDiff = armee.calculDifficulte(tdcAct, 1, q),
       faune = this._simuChasseGenererFaune(targetDiff),
-      res = Chasse.simulerCombat(armee, faune, {
-        armes: monProfil.niveauRecherche[2],
-        bouclier: monProfil.niveauRecherche[1],
-      }),
+      // Techs lues depuis le form (le user peut les éditer pour tester du "what-if")
+      bonus = {
+        armes: parseInt($("#o_simuChasseTechArmes").spinner("value")) || 0,
+        bouclier: parseInt($("#o_simuChasseTechBouclier").spinner("value")) || 0,
+      },
+      res = Chasse.simulerCombat(armee, faune, bonus),
       cm2Conquis = res.issue === "victoire" ? q : 0,
       // Heuristique calibrée sur 2 datapoints (1cm² → 20 promo, 1000cm² → 189 promo)
       promotions =
