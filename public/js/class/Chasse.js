@@ -202,4 +202,85 @@ class Chasse {
 			<tr ${bVisible ? "" : "style='display:none'"}><td>${IMG_DEF}</td><td>${numeral(this._armeeAv.getBaseDef()).format()}</td><td>${IMG_DEF}</td><td>${numeral(diffDef).format("+0,0")} (${numeral(diffDef / this._armeeAv.getBaseDef()).format("+0.00%")})</td><td>${IMG_DEF}</td><td>${numeral(this._armeeAp.getBaseDef()).format()}</td></tr>`;
     return html;
   }
+
+  /* ------------------------------------------------------------------ */
+  /* ---- Combat sim chasse (joueur vs faune) ------------------------- */
+  /* ------------------------------------------------------------------ */
+
+  /**
+   * Simule un combat de chasse joueur vs composition de faune, round par round.
+   *
+   * Modèle vérifié sur captures réelles du simulateur natif (cf.
+   * docs/scenarios/simulateur-chasse) :
+   * - Les deux côtés calculent leur attaque **avant** que les pertes du round
+   *   soient appliquées (ex. run 1 rd1 enemy fdf = 12×13+30×30+140+2×230 = 1656 ✓).
+   * - Pertes joueur ordre tier-bas-d'abord (confirmé par les transitions JSN/SN).
+   * - Pertes faune : meilleure approximation = espèces faibles (faible Vie) tuées
+   *   en premier ; documenté comme heuristique car le natif n'expose pas l'ordre exact.
+   * - Bonus armes/bouclier appliqués via `(1 + niveauRecherche/10)` (cf. Armee.getTotalAtt).
+   *
+   * @static
+   * @method simulerCombat
+   * @param {Armee} armee — armée du joueur (lit `unite[]` 14 entries)
+   * @param {Array<{slug,count}>} faune — composition rencontrée (slug = clé FAUNE)
+   * @param {Object} bonus — { armes, bouclier } niveaux de recherche du joueur
+   * @return {Object} { rounds:[…], issue:'victoire'|'defaite'|'egalite', survivantsJ, survivantsE }
+   */
+  static simulerCombat(armee, faune, bonus = { armes: 0, bouclier: 0 }) {
+    const MAX_ROUNDS = 10;
+    let myArmy = armee.unite.slice(),
+      enemies = faune
+        .map((f) => {
+          let s = FAUNE.find((x) => x.slug === f.slug);
+          return s ? { ...s, count: f.count } : null;
+        })
+        .filter((e) => e && e.count > 0),
+      rounds = [];
+    for (let r = 0; r < MAX_ROUNDS; r++) {
+      let myCount = myArmy.reduce((s, n) => s + n, 0),
+        enemyCount = enemies.reduce((s, e) => s + e.count, 0);
+      if (myCount === 0 || enemyCount === 0) break;
+      // Attaques calculées simultanément (avant pertes)
+      let myBaseAtt = myArmy.reduce((s, n, i) => s + n * ATT_UNITE[i + 1], 0),
+        myAttBonus = Math.round((myBaseAtt * bonus.armes) / 10),
+        myTotalAtt = myBaseAtt + myAttBonus,
+        enemyAtt = enemies.reduce((s, e) => s + e.count * e.fdf, 0);
+      // Pertes faune : weakest-vie first (heuristique)
+      let dmgLeft = myTotalAtt,
+        killed = 0,
+        enemiesSorted = [...enemies].sort((a, b) => a.vie - b.vie);
+      for (let e of enemiesSorted) {
+        if (dmgLeft <= 0) break;
+        let possibleKills = Math.min(e.count, Math.floor(dmgLeft / e.vie));
+        let realE = enemies.find((x) => x.slug === e.slug);
+        realE.count -= possibleKills;
+        dmgLeft -= possibleKills * e.vie;
+        killed += possibleKills;
+      }
+      enemies = enemies.filter((e) => e.count > 0);
+      // Pertes joueur : tier-bas-d'abord (confirmé)
+      let myDmgLeft = enemyAtt,
+        myLost = 0;
+      for (let i = 0; i < myArmy.length; i++) {
+        if (myDmgLeft <= 0 || myArmy[i] === 0) continue;
+        let unitVie = VIE_UNITE[i + 1] + Math.round((VIE_UNITE[i + 1] * bonus.bouclier) / 10),
+          possibleLost = Math.min(myArmy[i], Math.floor(myDmgLeft / unitVie));
+        myArmy[i] -= possibleLost;
+        myDmgLeft -= possibleLost * unitVie;
+        myLost += possibleLost;
+      }
+      rounds.push({
+        playerAtt: myTotalAtt,
+        playerAttBonus: myAttBonus,
+        playerKills: killed,
+        enemyAtt,
+        enemyAttBonus: 0,
+        playerLost: myLost,
+      });
+    }
+    let myAlive = myArmy.some((n) => n > 0),
+      enemyAlive = enemies.length > 0,
+      issue = enemyAlive && !myAlive ? "defaite" : !enemyAlive ? "victoire" : "egalite";
+    return { rounds, issue, survivantsJ: myArmy, survivantsE: enemies };
+  }
 }

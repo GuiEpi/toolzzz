@@ -15,7 +15,7 @@ class BoiteChasse extends Boite {
     super(
       "o_boiteChasse",
       "Outils pour Chasseur",
-      `<div id='o_tabsChasse' class='o_tabs'><ul><li><a href='#o_tabsChasse1'>Analyser</a></li><li><a href='#o_tabsChasse2'>Simuler</a></li></ul><div id='o_tabsChasse1'/><div id='o_tabsChasse2'/></div>`,
+      `<div id='o_tabsChasse' class='o_tabs'><ul><li><a href='#o_tabsChasse1'>Analyser</a></li><li><a href='#o_tabsChasse2'>Simuler</a></li><li><a href='#o_tabsChasse3'>Bestiaire</a></li></ul><div id='o_tabsChasse1'/><div id='o_tabsChasse2'/><div id='o_tabsChasse3'/></div>`,
     );
   }
   /**
@@ -33,7 +33,7 @@ class BoiteChasse extends Boite {
           },
         })
         .removeClass("ui-widget");
-      this.analyse().simuler().css().event();
+      this.analyse().simuler().bestiaire().css().event();
     }
   }
   /**
@@ -45,7 +45,7 @@ class BoiteChasse extends Boite {
   css() {
     super.css();
     $(
-      "#o_resultatChasse tr:even, .o_tabs .ui-widget-header .ui-tabs-anchor, #o_simuChasseTable tr:even",
+      "#o_resultatChasse tr:even, .o_tabs .ui-widget-header .ui-tabs-anchor, #o_simuChasseFaune tr:even, #o_simuChasseRounds tr:even, #o_bestiaireTable tr:even",
     ).css("background-color", monProfil.parametre["couleur2"].valeur);
     $(".o_content a").css("color", monProfil.parametre["couleurTexte"].valeur);
     $(".o_content li:not(.ui-state-active) a").css("color", "inherit");
@@ -160,116 +160,148 @@ class BoiteChasse extends Boite {
     });
   }
   /**
-   * Comparateur de scénarios de chasse (onglet "Simuler" — `o_tabsChasse2`).
-   * Inspiré du `RefreshOtherHF` de CalysteneHuntingSimulator (lines 3562-3743) :
-   * l'utilisateur saisit plusieurs cibles de "terrain à conquérir", on affiche
-   * en parallèle pour chacune le nombre de chasses, cm²/chasse, pertes (AVG/MAX),
-   * temps requis et rentabilité — pour comparer rapidement plusieurs plans avant
-   * de lancer.
+   * Simulateur de combat de chasse (onglet "Simuler" — `o_tabsChasse2`).
+   * Le joueur saisit l'armée envoyée et la composition de faune rencontrée ;
+   * on simule round-by-round en s'appuyant sur `Chasse.simulerCombat` (cf.
+   * docs des stats de faune dans la table FAUNE de content.js) et on rend
+   * le narratif type natif (« Vous infligez X dégâts et tuez Y ennemies »).
    *
    * @private
    * @method simuler
    */
   simuler() {
-    let diffOptions = RATIO_CHASSE.map(
-      (r) => `<option value="${r}"${r === 9 ? " selected" : ""}>${r.toFixed(1)}</option>`,
+    // Inputs armée joueur : 1 ligne par unité (14 unités, ATT_UNITE/VIE_UNITE)
+    let armeeRows = "";
+    for (let i = 1; i <= 14; i++) {
+      armeeRows += `<tr><td class="right reduce">${NOM_UNITE[i]}</td><td><input type="text" class="o_simuChasseUnit" data-i="${i - 1}" value="0" size="10"/></td></tr>`;
+    }
+    // Inputs faune : 1 ligne par espèce
+    let fauneRows = FAUNE.map(
+      (f) =>
+        `<tr><td><img src="${chrome.runtime.getURL("images/faune/" + f.slug + ".png")}" height="22" alt="${f.nom}"/></td><td class="right reduce">${f.nom}</td><td><input type="text" class="o_simuChasseFauneN" data-slug="${f.slug}" value="0" size="10"/></td></tr>`,
     ).join("");
     $("#o_tabsChasse2").append(`
         <div class="centre">
-            <p class="reduce"><em>Saisis plusieurs cibles pour comparer pertes, temps et rentabilité.</em></p>
-            <table class="o_maxWidth centre" cellspacing="0">
-                <tbody>
-                    <tr><td class="right">Difficulté commune :</td><td><select id="o_simuChasseDiff">${diffOptions}</select></td></tr>
-                </tbody>
-            </table>
-            <table id="o_simuChasseTable" class="o_maxWidth centre o_marginT15" cellspacing="0">
-                <thead>
-                    <tr><th>#</th><th>Terrain à conquérir</th><th>Nb</th><th>cm²/chasse</th><th>Pertes AVG</th><th>Pertes MAX</th><th>Temps</th><th>cm²/jour</th><th></th></tr>
-                </thead>
-                <tbody id="o_simuChasseRows"></tbody>
-            </table>
-            <button id="o_simuChasseAdd" class="o_button o_marginT15" type="button">+ Ajouter un scénario</button>
+            <p class="reduce"><em>Simule un combat tour-par-tour : ton armée vs une composition de faune. Stats issues du <a href="http://alliancead2.free.fr/Bestiaire.html" target="_blank">Bestiaire</a>.</em></p>
+            <table class="o_maxWidth centre o_marginT15" cellspacing="0"><tr>
+                <td valign="top" style="width:50%">
+                    <table id="o_simuChasseArmee" class="o_maxWidth centre" cellspacing="0">
+                        <thead><tr><th colspan="2">Mon armée <span id="o_simuChasseLoadArmee" class="reduce souligne cursor">[charger]</span></th></tr></thead>
+                        <tbody>${armeeRows}</tbody>
+                    </table>
+                </td>
+                <td valign="top" style="width:50%">
+                    <table id="o_simuChasseFaune" class="o_maxWidth centre" cellspacing="0">
+                        <thead><tr><th colspan="3">Faune rencontrée</th></tr></thead>
+                        <tbody>${fauneRows}</tbody>
+                    </table>
+                </td>
+            </tr></table>
+            <button id="o_simuChasseGo" class="o_button f_success o_marginT15" type="button">Simuler</button>
+            <div id="o_simuChasseResult" class="o_marginT15"></div>
         </div>`);
-    // État interne — scénarios par défaut basés sur le terrain courant
-    let base = Math.max(Utils.terrain || 100000, 100000);
-    this._simuChasseScenarios = [
-      { tdcDep: Math.round(base * 1.5) },
-      { tdcDep: Math.round(base * 2) },
-      { tdcDep: Math.round(base * 3) },
-    ];
-    this._simuArmee = new Armee();
-    // Bind events (délégation — les rows sont re-rendues à chaque changement)
-    $("#o_simuChasseDiff").change(() => this._simuChasseRender());
-    $("#o_simuChasseAdd").click(() => {
-      this._simuChasseScenarios.push({ tdcDep: Math.round(base * 1.5) });
-      this._simuChasseRender();
+    $(
+      "#o_simuChasseArmee input.o_simuChasseUnit, #o_simuChasseFaune input.o_simuChasseFauneN",
+    ).spinner({
+      min: 0,
+      numberFormat: "i",
     });
-    $("#o_simuChasseRows")
-      .on("change spin", ".o_simuChasseTdc", (e, ui) => {
-        let i = parseInt($(e.currentTarget).data("i"));
-        let val = ui ? ui.value : parseInt($(e.currentTarget).val()) || 0;
-        this._simuChasseScenarios[i].tdcDep = val;
-        this._simuChasseRender();
-      })
-      .on("click", ".o_simuChasseRm", (e) => {
-        let i = parseInt($(e.currentTarget).data("i"));
-        this._simuChasseScenarios.splice(i, 1);
-        if (!this._simuChasseScenarios.length)
-          this._simuChasseScenarios.push({ tdcDep: Math.round(base * 1.5) });
-        this._simuChasseRender();
+    // Charge l'armée du joueur dans les inputs sur clic
+    $("#o_simuChasseLoadArmee").click(() => {
+      let armee = new Armee();
+      armee.getArmee().then((data) => {
+        armee.chargeData(data);
+        for (let i = 0; i < 14; i++)
+          $(`#o_simuChasseArmee input[data-i="${i}"]`).spinner("value", armee.unite[i] || 0);
       });
-    // Charge l'armée (nécessaire pour calculRatio → calculChasse)
-    this._simuArmee.getArmee().then((data) => {
-      this._simuArmee.chargeData(data);
-      this._simuChasseRender();
+    });
+    // Lance la simu
+    $("#o_simuChasseGo").click(() => {
+      let armee = new Armee();
+      $("#o_simuChasseArmee input.o_simuChasseUnit").each((_, el) => {
+        armee.unite[parseInt($(el).data("i"))] = parseInt($(el).val()) || 0;
+      });
+      let faune = $("#o_simuChasseFaune input.o_simuChasseFauneN")
+        .map((_, el) => ({ slug: $(el).data("slug"), count: parseInt($(el).val()) || 0 }))
+        .get()
+        .filter((f) => f.count > 0);
+      if (!armee.unite.some((n) => n > 0)) {
+        $.toast({ ...TOAST_WARNING, text: "Saisis au moins une unité de ton armée." });
+        return;
+      }
+      if (!faune.length) {
+        $.toast({ ...TOAST_WARNING, text: "Saisis au moins une espèce de faune." });
+        return;
+      }
+      let res = Chasse.simulerCombat(armee, faune, {
+        armes: monProfil.niveauRecherche[2],
+        bouclier: monProfil.niveauRecherche[1],
+      });
+      this._simuChasseAfficherResultat(armee, faune, res);
     });
     return this;
   }
   /**
    *
    */
-  _simuChasseRender() {
-    let armeePrete = this._simuArmee && this._simuArmee.unite.some((u) => u > 0);
-    if (!armeePrete) {
-      $("#o_simuChasseRows").html(
-        `<tr><td colspan="9" class="centre reduce"><em>Chargement de l'armée…</em></td></tr>`,
-      );
-      return;
-    }
-    let diff = parseFloat($("#o_simuChasseDiff").val()),
-      html = "";
-    this._simuChasseScenarios.forEach((s, i) => {
-      html += `<tr><td>${i + 1}</td>`;
-      html += `<td><input type="text" class="o_simuChasseTdc" data-i="${i}" value="${s.tdcDep || 0}" size="12"/></td>`;
-      if (s.tdcDep > 0) {
-        let r = this._simuChasseCompute(s.tdcDep, diff);
-        html += `<td>${r.NB}</td>`;
-        html += `<td class="right">${numeral(r.HF).format()}</td>`;
-        html += `<td class="right">${numeral(Math.round(r.pertes.AVG)).format()}</td>`;
-        html += `<td class="right red">${numeral(Math.round(r.pertes.MAX)).format()}</td>`;
-        html += `<td>${Utils.intToTime(r.temps)}</td>`;
-        html += `<td class="right green">${numeral(r.rentab).format()}</td>`;
-      } else {
-        html += `<td colspan="6" class="centre reduce"><em>—</em></td>`;
-      }
-      html += `<td><span class="cursor o_simuChasseRm" data-i="${i}" title="Retirer">✕</span></td>`;
-      html += `</tr>`;
+  _simuChasseAfficherResultat(armeeInit, fauneInit, res) {
+    let armeeStr = armeeInit.unite
+      .map((n, i) => (n > 0 ? `${numeral(n).format()} ${NOM_UNITE[i + 1]}` : null))
+      .filter(Boolean)
+      .join(", ");
+    let fauneStr = fauneInit
+      .map((f) => `${numeral(f.count).format()} ${FAUNE.find((x) => x.slug === f.slug).nom}`)
+      .join(", ");
+    let html = `<table id="o_simuChasseRounds" class="o_maxWidth centre" cellspacing="0">
+            <thead><tr><th colspan="4">Résultat du combat</th></tr></thead>
+            <tbody>
+                <tr><td colspan="4" class="left reduce"><b>Troupes en attaque :</b> ${armeeStr || "—"}.</td></tr>
+                <tr><td colspan="4" class="left reduce"><b>Troupes en défense :</b> ${fauneStr || "—"}.</td></tr>`;
+    res.rounds.forEach((r) => {
+      html += `<tr><td colspan="4" class="left reduce">Vous infligez <b>${numeral(r.playerAtt).format()}</b> (+ ${numeral(r.playerAttBonus).format()}) dégâts et tuez <b class="green">${numeral(r.playerKills).format()}</b> ennemies.</td></tr>`;
+      html += `<tr><td colspan="4" class="left reduce">L'ennemie inflige <b>${numeral(r.enemyAtt).format()}</b> (+ 0) dégâts à vos fourmis et en tue <b class="red">${numeral(r.playerLost).format()}</b>.</td></tr>`;
     });
-    $("#o_simuChasseRows").html(html);
-    $("#o_simuChasseRows input.o_simuChasseTdc").spinner({ min: 0, numberFormat: "i" });
+    let issueColor =
+        res.issue === "victoire" ? "green" : res.issue === "defaite" ? "red" : "orange",
+      issueText =
+        res.issue === "victoire"
+          ? "Vous avez gagné cette bataille !"
+          : res.issue === "defaite"
+            ? "Vos chasseuses sont mortes, l'expédition a échoué."
+            : "Match nul — combat interrompu.";
+    html += `<tr><td colspan="4" class="centre gras ${issueColor}">${issueText}</td></tr>`;
+    let survivantsJ = res.survivantsJ
+      .map((n, i) => (n > 0 ? `${numeral(n).format()} ${NOM_UNITE[i + 1]}` : null))
+      .filter(Boolean)
+      .join(", ");
+    let survivantsE = res.survivantsE
+      .map((e) => `${numeral(e.count).format()} ${e.nom}`)
+      .join(", ");
+    html += `<tr><td colspan="4" class="left reduce"><b>Survivants joueur :</b> ${survivantsJ || "aucun"}.</td></tr>`;
+    html += `<tr><td colspan="4" class="left reduce"><b>Survivants faune :</b> ${survivantsE || "aucun"}.</td></tr>`;
+    html += `</tbody></table>`;
+    $("#o_simuChasseResult").html(html);
     this.css();
   }
   /**
+   * Onglet "Bestiaire" — liste des 17 espèces de faune avec image et stats.
+   * Source de la table : http://alliancead2.free.fr/Bestiaire.html (constants
+   * FAUNE dans content.js, images bundlées dans public/images/faune/).
    *
+   * @private
+   * @method bestiaire
    */
-  _simuChasseCompute(tdcDep, diff) {
-    let armee = this._simuArmee,
-      reste = monProfil.niveauRecherche[5] + 2,
-      res = armee.calculChasse(tdcDep, diff, 0, 0, reste),
-      dDiff = armee.calculDifficulte(tdcDep, res.NB, res.HF),
-      pertes = armee.calculPerte(RATIO_CHASSE.indexOf(parseFloat(diff)), dDiff),
-      temps = Math.round((Utils.terrain + res.HF) * Math.pow(0.9, monProfil.niveauRecherche[5])),
-      rentab = temps > 0 ? Math.round(((res.NB * res.HF) / temps) * 86400) : 0;
-    return { NB: res.NB, HF: res.HF, dDiff, pertes, temps, rentab };
+  bestiaire() {
+    let rows = FAUNE.map(
+      (f) =>
+        `<tr><td><img src="${chrome.runtime.getURL("images/faune/" + f.slug + ".png")}" height="32" alt="${f.nom}"/></td><td class="left">${f.nom}</td><td class="right">${numeral(f.fdf).format()}</td><td class="right">${numeral(f.vie).format()}</td><td class="right">${numeral(f.diff).format()}</td></tr>`,
+    ).join("");
+    $("#o_tabsChasse3").append(`
+        <table id="o_bestiaireTable" class="o_maxWidth centre" cellspacing="0">
+            <thead><tr><th></th><th>Espèce</th><th class="right">FdF</th><th class="right">Vie</th><th class="right">Difficulté</th></tr></thead>
+            <tbody>${rows}</tbody>
+            <tfoot><tr><td colspan="5" class="reduce"><em>Stats issues du <a href="http://alliancead2.free.fr/Bestiaire.html" target="_blank">Bestiaire</a> de Calystène (2017).</em></td></tr></tfoot>
+        </table>`);
+    return this;
   }
 }

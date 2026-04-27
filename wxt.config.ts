@@ -91,7 +91,7 @@ export default defineConfig({
     ],
     web_accessible_resources: [
       {
-        resources: ["images/*", "css/*", "js/*"],
+        resources: ["images/*", "images/**", "css/*", "js/*"],
         matches: ["http://*.fourmizzz.fr/*"],
       },
     ],
