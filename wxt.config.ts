@@ -28,7 +28,7 @@ export default defineConfig({
     action: {
       default_icon: "images/icons/48.png",
     },
-    permissions: ["storage", "tabs"],
+    permissions: [],
     host_permissions: ["http://*.fourmizzz.fr/*"],
     content_scripts: [
       {
