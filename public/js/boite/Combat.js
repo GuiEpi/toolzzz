@@ -1299,7 +1299,9 @@ class BoiteCombat extends Boite {
       `http://${Utils.serveur}.fourmizzz.fr/ennemie.php?Attaquer=${cible.id}`,
       donnees,
       (data) => {
-        let txt = $("<div/>").append(data).find("center:last").text(),
+        let doc = new DOMParser().parseFromString(data, "text/html"),
+          centers = doc.querySelectorAll("center"),
+          txt = centers.length ? centers[centers.length - 1].textContent : "",
           ok = txt.indexOf("Vos troupes sont en marche") !== -1;
         this._mfMarquerAttaque(cible.pseudo, i, ok);
         setTimeout(

@@ -1026,7 +1026,9 @@ class Armee {
           "http://" + Utils.serveur + ".fourmizzz.fr/ennemie.php?Attaquer=" + idCible,
           donnees,
           (data) => {
-            let res = $("<div/>").append(data).find("center:last").text();
+            let doc = new DOMParser().parseFromString(data, "text/html"),
+              centers = doc.querySelectorAll("center"),
+              res = centers.length ? centers[centers.length - 1].textContent : "";
             $("#o_simulationFlood tr:eq(" + (indice + 2) + ")").addClass(
               res.indexOf("Vos troupes sont en marche") == -1 ? "red" : "green",
             );
