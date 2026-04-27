@@ -71,7 +71,7 @@ Firefox exposes `chrome.*` as an alias for `browser.*`, so `chrome.runtime.*` wo
 ## Firefox publication specifics
 
 - `browser_specific_settings.gecko.id` is `toolzzz@guiepi.github.io` — this ID must stay stable across uploads to AMO (changing it breaks updates for installed users).
-- `strict_min_version: "140.0"` — aligned with the Firefox version that introduced `data_collection_permissions`. Lower values trigger an AMO warning saying the privacy declaration is ignored on older Firefox.
+- `strict_min_version: "142.0"` — Firefox **142** is when `data_collection_permissions` is honored on **Firefox for Android** (desktop got it earlier, but AMO's review surfaces an Android-specific warning if `strict_min_version` is below 142). Lower values let AMO accept the upload but warn that the privacy declaration is ignored on older Firefox/Android.
 - AMO requires non-minified sources for review — keep the vendored libs in `public/js/lib/` readable (they currently are).
 - AMO requires `browser_specific_settings.gecko.data_collection_permissions` since November 2025 (will be enforced for all extensions in 2026). Currently declared as `required: ["none"]` which is accurate — the extension only reads fourmizzz.fr pages locally. If you add a feature that transmits data to an external server, you MUST update this declaration (values like `websiteContent`, `websiteActivity`, etc.) or AMO will reject the submission.
 - `manifest.author` must be a **string** on AMO (not the `{ email: string }` object form that Chrome accepts). WXT's TS types enforce the object form, so the config has a targeted `@ts-expect-error` directive on that line.
