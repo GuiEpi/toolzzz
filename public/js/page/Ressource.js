@@ -41,7 +41,45 @@ class PageRessource {
     });
     // Sauvegarde les chasses en cours et ajoute les boutons max recolte
     if (!Utils.comptePlus) this.plus();
+    // Bouton "Annuler toutes les chasses" si au moins une est en cours
+    this.boutonAnnulerChasses();
     return this;
+  }
+  /**
+   * Ajoute un bouton "Annuler toutes les chasses" dans la boîte de chasse en cours.
+   * Le serveur expose `Ressources.php?annuler=<chasseId>` pour annuler une chasse —
+   * on itère sur tous les spans `chasse_<id>` présents dans `#boite_tdc`.
+   *
+   * @private
+   * @method boutonAnnulerChasses
+   */
+  boutonAnnulerChasses() {
+    let chasses = $("#boite_tdc span[id^='chasse_']");
+    if (!chasses.length) return;
+    $("#boite_tdc").append(
+      `<div class="o_marginT15 centre"><button id="o_annulerChasses" class="o_button f_error" type="button">Annuler toutes les chasses (${chasses.length})</button></div>`,
+    );
+    $("#o_annulerChasses").click(() => {
+      if (!confirm(`Annuler les ${chasses.length} chasse(s) en cours ? Action irréversible.`))
+        return;
+      $("#o_annulerChasses").prop("disabled", true).text("Annulation…");
+      let promesses = chasses
+        .map((_, span) => $(span).attr("id").replace("chasse_", ""))
+        .get()
+        .map((id) => $.get(`http://${Utils.serveur}.fourmizzz.fr/Ressources.php?annuler=${id}`));
+      Promise.all(promesses).then(
+        () => {
+          location.reload();
+        },
+        () => {
+          $.toast({
+            ...TOAST_ERROR,
+            text: "Au moins une annulation a échoué — rechargement quand même.",
+          });
+          setTimeout(() => location.reload(), 1500);
+        },
+      );
+    });
   }
   /**
    * Formulaire de lancement pour les chasses.
