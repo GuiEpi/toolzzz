@@ -165,9 +165,61 @@ class PageAttaquer {
 			<tr><td>Antisonde (<span id="o_pourcentAttaque0">0</span>%)</td><td><input value='0' size='12' id='o_floodAntiSonde'/></td><td></td><td>${numeral(Utils.terrain).format()}</td><td>${numeral(this._cible.terrain).format()}</td></tr>
             <tr class="gras reduce"><td colspan="3"></td><td><span id="o_supprimeAttaque" class="souligne cursor" ${methode == 1 ? "style=display:none;" : ""}>Supprimer une attaque</span></td><td><span id="o_ajouteAttaque" class="souligne cursor" ${methode == 1 ? "style=display:none;" : ""}>Ajouter une attaque</span></td></tr>
             </table>
+            <fieldset id="o_floodRedeployFs" class="o_marginT15"><legend><label><input type="checkbox" id="o_floodRedeployEnable"/> Redéployer après flood</label></legend>
+                <table class="o_maxWidth centre" cellspacing="0">
+                    <tbody>
+                        <tr>
+                            <td class="right reduce">Vers Terrain de chasse :</td>
+                            <td><input type="text" id="o_floodRedeployTdcNb" value="0"/></td>
+                            <td><select id="o_floodRedeployTdcUnit">${NOM_UNITE.slice(1)
+                              .map((nom, i) => `<option value="${i + 1}">${nom}</option>`)
+                              .join("")}</select></td>
+                        </tr>
+                        <tr>
+                            <td class="right reduce">Vers Dôme / Fourmilière :</td>
+                            <td><input type="text" id="o_floodRedeployDomeNb" value="0"/></td>
+                            <td><select id="o_floodRedeployDomeUnit">${NOM_UNITE.slice(1)
+                              .map((nom, i) => `<option value="${i + 1}">${nom}</option>`)
+                              .join("")}</select></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p class="reduce"><em>Les troupes restées en Loge sont redéployées juste avant le rechargement de la page.</em></p>
+            </fieldset>
             <button id='o_lanceFlood' class='o_marginT15 o_button f_success'>Flooder</button>
             <p class="reduce left">* : place les unités restantes sur l'attaque selectionnée.</p>
             </fieldset>`);
+    // Chargement / persistance du redéploiement (clé partagée avec la BoiteCombat multi-flood)
+    let redeployCfg;
+    try {
+      redeployCfg = JSON.parse(localStorage.getItem("outiiil_postFloodRedeploy")) || {};
+    } catch (e) {
+      redeployCfg = {};
+    }
+    $("#o_floodRedeployEnable").prop("checked", !!redeployCfg.enable);
+    $("#o_floodRedeployTdcNb").val(redeployCfg.tdc?.nbTroupes ?? 0);
+    $("#o_floodRedeployTdcUnit").val(redeployCfg.tdc?.indUnite ?? 1);
+    $("#o_floodRedeployDomeNb").val(redeployCfg.dome?.nbTroupes ?? 0);
+    $("#o_floodRedeployDomeUnit").val(redeployCfg.dome?.indUnite ?? 1);
+    $("#o_floodRedeployTdcNb, #o_floodRedeployDomeNb").spinner({ min: 0, numberFormat: "i" });
+    $(
+      "#o_floodRedeployEnable, #o_floodRedeployTdcNb, #o_floodRedeployTdcUnit, #o_floodRedeployDomeNb, #o_floodRedeployDomeUnit",
+    ).on("change", () => {
+      localStorage.setItem(
+        "outiiil_postFloodRedeploy",
+        JSON.stringify({
+          enable: $("#o_floodRedeployEnable").is(":checked"),
+          tdc: {
+            nbTroupes: parseInt($("#o_floodRedeployTdcNb").val()) || 0,
+            indUnite: parseInt($("#o_floodRedeployTdcUnit").val()) || 1,
+          },
+          dome: {
+            nbTroupes: parseInt($("#o_floodRedeployDomeNb").val()) || 0,
+            indUnite: parseInt($("#o_floodRedeployDomeUnit").val()) || 1,
+          },
+        }),
+      );
+    });
     $("#o_floodTDCA, #o_floodTDCB, #o_floodAntiSonde, input[id^='o_attaque']").spinner({
       min: 0,
       numberFormat: "i",

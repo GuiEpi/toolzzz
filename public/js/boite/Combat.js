@@ -654,10 +654,30 @@ class BoiteCombat extends Boite {
    * @method multiFlood
    */
   multiFlood() {
+    let unitOptions = NOM_UNITE.slice(1)
+      .map((nom, i) => `<option value="${i + 1}">${nom}</option>`)
+      .join("");
     $("#o_tabsCombat3").append(`<div id="o_multiFlood" class="centre">
             <div id="o_mfFormWrap"></div>
             <div id="o_mfResultats" class="o_marginT15"></div>
             <p id="o_mfRecap" class="o_marginT15"></p>
+            <fieldset id="o_mfRedeployFs" class="o_marginT15"><legend><label><input type="checkbox" id="o_mfRedeployEnable"/> Redéployer après flood</label></legend>
+                <table class="o_maxWidth centre" cellspacing="0">
+                    <tbody>
+                        <tr>
+                            <td class="right reduce">Vers Terrain de chasse :</td>
+                            <td><input type="text" id="o_mfRedeployTdcNb" value="0"/></td>
+                            <td><select id="o_mfRedeployTdcUnit">${unitOptions}</select></td>
+                        </tr>
+                        <tr>
+                            <td class="right reduce">Vers Dôme / Fourmilière :</td>
+                            <td><input type="text" id="o_mfRedeployDomeNb" value="0"/></td>
+                            <td><select id="o_mfRedeployDomeUnit">${unitOptions}</select></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p class="reduce"><em>Une fois le dernier flood lancé, les troupes restées en Loge Impériale sont redéployées automatiquement.</em></p>
+            </fieldset>
             <button id="o_mfLancer" class="o_button f_success o_marginT15" type="button" disabled>Lancer ces attaques</button>
         </div>`);
     /**
@@ -667,6 +687,8 @@ class BoiteCombat extends Boite {
     this._mfCibles = [];
     this._mfAttaquantOpts = { terrainFinal: null, priseMax: null };
     this._mfTotalUnites = null; // chargé lazy via Armee.getArmee()
+    this._mfChargerRedeployement();
+    this._mfBindRedeployement();
     this._mfRenderForm();
     // Pré-charge l'armée pour le check garnison ; ne bloque pas l'UI
     if (!this._mfArmee) this._mfArmee = new Armee();
@@ -810,6 +832,8 @@ class BoiteCombat extends Boite {
       this._mfRenderForm();
       this.simulerMultiFlood();
     });
+    // Spinner sur tous les inputs numériques (Terrain Final / Prise Max par cible et attaquant) — convention Toolzzz
+    $("#o_mfForm input.o_mfOpt, #o_mfForm input.o_mfAttOpt").spinner({ min: 0, numberFormat: "i" });
     // Options par cible (Terrain Final / Prise Max / Arrondir) — re-simu sur change
     $("#o_mfForm .o_mfOpt").on("change", (e) => {
       let $el = $(e.currentTarget),
@@ -1203,8 +1227,27 @@ class BoiteCombat extends Boite {
    */
   _mfLancerCibleSuivante(aLancer, idx) {
     if (idx >= aLancer.length) {
-      $.toast({ ...TOAST_SUCCESS, text: "Multi-flood terminé." });
-      $("#o_mfLancer").text("Lancer ces attaques");
+      let cfg = this._mfGetRedeployConfig();
+      if (cfg) {
+        $("#o_mfLancer").text("Redéploiement…");
+        Armee.deplacerApresFlood(cfg).then(
+          () => {
+            $.toast({ ...TOAST_SUCCESS, text: "Multi-flood terminé. Troupes redéployées." });
+            $("#o_mfLancer").text("Lancer ces attaques");
+          },
+          (err) => {
+            console.error("[multiFlood] redéploiement échoué", err);
+            $.toast({
+              ...TOAST_WARNING,
+              text: "Multi-flood terminé, mais le redéploiement a échoué (voir console).",
+            });
+            $("#o_mfLancer").text("Lancer ces attaques");
+          },
+        );
+      } else {
+        $.toast({ ...TOAST_SUCCESS, text: "Multi-flood terminé." });
+        $("#o_mfLancer").text("Lancer ces attaques");
+      }
       return;
     }
     let { cible, prises, indices } = aLancer[idx];
@@ -1261,7 +1304,7 @@ class BoiteCombat extends Boite {
         this._mfMarquerAttaque(cible.pseudo, i, ok);
         setTimeout(
           () => this._mfEnvoyerAttaqueSuivante(cible, securite, indices, k + 1, onComplete),
-          1000,
+          2000,
         );
       },
     );
@@ -1306,6 +1349,72 @@ class BoiteCombat extends Boite {
       .closest("tr")
       .removeClass("red green")
       .addClass(ok ? "green" : "red");
+  }
+  /**
+   * Lit les paramètres de redéploiement post-flood depuis localStorage et
+   * les applique aux inputs (idempotent, appelé au montage de la BoiteCombat).
+   *
+   * @private
+   * @method _mfChargerRedeployement
+   */
+  _mfChargerRedeployement() {
+    let cfg;
+    try {
+      cfg = JSON.parse(localStorage.getItem("outiiil_postFloodRedeploy")) || {};
+    } catch (e) {
+      cfg = {};
+    }
+    $("#o_mfRedeployEnable").prop("checked", !!cfg.enable);
+    $("#o_mfRedeployTdcNb").val(cfg.tdc?.nbTroupes ?? "");
+    $("#o_mfRedeployTdcUnit").val(cfg.tdc?.indUnite ?? 1);
+    $("#o_mfRedeployDomeNb").val(cfg.dome?.nbTroupes ?? "");
+    $("#o_mfRedeployDomeUnit").val(cfg.dome?.indUnite ?? 1);
+  }
+  /**
+   *
+   */
+  _mfBindRedeployement() {
+    $("#o_mfRedeployTdcNb, #o_mfRedeployDomeNb").spinner({ min: 0, numberFormat: "i" });
+    $(
+      "#o_mfRedeployEnable, #o_mfRedeployTdcNb, #o_mfRedeployTdcUnit, #o_mfRedeployDomeNb, #o_mfRedeployDomeUnit",
+    ).on("change", () => this._mfSauverRedeployement());
+  }
+  /**
+   *
+   */
+  _mfSauverRedeployement() {
+    let cfg = {
+      enable: $("#o_mfRedeployEnable").is(":checked"),
+      tdc: {
+        nbTroupes: parseInt($("#o_mfRedeployTdcNb").val()) || 0,
+        indUnite: parseInt($("#o_mfRedeployTdcUnit").val()) || 1,
+      },
+      dome: {
+        nbTroupes: parseInt($("#o_mfRedeployDomeNb").val()) || 0,
+        indUnite: parseInt($("#o_mfRedeployDomeUnit").val()) || 1,
+      },
+    };
+    localStorage.setItem("outiiil_postFloodRedeploy", JSON.stringify(cfg));
+  }
+  /**
+   * Construit la config de déplacement à partir de l'état UI courant.
+   * Retourne `null` si la case n'est pas cochée.
+   *
+   * @private
+   * @method _mfGetRedeployConfig
+   */
+  _mfGetRedeployConfig() {
+    if (!$("#o_mfRedeployEnable").is(":checked")) return null;
+    return {
+      tdc: {
+        nbTroupes: parseInt($("#o_mfRedeployTdcNb").val()) || 0,
+        indUnite: parseInt($("#o_mfRedeployTdcUnit").val()) || 1,
+      },
+      dome: {
+        nbTroupes: parseInt($("#o_mfRedeployDomeNb").val()) || 0,
+        indUnite: parseInt($("#o_mfRedeployDomeUnit").val()) || 1,
+      },
+    };
   }
   /**
    * Affiche une calculatrice pour calculer les temps de trajets, les horraires.

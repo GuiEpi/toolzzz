@@ -1032,13 +1032,31 @@ class Armee {
             );
             setTimeout(() => {
               this.envoyerFlood(idCible, ++indice, securite);
-            }, 1000);
+            }, 2000);
           },
         );
       } else // on passe à l'attaque suivante
       this.envoyerFlood(idCible, ++indice, securite);
-    } else // on a fini, on recharge la page
-    location.reload();
+    } else {
+      // on a fini : déclenche le redéploiement si configuré, puis recharge la page
+      let cfg;
+      try {
+        cfg = JSON.parse(localStorage.getItem("outiiil_postFloodRedeploy"));
+      } catch (e) {
+        /* pas grave, on continue sans */
+      }
+      if (cfg?.enable && (cfg.tdc?.nbTroupes > 0 || cfg.dome?.nbTroupes > 0)) {
+        Armee.deplacerApresFlood(cfg).then(
+          () => location.reload(),
+          (err) => {
+            console.error("[envoyerFlood] redéploiement post-flood échoué", err);
+            location.reload();
+          },
+        );
+      } else {
+        location.reload();
+      }
+    }
   }
 
   /* ------------------------------------------------------------------ */
@@ -1061,5 +1079,82 @@ class Armee {
       }
     });
     return this;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* ---- Méthodes statiques : déplacement de troupes ----------------- */
+  /* ------------------------------------------------------------------ */
+
+  /**
+   * Récupère le token CSRF de la page Armée. Utile pour poster un déplacement
+   * de troupes depuis n'importe quelle page (la BoiteCombat n'a pas le DOM
+   * d'`Armee.php` sous la main, contrairement à `placerAntisondeSuffisant`).
+   *
+   * @static
+   * @method fetchTokenArmee
+   * @return {Promise<String>} `t=<value>`
+   */
+  static fetchTokenArmee() {
+    return $.get(`http://${Utils.serveur}.fourmizzz.fr/Armee.php`).then((html) => {
+      let m = html.match(/name="t"\s+id="t"\s+value="([^"]+)"/);
+      if (!m) throw new Error("Token Armee.php introuvable");
+      return "t=" + m[1];
+    });
+  }
+
+  /**
+   * Déplace `nbTroupes` unités d'un type donné entre deux lieux.
+   * Lieux : 1 = Terrain de chasse, 2 = Dôme/Fourmilière, 3 = Loge Impériale.
+   * `indUnite` est l'index 1-14 dans `NOM_UNITE`. Le mapping vers le nom serveur
+   * `uniteX` reproduit le quirk hérité du jeu (cf. `envoyerFlood:1010-1023`,
+   * `placerAntisondeSuffisant:224`) : Concierge d'élite/Tank d'élite/Tueuse[E]
+   * ont des indices serveur non-séquentiels.
+   *
+   * @static
+   * @method deplacerUnite
+   */
+  static deplacerUnite({ securite, lieuOrigine, lieuDestination, indUnite, nbTroupes }) {
+    let correspondance = [null, 1, 2, 3, 4, 5, 6, 14, 7, 8, 9, 10, 13, 11, 12];
+    let uniteServeur = correspondance[indUnite];
+    return $.post(
+      `http://${Utils.serveur}.fourmizzz.fr/Armee.php?Transferer=Envoyer&LieuOrigine=${lieuOrigine}&LieuDestination=${lieuDestination}&ChoixUnite=unite${uniteServeur}&nbTroupes=${nbTroupes}&${securite}`,
+    );
+  }
+
+  /**
+   * Orchestre les déplacements après un flood : récupère le token, puis envoie
+   * en chaîne les transferts depuis la Loge (lieu 3) vers TdC (1) et Dôme (2).
+   * Chaque sous-config est ignorée si `nbTroupes <= 0`.
+   *
+   * @static
+   * @method deplacerApresFlood
+   * @param {Object} config { tdc?: {indUnite, nbTroupes}, dome?: {indUnite, nbTroupes} }
+   * @return {Promise}
+   */
+  static deplacerApresFlood(config) {
+    return Armee.fetchTokenArmee().then((securite) => {
+      let chain = Promise.resolve();
+      if (config.tdc?.nbTroupes > 0)
+        chain = chain.then(() =>
+          Armee.deplacerUnite({
+            securite,
+            lieuOrigine: 3,
+            lieuDestination: 1,
+            indUnite: config.tdc.indUnite,
+            nbTroupes: config.tdc.nbTroupes,
+          }),
+        );
+      if (config.dome?.nbTroupes > 0)
+        chain = chain.then(() =>
+          Armee.deplacerUnite({
+            securite,
+            lieuOrigine: 3,
+            lieuDestination: 2,
+            indUnite: config.dome.indUnite,
+            nbTroupes: config.dome.nbTroupes,
+          }),
+        );
+      return chain;
+    });
   }
 }

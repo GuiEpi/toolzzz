@@ -93,9 +93,25 @@ Toujours fournir des `language` traduits FR (cf. exemple existant). DataTables e
 
 ## Inputs et widgets jQuery UI
 
-Disponibles partout via `jquery-ui_1.12.1.js` (tout le bundle est chargé) :
+Disponibles partout via `jquery-ui_1.12.1.js` (tout le bundle est chargé).
 
-- `$("#x").spinner({ min, max, numberFormat: "i" })` — input numérique
+### Inputs numériques — TOUJOURS via `.spinner()`
+
+⚠️ **Ne jamais utiliser `<input type="number">`**. Convention partout dans Toolzzz : input texte simple + appel `.spinner({ min, max, numberFormat: "i" })`. Donne les flèches haut/bas customisées qui matchent visuellement le reste de l'extension (cf. Lanceur de Chasses, Lanceur de Flood, Multi-flood, Calculatrice combat).
+
+```html
+<input type="text" id="o_truc" value="0" size="12" />
+```
+
+```js
+$("#o_truc").spinner({ min: 0, numberFormat: "i" });
+// ou max: 50 pour des niveaux, etc.
+```
+
+À appeler **après** que le HTML soit dans le DOM. Pour des inputs re-rendus dynamiquement (genre `_mfBindForm` du multi-flood), réappliquer `.spinner()` après chaque render — sinon les nouveaux inputs sont des champs texte plats.
+
+### Autres widgets
+
 - `$("#x").autocomplete({ source, select, … })` — autocomplete (cf. `Joueur.rechercher` + `Utils.extraitRecherche`)
 - `$("#x").datetimepicker(DATEPICKER_OPTION)` — date/heure
 - `$("#x").slider({ min, max, change })` — slider 0/1
