@@ -238,40 +238,40 @@ class BoiteChasse extends Boite {
     let armee = new Armee(),
       tdcAct = parseInt($("#o_simuChasseTdcAct").spinner("value")) || 0,
       tdcVeut = parseInt($("#o_simuChasseTdcVeut").spinner("value")) || 0;
+    // Utiliser .spinner("value") (et pas .val()) — `numeral.format` met des espaces
+    // dans le format (« 19 388 ») que parseInt ne re-parse pas correctement, ce qui
+    // faisait que le 2ᵉ Fight! lisait des valeurs tronquées entre 2 runs successifs.
     $("#o_simuChasseArmee input.o_simuChasseUnit").each((_, el) => {
-      armee.unite[parseInt($(el).data("i"))] = parseInt($(el).val()) || 0;
+      armee.unite[parseInt($(el).data("i"))] = parseInt($(el).spinner("value")) || 0;
     });
     if (!armee.unite.some((n) => n > 0)) {
       $.toast({ ...TOAST_WARNING, text: "Saisis au moins une unité dans Chasseurs." });
       return;
     }
     let armeeAvant = armee.unite.slice(),
-      // q=0 → minimum 1 cm² conquis comme le natif
       q = tdcVeut > 0 ? tdcVeut : 1,
-      // calculDifficulte donne ~5% près de la valeur natif
       targetDiff = armee.calculDifficulte(tdcAct, 1, q),
       faune = this._simuChasseGenererFaune(targetDiff),
-      // Techs lues depuis le form (le user peut les éditer pour tester du "what-if")
       bonus = {
         armes: parseInt($("#o_simuChasseTechArmes").spinner("value")) || 0,
         bouclier: parseInt($("#o_simuChasseTechBouclier").spinner("value")) || 0,
       },
       res = Chasse.simulerCombat(armee, faune, bonus),
       cm2Conquis = res.issue === "victoire" ? q : 0,
-      // Heuristique calibrée sur 2 datapoints (1cm² → 20 promo, 1000cm² → 189 promo)
-      promotions =
-        res.issue === "victoire"
-          ? Math.min(res.survivantsJ[0], Math.max(20, Math.round(cm2Conquis * 0.19)))
-          : 0;
-    this._simuChasseAfficherResultat({ armeeAvant, faune, res, cm2Conquis, promotions });
+      promos = Chasse.computePromotions(res.survivantsJ, res.issue, res.speedTier);
+    this._simuChasseAfficherResultat({ armeeAvant, faune, res, cm2Conquis, promos });
     if (res.issue === "victoire") {
+      // Application multi-tiers : chaque tier perd ses promos vers tier+1
       let nouvelleArmee = res.survivantsJ.slice();
-      nouvelleArmee[0] -= promotions;
-      nouvelleArmee[1] += promotions;
+      for (let i = 0; i < 13; i++) {
+        if (promos[i] > 0) {
+          nouvelleArmee[i] -= promos[i];
+          nouvelleArmee[i + 1] += promos[i];
+        }
+      }
       for (let i = 0; i < 14; i++)
         $(`#o_simuChasseArmee input[data-i="${i}"]`).spinner("value", nouvelleArmee[i] || 0);
       $("#o_simuChasseTdcAct").spinner("value", tdcAct + cm2Conquis);
-      // Le terrain à conquérir reste — l'utilisateur peut Fight! à nouveau
     }
   }
   /**
@@ -312,7 +312,7 @@ class BoiteChasse extends Boite {
   /**
    *
    */
-  _simuChasseAfficherResultat({ armeeAvant, faune, res, cm2Conquis, promotions }) {
+  _simuChasseAfficherResultat({ armeeAvant, faune, res, cm2Conquis, promos }) {
     let armeeStr = armeeAvant
       .map((n, i) =>
         n > 0 ? `${numeral(n).format()} ${n > 1 ? NOM_UNITES[i + 1] : NOM_UNITE[i + 1]}` : null,
@@ -325,14 +325,22 @@ class BoiteChasse extends Boite {
         return `${numeral(f.count).format()} ${f.count > 1 ? s.nom + (s.nom.endsWith("s") ? "" : "s") : s.nom}`;
       })
       .join(", ");
+    // Message de victoire selon le speed-kill tier (matche les phrases du natif)
     let issueColor =
         res.issue === "victoire" ? "green" : res.issue === "defaite" ? "red" : "orange",
+      issueText;
+    if (res.issue === "victoire") {
       issueText =
-        res.issue === "victoire"
-          ? "Vous avez gagné cette bataille !"
-          : res.issue === "defaite"
-            ? "Vos chasseuses sont mortes, l'expédition a échoué."
-            : "Match nul — combat interrompu.";
+        res.speedTier === "ecrasante"
+          ? "Écrasante victoire ! A peine le temps de se dégourdir les pattes qu'ils étaient tous morts ..."
+          : res.speedTier === "belle"
+            ? "Belle victoire ! L'ennemi n'a même pas eu le temps d'organiser ses défenses efficacement !"
+            : "L'adversaire y a cru, mais vous sortez victorieux de ce combat acharné. Vous avez gagné cette bataille !";
+    } else if (res.issue === "defaite") {
+      issueText = "Vos chasseuses sont mortes, l'expédition a échoué.";
+    } else {
+      issueText = "Match nul — combat interrompu.";
+    }
     let html = `<table id="o_simuChasseRounds" class="o_maxWidth centre" cellspacing="0">
             <thead><tr><th>Message que recevrait le chasseur :</th></tr></thead>
             <tbody>
@@ -343,8 +351,19 @@ class BoiteChasse extends Boite {
       html += `<tr><td class="left reduce">L'ennemie inflige <b>${numeral(r.enemyAtt).format()}</b> (+ 0) dégâts à vos fourmis et en tue <b class="red">${numeral(r.playerLost).format()}</b>.</td></tr>`;
     });
     html += `<tr><td class="centre gras ${issueColor}">${issueText}</td></tr>`;
-    if (res.issue === "victoire" && promotions > 0) {
-      html += `<tr><td class="left reduce"><em>Les unités survivantes ont appris de cette bataille :<br/>− ${numeral(promotions).format()} ${promotions > 1 ? "Jeunes Soldates Naines sont devenues des" : "Jeune Soldate Naine est devenue une"} <b>${promotions > 1 ? "Soldates Naines" : "Soldate Naine"}</b></em></td></tr>`;
+    // Promotions multi-tiers
+    if (res.issue === "victoire" && promos && promos.some((p) => p > 0)) {
+      let lines = [];
+      promos.forEach((p, i) => {
+        if (p > 0) {
+          let from = p > 1 ? NOM_UNITES[i + 1] : NOM_UNITE[i + 1],
+            to = p > 1 ? NOM_UNITES[i + 2] : NOM_UNITE[i + 2];
+          lines.push(
+            `− ${numeral(p).format()} ${from} ${p > 1 ? "sont devenues des" : "est devenue une"} <b>${to}</b>`,
+          );
+        }
+      });
+      html += `<tr><td class="left reduce"><em>Les unités survivantes ont appris de cette bataille :<br/>${lines.join("<br/>")}</em></td></tr>`;
     }
     if (cm2Conquis > 0) {
       html += `<tr><td class="left reduce">Vos chasseuses ont conquis <b class="green">${numeral(cm2Conquis).format()}</b> cm². <em class="reduce">(Nourriture : non calculée — heuristique non implémentée.)</em></td></tr>`;

@@ -228,59 +228,116 @@ class Chasse {
    */
   static simulerCombat(armee, faune, bonus = { armes: 0, bouclier: 0 }) {
     const MAX_ROUNDS = 10;
-    let myArmy = armee.unite.slice(),
-      enemies = faune
-        .map((f) => {
-          let s = FAUNE.find((x) => x.slug === f.slug);
-          return s ? { ...s, count: f.count } : null;
-        })
-        .filter((e) => e && e.count > 0),
-      rounds = [];
+    // Joueur : on suit l'HP cumulé par tier (les unités blessées contribuent
+    // proportionnellement à l'attaque suivante — vérifié sur capture-2 round 2).
+    let playerTiers = armee.unite.map((count, i) => {
+      let baseVie = VIE_UNITE[i + 1],
+        vie = baseVie + Math.round((baseVie * bonus.bouclier) / 10);
+      return { idx: i, count, vie, totalHP: count * vie };
+    });
+    // Faune : pareil, HP cumulé par espèce.
+    let enemies = faune
+      .map((f) => {
+        let s = FAUNE.find((x) => x.slug === f.slug);
+        return s ? { ...s, count: f.count, totalHP: f.count * s.vie } : null;
+      })
+      .filter((e) => e && e.count > 0);
+    // Speed-kill malus : le natif applique un multiplicateur sur l'attaque ennemie
+    // selon la rapidité de la victoire (vérifié sur Fights 4 ×0.5, 8 ×0.1, 1 ×1.0).
+    let baseAttForRatio = playerTiers.reduce((s, t) => s + t.count * ATT_UNITE[t.idx + 1], 0),
+      totalAttForRatio = baseAttForRatio + Math.round((baseAttForRatio * bonus.armes) / 10),
+      enemyHPInit = enemies.reduce((s, e) => s + e.totalHP, 0),
+      killRatio = enemyHPInit > 0 ? totalAttForRatio / enemyHPInit : 0,
+      enemyMul = killRatio >= 10 ? 0.1 : killRatio >= 1.5 ? 0.5 : 1.0,
+      speedTier = enemyMul === 0.1 ? "ecrasante" : enemyMul === 0.5 ? "belle" : "normal";
+    let rounds = [];
     for (let r = 0; r < MAX_ROUNDS; r++) {
-      let myCount = myArmy.reduce((s, n) => s + n, 0),
-        enemyCount = enemies.reduce((s, e) => s + e.count, 0);
-      if (myCount === 0 || enemyCount === 0) break;
-      // Attaques calculées simultanément (avant pertes)
-      let myBaseAtt = myArmy.reduce((s, n, i) => s + n * ATT_UNITE[i + 1], 0),
+      let pAlive = playerTiers.reduce((s, t) => s + t.count, 0),
+        eAlive = enemies.reduce((s, e) => s + e.count, 0);
+      if (pAlive === 0 || eAlive === 0) break;
+      // Attaques basées sur HP courant (les blessés contribuent proportionnellement)
+      let myBaseAtt = Math.ceil(
+          playerTiers.reduce((s, t) => s + (t.totalHP / t.vie) * ATT_UNITE[t.idx + 1], 0),
+        ),
         myAttBonus = Math.round((myBaseAtt * bonus.armes) / 10),
         myTotalAtt = myBaseAtt + myAttBonus,
-        enemyAtt = enemies.reduce((s, e) => s + e.count * e.fdf, 0);
-      // Pertes faune : weakest-vie first (heuristique)
+        enemyBaseAtt = Math.ceil(enemies.reduce((s, e) => s + (e.totalHP / e.vie) * e.fdf, 0)),
+        enemyTotalAtt = Math.round(enemyBaseAtt * enemyMul);
+      // Pertes faune : weakest-vie first
       let dmgLeft = myTotalAtt,
         killed = 0,
-        enemiesSorted = [...enemies].sort((a, b) => a.vie - b.vie);
-      for (let e of enemiesSorted) {
-        if (dmgLeft <= 0) break;
-        let possibleKills = Math.min(e.count, Math.floor(dmgLeft / e.vie));
-        let realE = enemies.find((x) => x.slug === e.slug);
-        realE.count -= possibleKills;
-        dmgLeft -= possibleKills * e.vie;
-        killed += possibleKills;
+        sortedEnemies = [...enemies].sort((a, b) => a.vie - b.vie);
+      for (let e of sortedEnemies) {
+        if (dmgLeft <= 0 || e.totalHP <= 0) continue;
+        let absorbed = Math.min(dmgLeft, e.totalHP),
+          newHP = e.totalHP - absorbed,
+          newCount = newHP > 0 ? Math.ceil(newHP / e.vie) : 0;
+        killed += e.count - newCount;
+        e.totalHP = newHP;
+        e.count = newCount;
+        dmgLeft -= absorbed;
       }
       enemies = enemies.filter((e) => e.count > 0);
-      // Pertes joueur : tier-bas-d'abord (confirmé)
-      let myDmgLeft = enemyAtt,
+      // Pertes joueur : lowest-tier first (confirmé)
+      let myDmgLeft = enemyTotalAtt,
         myLost = 0;
-      for (let i = 0; i < myArmy.length; i++) {
-        if (myDmgLeft <= 0 || myArmy[i] === 0) continue;
-        let unitVie = VIE_UNITE[i + 1] + Math.round((VIE_UNITE[i + 1] * bonus.bouclier) / 10),
-          possibleLost = Math.min(myArmy[i], Math.floor(myDmgLeft / unitVie));
-        myArmy[i] -= possibleLost;
-        myDmgLeft -= possibleLost * unitVie;
-        myLost += possibleLost;
+      for (let t of playerTiers) {
+        if (myDmgLeft <= 0 || t.totalHP <= 0) continue;
+        let absorbed = Math.min(myDmgLeft, t.totalHP),
+          newHP = t.totalHP - absorbed,
+          newCount = newHP > 0 ? Math.ceil(newHP / t.vie) : 0;
+        myLost += t.count - newCount;
+        t.totalHP = newHP;
+        t.count = newCount;
+        myDmgLeft -= absorbed;
       }
       rounds.push({
         playerAtt: myTotalAtt,
         playerAttBonus: myAttBonus,
         playerKills: killed,
-        enemyAtt,
+        enemyAtt: enemyTotalAtt,
         enemyAttBonus: 0,
         playerLost: myLost,
       });
     }
-    let myAlive = myArmy.some((n) => n > 0),
+    let myAlive = playerTiers.some((t) => t.count > 0),
       enemyAlive = enemies.length > 0,
-      issue = enemyAlive && !myAlive ? "defaite" : !enemyAlive ? "victoire" : "egalite";
-    return { rounds, issue, survivantsJ: myArmy, survivantsE: enemies };
+      issue = !myAlive ? "defaite" : !enemyAlive ? "victoire" : "egalite";
+    return {
+      rounds,
+      issue,
+      speedTier, // "ecrasante" | "belle" | "normal" — relevant only when issue==="victoire"
+      survivantsJ: playerTiers.map((t) => t.count),
+      survivantsE: enemies,
+    };
+  }
+
+  /**
+   * Calcule les promotions multi-tiers après une victoire. Heuristique calibrée
+   * sur les datapoints de capture (cf. docs/scenarios/simulateur-chasse-calibration) :
+   * - Victoire normale : ~13% du tier promu (Fight 1 : 5115 JSN → 654 = 12.8%)
+   * - Belle/Écrasante : ~2.5% avec cap ~2400 (Fight 4-8 : ~2400 cap observé)
+   * - Le même TAUX est appliqué à chaque tier consécutif (Fight 5/6 : SN→NE rate
+   *   ≈ JSN→SN rate ≈ 2.5%).
+   *
+   * @static
+   * @method computePromotions
+   * @param {Array} survivants — survivantsJ (14 entries)
+   * @param {String} issue — "victoire" | "defaite" | "egalite"
+   * @param {String} speedTier — "ecrasante" | "belle" | "normal"
+   * @return {Array<number>} promos par tier (14 entries) : promos[i] = combien
+   *   d'unités du tier i deviennent tier i+1.
+   */
+  static computePromotions(survivants, issue, speedTier) {
+    let promos = new Array(14).fill(0);
+    if (issue !== "victoire") return promos;
+    let rate = speedTier === "normal" ? 0.13 : 0.025,
+      cap = speedTier === "normal" ? Infinity : 2400;
+    for (let i = 0; i < 13; i++) {
+      let count = survivants[i];
+      if (count <= 0) continue;
+      promos[i] = Math.min(cap, Math.round(count * rate));
+    }
+    return promos;
   }
 }
