@@ -28,13 +28,12 @@ class BoiteChasse extends Boite {
     if (super.afficher()) {
       $("#o_tabsChasse")
         .tabs({
-          disabled: [1],
           activate: (event, ui) => {
             this.css();
           },
         })
         .removeClass("ui-widget");
-      this.analyse().css().event();
+      this.analyse().simuler().css().event();
     }
   }
   /**
@@ -45,10 +44,9 @@ class BoiteChasse extends Boite {
    */
   css() {
     super.css();
-    $("#o_resultatChasse tr:even, .o_tabs .ui-widget-header .ui-tabs-anchor").css(
-      "background-color",
-      monProfil.parametre["couleur2"].valeur,
-    );
+    $(
+      "#o_resultatChasse tr:even, .o_tabs .ui-widget-header .ui-tabs-anchor, #o_simuChasseTable tr:even",
+    ).css("background-color", monProfil.parametre["couleur2"].valeur);
     $(".o_content a").css("color", monProfil.parametre["couleurTexte"].valeur);
     $(".o_content li:not(.ui-state-active) a").css("color", "inherit");
     let matches = monProfil.parametre["couleurTexte"].valeur.match(
@@ -160,5 +158,118 @@ class BoiteChasse extends Boite {
           ")",
       ).toggle();
     });
+  }
+  /**
+   * Comparateur de scénarios de chasse (onglet "Simuler" — `o_tabsChasse2`).
+   * Inspiré du `RefreshOtherHF` de CalysteneHuntingSimulator (lines 3562-3743) :
+   * l'utilisateur saisit plusieurs cibles de "terrain à conquérir", on affiche
+   * en parallèle pour chacune le nombre de chasses, cm²/chasse, pertes (AVG/MAX),
+   * temps requis et rentabilité — pour comparer rapidement plusieurs plans avant
+   * de lancer.
+   *
+   * @private
+   * @method simuler
+   */
+  simuler() {
+    let diffOptions = RATIO_CHASSE.map(
+      (r) => `<option value="${r}"${r === 9 ? " selected" : ""}>${r.toFixed(1)}</option>`,
+    ).join("");
+    $("#o_tabsChasse2").append(`
+        <div class="centre">
+            <p class="reduce"><em>Saisis plusieurs cibles pour comparer pertes, temps et rentabilité.</em></p>
+            <table class="o_maxWidth centre" cellspacing="0">
+                <tbody>
+                    <tr><td class="right">Difficulté commune :</td><td><select id="o_simuChasseDiff">${diffOptions}</select></td></tr>
+                </tbody>
+            </table>
+            <table id="o_simuChasseTable" class="o_maxWidth centre o_marginT15" cellspacing="0">
+                <thead>
+                    <tr><th>#</th><th>Terrain à conquérir</th><th>Nb</th><th>cm²/chasse</th><th>Pertes AVG</th><th>Pertes MAX</th><th>Temps</th><th>cm²/jour</th><th></th></tr>
+                </thead>
+                <tbody id="o_simuChasseRows"></tbody>
+            </table>
+            <button id="o_simuChasseAdd" class="o_button o_marginT15" type="button">+ Ajouter un scénario</button>
+        </div>`);
+    // État interne — scénarios par défaut basés sur le terrain courant
+    let base = Math.max(Utils.terrain || 100000, 100000);
+    this._simuChasseScenarios = [
+      { tdcDep: Math.round(base * 1.5) },
+      { tdcDep: Math.round(base * 2) },
+      { tdcDep: Math.round(base * 3) },
+    ];
+    this._simuArmee = new Armee();
+    // Bind events (délégation — les rows sont re-rendues à chaque changement)
+    $("#o_simuChasseDiff").change(() => this._simuChasseRender());
+    $("#o_simuChasseAdd").click(() => {
+      this._simuChasseScenarios.push({ tdcDep: Math.round(base * 1.5) });
+      this._simuChasseRender();
+    });
+    $("#o_simuChasseRows")
+      .on("change spin", ".o_simuChasseTdc", (e, ui) => {
+        let i = parseInt($(e.currentTarget).data("i"));
+        let val = ui ? ui.value : parseInt($(e.currentTarget).val()) || 0;
+        this._simuChasseScenarios[i].tdcDep = val;
+        this._simuChasseRender();
+      })
+      .on("click", ".o_simuChasseRm", (e) => {
+        let i = parseInt($(e.currentTarget).data("i"));
+        this._simuChasseScenarios.splice(i, 1);
+        if (!this._simuChasseScenarios.length)
+          this._simuChasseScenarios.push({ tdcDep: Math.round(base * 1.5) });
+        this._simuChasseRender();
+      });
+    // Charge l'armée (nécessaire pour calculRatio → calculChasse)
+    this._simuArmee.getArmee().then((data) => {
+      this._simuArmee.chargeData(data);
+      this._simuChasseRender();
+    });
+    return this;
+  }
+  /**
+   *
+   */
+  _simuChasseRender() {
+    let armeePrete = this._simuArmee && this._simuArmee.unite.some((u) => u > 0);
+    if (!armeePrete) {
+      $("#o_simuChasseRows").html(
+        `<tr><td colspan="9" class="centre reduce"><em>Chargement de l'armée…</em></td></tr>`,
+      );
+      return;
+    }
+    let diff = parseFloat($("#o_simuChasseDiff").val()),
+      html = "";
+    this._simuChasseScenarios.forEach((s, i) => {
+      html += `<tr><td>${i + 1}</td>`;
+      html += `<td><input type="text" class="o_simuChasseTdc" data-i="${i}" value="${s.tdcDep || 0}" size="12"/></td>`;
+      if (s.tdcDep > 0) {
+        let r = this._simuChasseCompute(s.tdcDep, diff);
+        html += `<td>${r.NB}</td>`;
+        html += `<td class="right">${numeral(r.HF).format()}</td>`;
+        html += `<td class="right">${numeral(Math.round(r.pertes.AVG)).format()}</td>`;
+        html += `<td class="right red">${numeral(Math.round(r.pertes.MAX)).format()}</td>`;
+        html += `<td>${Utils.intToTime(r.temps)}</td>`;
+        html += `<td class="right green">${numeral(r.rentab).format()}</td>`;
+      } else {
+        html += `<td colspan="6" class="centre reduce"><em>—</em></td>`;
+      }
+      html += `<td><span class="cursor o_simuChasseRm" data-i="${i}" title="Retirer">✕</span></td>`;
+      html += `</tr>`;
+    });
+    $("#o_simuChasseRows").html(html);
+    $("#o_simuChasseRows input.o_simuChasseTdc").spinner({ min: 0, numberFormat: "i" });
+    this.css();
+  }
+  /**
+   *
+   */
+  _simuChasseCompute(tdcDep, diff) {
+    let armee = this._simuArmee,
+      reste = monProfil.niveauRecherche[5] + 2,
+      res = armee.calculChasse(tdcDep, diff, 0, 0, reste),
+      dDiff = armee.calculDifficulte(tdcDep, res.NB, res.HF),
+      pertes = armee.calculPerte(RATIO_CHASSE.indexOf(parseFloat(diff)), dDiff),
+      temps = Math.round((Utils.terrain + res.HF) * Math.pow(0.9, monProfil.niveauRecherche[5])),
+      rentab = temps > 0 ? Math.round(((res.NB * res.HF) / temps) * 86400) : 0;
+    return { NB: res.NB, HF: res.HF, dDiff, pertes, temps, rentab };
   }
 }
