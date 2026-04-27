@@ -295,7 +295,7 @@ class PageForum {
         if (!$(`#cat_forum span:contains(Outiiil_Commande)`).length) {
           this.creerSection("Outiiil_Commande").then(
             (data) => {
-              let response = $("<div/>").append($(data).find("cmd:eq(1)").html());
+              let response = Utils.parseHtml(Utils.parseHtml(data).find("cmd:eq(1)").html() || "");
               let idCat = $(response)
                 .find(`input[value='Outiiil_Commande']`)
                 .parent()
@@ -329,7 +329,7 @@ class PageForum {
         if (!$(`#cat_forum span:contains(Outiiil_Membre)`).length) {
           this.creerSection("Outiiil_Membre").then(
             (data) => {
-              let response = $("<div/>").append($(data).find("cmd:eq(1)").html());
+              let response = Utils.parseHtml(Utils.parseHtml(data).find("cmd:eq(1)").html() || "");
               let idCat = $(response)
                 .find(`input[value='Outiiil_Membre']`)
                 .parent()
@@ -398,7 +398,7 @@ class PageForum {
           this.creerSection(titreSection).then(
             (data) => {
               // on recup la section pour ajouter les sujets des joueurs
-              let response = $("<div/>").append($(data).find("cmd:eq(1)").html());
+              let response = Utils.parseHtml(Utils.parseHtml(data).find("cmd:eq(1)").html() || "");
               let idCat = $(response)
                 .find(`input[value='${titreSection}']`)
                 .parent()

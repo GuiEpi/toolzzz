@@ -278,4 +278,18 @@ class Utils {
     }
     return element;
   }
+  /**
+   * Parse une chaîne HTML reçue d'une page Fourmizzz sans exécuter ses scripts
+   * inline. À utiliser à la place de `$("<div/>").append(html)` qui, sur Chrome,
+   * exécute les `<script>` du HTML reçu et propage leurs ReferenceError jusqu'à
+   * casser la suite du callback (cf. `envoyerFlood` / `_mfEnvoyerAttaqueSuivante`).
+   *
+   * @static
+   * @method parseHtml
+   * @param {String} html
+   * @return {jQuery} wrapper jQuery du `<body>` parsé, prêt pour `.find()`.
+   */
+  static parseHtml(html) {
+    return $(new DOMParser().parseFromString(html, "text/html").body);
+  }
 }

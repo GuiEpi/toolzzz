@@ -903,7 +903,7 @@ class BoiteCombat extends Boite {
   _mfFetchProfil(pseudo) {
     let url = `http://${Utils.serveur}.fourmizzz.fr/Membre.php?Pseudo=${encodeURIComponent(pseudo)}`;
     return $.get(url).then((html) => {
-      let $page = $("<div/>").append(html),
+      let $page = Utils.parseHtml(html),
         coords = $page.find(".boite_membre a[href^='carte2.php?']").text(),
         m = coords.match(/x=(\d+) et y=(\d+)/),
         idLink = $page.find("a[href^='commerce.php?ID=']").attr("href") || "",
@@ -1253,7 +1253,7 @@ class BoiteCombat extends Boite {
     let { cible, prises, indices } = aLancer[idx];
     $.get(`http://${Utils.serveur}.fourmizzz.fr/ennemie.php?Attaquer=${cible.id}`)
       .then((html) => {
-        let $page = $("<div/>").append(html),
+        let $page = Utils.parseHtml(html),
           tInput = $page.find("input#t").last();
         if (!tInput.length) {
           $.toast({
@@ -1299,9 +1299,7 @@ class BoiteCombat extends Boite {
       `http://${Utils.serveur}.fourmizzz.fr/ennemie.php?Attaquer=${cible.id}`,
       donnees,
       (data) => {
-        let doc = new DOMParser().parseFromString(data, "text/html"),
-          centers = doc.querySelectorAll("center"),
-          txt = centers.length ? centers[centers.length - 1].textContent : "",
+        let txt = Utils.parseHtml(data).find("center:last").text(),
           ok = txt.indexOf("Vos troupes sont en marche") !== -1;
         this._mfMarquerAttaque(cible.pseudo, i, ok);
         setTimeout(

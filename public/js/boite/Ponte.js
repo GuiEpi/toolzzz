@@ -159,7 +159,7 @@ class BoitePonte extends Boite {
       if (nombre) {
         // on recup un jeton
         $.ajax({ url: "http://" + Utils.serveur + ".fourmizzz.fr/Reine.php" }).then((data) => {
-          let parsed = $("<div/>").append(data);
+          let parsed = Utils.parseHtml(data);
           securite = parsed.find("#t").attr("name") + "=" + parsed.find("#t").attr("value");
           // on prepare et on lance la ponte
           let donnees = {};
@@ -170,7 +170,7 @@ class BoitePonte extends Boite {
           donnees["nombre_de_ponte"] = nombre;
           donnees["" + securite.split("=")[0]] = securite.split("=")[1];
           $.post("http://" + Utils.serveur + ".fourmizzz.fr/Reine.php", donnees, (data) => {
-            let parsed = $("<div/>").append(data);
+            let parsed = Utils.parseHtml(data);
             $("#boiteInfo").fadeOut("slow").html(parsed.find("#boiteInfo").html()).fadeIn("slow");
             if (Utils.comptePlus)
               $("#boiteComptePlus")

@@ -527,7 +527,7 @@ class Joueur {
    *
    */
   chargerConstruction(html) {
-    let parsed = $("<div/>").append(html);
+    let parsed = Utils.parseHtml(html);
     // Niveau des batiments
     parsed.find(".ligneAmelioration").each((i, elt) => {
       this._niveauConstruction[i] = parseInt(
@@ -576,7 +576,7 @@ class Joueur {
    *
    */
   chargerRecherche(html) {
-    let parsed = $("<div/>").append(html);
+    let parsed = Utils.parseHtml(html);
     // Niveau des recherches
     parsed.find(".ligneAmelioration").each((i, elt) => {
       this._niveauRecherche[i] = parseInt($(elt).find(".niveau_amelioration").text().split(" ")[1]);

@@ -375,7 +375,7 @@ class BoiteComptePlus {
         ? ""
         : $("#boiteComptePlus .contenu_boite_compte_plus table:eq(0)").css("display", "none");
     // effet highlight si du terrain est decouvert
-    let tooltipConso = $("<div/>").append(
+    let tooltipConso = Utils.parseHtml(
       $("#tableau_boite_info").next().text().split("content:")[1].split("})")[0],
     );
     if (

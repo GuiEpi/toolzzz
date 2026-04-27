@@ -172,7 +172,7 @@ class PageRessource {
           intervalle = $("#o_chasseInt").val() * 1000;
         $.ajax({ url: "http://" + Utils.serveur + ".fourmizzz.fr/AcquerirTerrain.php" }).then(
           (data) => {
-            let parsed = $("<div/>").append(data);
+            let parsed = Utils.parseHtml(data);
             this._armee.envoyerChasse(
               terrainChasse,
               nbChasse,
