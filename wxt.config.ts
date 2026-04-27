@@ -7,7 +7,7 @@ export default defineConfig({
   manifest: {
     name: "Toolzzz",
     description: "Extension pour www.fourmizzz.fr.",
-    version: "3.0.3",
+    version: "3.0.4",
     // @ts-expect-error AMO refuse la forme objet; Chrome accepte la string. On s'aligne sur Firefox.
     author: "Hraesvelg",
     homepage_url: "https://github.com/GuiEpi/toolzzz",
