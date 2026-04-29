@@ -108,10 +108,9 @@ class PageRessource {
 			<tr><td>Chasse(s)</td><td>:</td><td id='o_chasseTotal'></td><td></td></tr>
 			<tr class='ligne_paire'><td>Temps requis</td><td>:</td><td id='o_chasseTemps'></td></tr>
 			<tr><td>Retour</td><td>:</td><td id='o_chasseRetour'></td></tr>
-			<tr class='ligne_paire'><td>Heure d'arrivée</td><td>:</td><td id='o_chasseHeureArrivee'></td></tr>
-			<tr><td>Rentabilité</td><td>:</td><td id='o_chasseRentabilite'></td></tr>
-			<tr class='ligne_paire'><td>Difficulté</td><td>:</td><td id='o_chasseRefDiff'></td></tr>
-			<tr><td>Perte estimé</td><td>:</td><td id='o_chassePerte'></td></tr>
+			<tr class='ligne_paire'><td>Rentabilité</td><td>:</td><td id='o_chasseRentabilite'></td></tr>
+			<tr><td>Difficulté</td><td>:</td><td id='o_chasseRefDiff'></td></tr>
+			<tr class='ligne_paire'><td>Perte estimé</td><td>:</td><td id='o_chassePerte'></td></tr>
 			</table>
             <div class='o_marginT15'>
               <a id='o_chassePertesTdcToggle' class='cursor souligne'>▼ Pertes selon le niveau de TdC à l'arrivée</a>
@@ -430,10 +429,8 @@ class PageRessource {
       (Utils.terrain + terrainChasse) * Math.pow(0.9, monProfil.niveauRecherche[5]),
     );
     $("#o_chasseTemps").text(Utils.intToTime(temps));
-    let arrivee = Utils.roundMinute(temps);
-    $("#o_chasseRetour").text(arrivee.format("D MMM YYYY à HH[h]mm"));
-    let dateLong = arrivee.format("dddd D MMM YYYY [à] HH[h]mm");
-    $("#o_chasseHeureArrivee").text(dateLong.charAt(0).toUpperCase() + dateLong.slice(1));
+    let dateLong = Utils.roundMinute(temps).format("dddd D MMM YYYY [à] HH[h]mm");
+    $("#o_chasseRetour").text(dateLong.charAt(0).toUpperCase() + dateLong.slice(1));
     $("#o_chasseRentabilite").text(
       numeral(Math.round(((nbChasse * terrainChasse) / temps) * 86400)).format() + " cm² / jour",
     );
