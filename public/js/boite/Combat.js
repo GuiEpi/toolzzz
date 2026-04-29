@@ -50,7 +50,7 @@ class BoiteCombat extends Boite {
   css() {
     super.css();
     $(
-      "#o_resultatCombat tr:even, .o_tabs .ui-widget-header .ui-tabs-anchor, #o_calculatriceCombat tr:even, .o_mfResultatCible tr:even",
+      "#o_resultatCombat tr:even, .o_tabs .ui-widget-header .ui-tabs-anchor, #o_calculatriceCombat tr:even, .o_mfResultatCible tr:even, #o_calcSondeRecap tbody tr:even, #o_calcAttaque tbody tr:even, #o_calcAttaque thead tr",
     ).css("background-color", monProfil.parametre["couleur2"].valeur);
     $(".o_tabs .ui-widget-header .ui-tabs-anchor").css(
       "background-color",
@@ -104,9 +104,11 @@ class BoiteCombat extends Boite {
    * @method analyse
    */
   analyser() {
-    $("#o_tabsCombat1").append(
-      "<textarea id='o_rcCombat' class='o_maxWidth' placeholder='Rapport de combat...'></textarea><div class='o_marginT15' style='max-height:200px;overflow:auto'><table id='o_resultatCombat' class='o_maxWidth'></table></div>",
-    );
+    $("#o_tabsCombat1")
+      .css({ "max-height": "70vh", "overflow-y": "auto" })
+      .append(
+        "<textarea id='o_rcCombat' class='o_maxWidth' placeholder='Rapport de combat...'></textarea><div class='o_marginT15'><table id='o_resultatCombat' class='o_maxWidth'></table></div><div id='o_calcSonde' class='o_marginT15' style='display:none'></div>",
+      );
     return this.eventAnalyser();
   }
   /**
@@ -118,6 +120,9 @@ class BoiteCombat extends Boite {
       let combat = new Combat({ RC: e.currentTarget.value });
       if (combat.analyse()) {
         $("#o_resultatCombat").html(combat.toHTMLBoite());
+        let sonde = combat.analyseSonde();
+        if (sonde) this.afficherCalcAttaque(sonde);
+        else $("#o_calcSonde").hide().empty();
         this.css();
       } else
         $.toast({
@@ -125,6 +130,176 @@ class BoiteCombat extends Boite {
           text: "Le rapport de combat ne peut pas être analysé.",
         });
     });
+    return this;
+  }
+  /**
+   * Construit la section "Calcul attaque à lancer" sous le RC analysé.
+   * Reproduit la zone B26-K54 du tableur Calystene XP v1.04 (feuille "Auto sur sonde") :
+   * récap multiplicateur/vie/FdF/armes ennemi/défense/réplique + formulaire
+   * d'attaque interactif avec colonne "Nb à ajouter pour FdF" et check JSN réplique.
+   *
+   * @private
+   * @method afficherCalcAttaque
+   * @param {Object} sonde résultat de Combat.analyseSonde()
+   */
+  afficherCalcAttaque(sonde) {
+    let armes = monProfil.niveauRecherche[2],
+      bouclier = monProfil.niveauRecherche[1],
+      html = `<hr class='o_calcSepar'/>
+            <div class='centre gras o_marginT15'>Analyse de la sonde</div>
+            <table id='o_calcSondeRecap' class='o_maxWidth o_marginT15' cellspacing='0'>
+              <tbody>
+                <tr>
+                  <td class='left'>Multiplicateur de vie ennemi</td>
+                  <td class='right'>×${sonde.multiplicateur.toFixed(4)}</td>
+                  <td class='left'>Vie HB × 3</td>
+                  <td class='right'>${numeral(sonde.vieHBx3).format()}</td>
+                </tr>
+                <tr>
+                  <td class='left small'>${sonde.lieuTxt ? "(" + sonde.lieuTxt + ")" : ""}</td>
+                  <td></td>
+                  <td class='left'>Vie AB (lieu de la sonde)</td>
+                  <td class='right'>${numeral(Math.round(sonde.vieAB)).format()}</td>
+                </tr>
+                <tr class='gras'>
+                  <td></td>
+                  <td></td>
+                  <td class='left'>FdF AB nécessaire pour réplique 10%</td>
+                  <td class='right'>${numeral(Math.round(sonde.fdfNecessaire)).format()}</td>
+                </tr>
+                <tr>
+                  <td class='left'>Armes de l'ennemi</td>
+                  <td class='right'>${sonde.armesEnnemi}</td>
+                  <td class='left'>Défense AB</td>
+                  <td class='right'>${numeral(sonde.defenseAB).format()}</td>
+                </tr>
+                <tr>
+                  <td></td>
+                  <td></td>
+                  <td class='left'>Réplique 10%</td>
+                  <td class='right'>${numeral(Math.round(sonde.repliqueDef10)).format()}</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class='o_marginT15 centre gras'>Calcul attaque à lancer</div>
+            <div class='centre o_marginT15'>
+              Niveau Armes <input id='o_calcArmes' value='${armes}' size='3'/>
+              &nbsp;&nbsp;
+              Niveau Bouclier <input id='o_calcBouclier' value='${bouclier}' size='3'/>
+            </div>
+            <table id='o_calcAttaque' class='o_maxWidth o_marginT15' cellspacing='0'>
+              <thead>
+                <tr>
+                  <th class='left'>Type d'unité</th>
+                  <th class='right'><span id='o_calcPlacementArmee' class='cursor'>${IMG_FLECHE} Nb à envoyer ${IMG_FLECHE}</span></th>
+                  <th class='right'>Att AB</th>
+                  <th class='right'>Nb à ajouter pour FdF</th>
+                </tr>
+              </thead>
+              <tbody>`;
+    for (let i = 1; i <= 14; i++)
+      html += `<tr>
+                <td class='left'>${NOM_UNITE[i]}</td>
+                <td class='right'><input class='o_calcUnite right' data-idx='${i}' value='0' size='10'/></td>
+                <td class='right o_calcAtt' data-idx='${i}'>0</td>
+                <td class='right o_calcAjout' data-idx='${i}'>—</td>
+              </tr>`;
+    html += `</tbody>
+              <tfoot>
+                <tr class='gras'>
+                  <td class='left'>TOTAUX</td>
+                  <td class='right' id='o_calcNbTotal'>0</td>
+                  <td class='right' id='o_calcAttTotal'>0</td>
+                  <td></td>
+                </tr>
+                <tr>
+                  <td class='left' colspan='2'>FdF AB nécessaire (réplique 10%)</td>
+                  <td class='right gras' id='o_calcFdfNec'>${numeral(Math.round(sonde.fdfNecessaire)).format()}</td>
+                  <td class='right' id='o_calcStatusAtt'>—</td>
+                </tr>
+                <tr>
+                  <td class='left' colspan='2'>JSN nécessaires (réplique 10%)</td>
+                  <td class='right gras' id='o_calcJsnNec'>0</td>
+                  <td class='right' id='o_calcStatusJsn'>—</td>
+                </tr>
+              </tfoot>
+            </table>`;
+    $("#o_calcSonde").html(html).data("sonde", sonde).show();
+    $("#o_calcArmes, #o_calcBouclier").spinner({ min: 0, max: 50, numberFormat: "d" });
+    $(".o_calcUnite").spinner({ min: 0, numberFormat: "i" });
+    $("#o_calcSonde input").on("input spin", () => this.actualiserCalcAttaque());
+    $("#o_calcPlacementArmee").click((e) => {
+      if (this._armee) this.placerArmeeCalc();
+      else {
+        this._armee = new Armee();
+        this._armee.getArmee().then((data) => {
+          this._armee.chargeData(data);
+          this.placerArmeeCalc();
+        });
+      }
+      return false;
+    });
+    return this.actualiserCalcAttaque();
+  }
+  /**
+   * Remplit les inputs "Nb à envoyer" du calc avec l'armée courante du joueur,
+   * ou les vide si elles correspondent déjà à l'armée chargée (toggle).
+   *
+   * @private
+   * @method placerArmeeCalc
+   */
+  placerArmeeCalc() {
+    let armeeTmp = new Array();
+    for (let i = 1; i <= 14; i++)
+      armeeTmp.push(numeral($(`.o_calcUnite[data-idx='${i}']`).val()).value() || 0);
+    let allMatch = this._armee.unite.every((elt, i) => {
+      return elt === armeeTmp[i];
+    });
+    for (let i = 1; i <= 14; i++)
+      $(`.o_calcUnite[data-idx='${i}']`).spinner("value", allMatch ? 0 : this._armee.unite[i - 1]);
+    return this.actualiserCalcAttaque();
+  }
+  /**
+   * Recalcule en direct l'attaque par unité, l'attaque totale, la colonne
+   * "Nb à ajouter pour FdF" et le check JSN nécessaires en cas de réplique 10%.
+   *
+   * @private
+   * @method actualiserCalcAttaque
+   */
+  actualiserCalcAttaque() {
+    let sonde = $("#o_calcSonde").data("sonde");
+    if (!sonde) return this;
+    let armes = numeral($("#o_calcArmes").val()).value() || 0,
+      bouclier = numeral($("#o_calcBouclier").val()).value() || 0,
+      bonusAtt = 1 + armes / 10,
+      bonusVie = 1 + bouclier / 10,
+      totalAtt = 0,
+      totalNb = 0,
+      qtyJsn = 0;
+    for (let i = 1; i <= 14; i++) {
+      let qty = numeral($(`.o_calcUnite[data-idx='${i}']`).val()).value() || 0,
+        att = qty * ATT_UNITE[i] * bonusAtt;
+      $(`.o_calcAtt[data-idx='${i}']`).text(numeral(Math.round(att)).format());
+      totalAtt += att;
+      totalNb += qty;
+      if (i === 1) qtyJsn = qty;
+    }
+    $("#o_calcNbTotal").text(numeral(totalNb).format());
+    $("#o_calcAttTotal").text(numeral(Math.round(totalAtt)).format());
+    let manqueAtt = sonde.fdfNecessaire - totalAtt;
+    for (let i = 1; i <= 14; i++) {
+      let cell = $(`.o_calcAjout[data-idx='${i}']`);
+      if (manqueAtt <= 0) cell.html("<span class='green'>FdF suffisante</span>");
+      else cell.text(numeral(Math.ceil(manqueAtt / (ATT_UNITE[i] * bonusAtt))).format());
+    }
+    $("#o_calcStatusAtt").html(
+      manqueAtt <= 0 ? "<span class='green'>OK</span>" : "<span class='red'>Alerte !</span>",
+    );
+    let jsnNec = Math.ceil(sonde.repliqueDef10 / (VIE_UNITE[1] * bonusVie));
+    $("#o_calcJsnNec").text(numeral(jsnNec).format());
+    $("#o_calcStatusJsn").html(
+      qtyJsn >= jsnNec ? "<span class='green'>OK</span>" : "<span class='red'>Alerte !</span>",
+    );
     return this;
   }
   /**
