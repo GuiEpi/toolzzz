@@ -421,6 +421,58 @@ class Combat {
     return false;
   }
   /**
+   * Analyse un RC d'attaque pour en déduire le multiplicateur de vie effectif
+   * du défenseur (lieu + bouclier combinés) et la FdF nécessaire pour one-shot
+   * en encaissant la réplique 10%. Inspiré du tableur Calystene XP v1.04
+   * (feuille "Auto sur sonde", zone B26-K31).
+   *
+   * @private
+   * @method analyseSonde
+   * @return {Object|null} { multiplicateur, vieHB, vieHBx3, vieAB, fdfNecessaire,
+   *                         armesEnnemi, defenseAB, repliqueDef10 } ou null si non applicable
+   */
+  analyseSonde() {
+    if (this._pointDeVue !== 0) return null;
+    if (!this._armeeEnnemieAv || !this._armeeEnnemieAp) return null;
+    if (this._armeeEnnemieAv.getBaseVie() === 0) return null;
+    if (this._armeeEnnemieAp.getSommeUnite() === 0) return null;
+    if (this._rc.split("Vous infligez").length < 2) return null;
+    if (this._rc.split("ennemie inflige").length < 2) return null;
+    let tmp1 = this._rc.split("Vous infligez")[1].split("dégâts")[0],
+      degatBase = parseInt(tmp1.split("(")[0].replace(/ /g, "")),
+      degatBonus = parseInt(tmp1.split("+")[1].split(")")[0].replace(/ /g, "")),
+      degatTotal = degatBase + degatBonus;
+    let vieKilled = 0;
+    for (let i = 0; i < 14; i++)
+      vieKilled +=
+        (this._armeeEnnemieAv.unite[i] - this._armeeEnnemieAp.unite[i]) * VIE_UNITE[i + 1];
+    if (vieKilled <= 0) return null;
+    let multiplicateur = Math.round((degatTotal / vieKilled) * 2000) / 2000,
+      vieHB = this._armeeEnnemieAv.getBaseVie(),
+      vieHBx3 = vieHB * 3,
+      vieAB = vieHB * multiplicateur,
+      fdfNecessaire = Math.max(vieHBx3, vieAB);
+    let tmp2 = this._rc.split("ennemie inflige")[1].split("dégâts")[0],
+      defBase = parseInt(tmp2.split("(")[0].replace(/ /g, "")),
+      defBonus = parseInt(tmp2.split("+")[1].split(")")[0].replace(/ /g, "")),
+      defenseAB = defBase + defBonus,
+      armesEnnemi = this.calculerArmes(defBase, defBonus),
+      repliqueDef10 = defenseAB / 10;
+    let mLieu = this._rc.match(/Vous attaquez\s+(.+?)\s+de\s+/),
+      lieuTxt = mLieu ? mLieu[1] : "";
+    return {
+      multiplicateur,
+      vieHB,
+      vieHBx3,
+      vieAB,
+      fdfNecessaire,
+      armesEnnemi,
+      defenseAB,
+      repliqueDef10,
+      lieuTxt,
+    };
+  }
+  /**
    * Retourne l'armée en retirant d'aprés le rapport les unités perdues suivant le texte.
    *
    * @private

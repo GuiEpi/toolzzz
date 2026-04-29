@@ -63,6 +63,45 @@ Suivre le style de `BoiteCombat.calculatrice()` (onglet « Temps de trajet ») :
 </table>
 ```
 
+### Padding des cellules
+
+Les `<table>` dans `.o_content` ont `border-collapse: collapse` et **aucun padding par défaut** sur les `td`/`th` — sans règle explicite, les cellules se collent les unes aux autres (effet `valeurLibellé` indésirable). Ajouter une règle `#o_<id> td, #o_<id> th { padding: 2px 6px }` dans `outiiil.css` à proximité des règles équivalentes (cf. `#o_simulationChasse td`, `#o_historiqueAlliance tr td`). **Ne pas** utiliser de `style="padding:…"` inline ni de `.css()` jQuery — les règles per-table-id sont la convention partout.
+
+Pour un layout 4-col « libellé/valeur | libellé/valeur » côte à côte, ajouter en plus `#o_<id> td:nth-child(3) { padding-left: 28px }` pour séparer visuellement les deux blocs (sinon la valeur du bloc gauche colle au libellé du bloc droit).
+
+### Titre de section vs `<thead>`
+
+Si l'onglet contient **plusieurs sections distinctes** (récap + formulaire, par ex.), mettre le titre **au-dessus** du tableau via `<div class='centre gras o_marginT15'>Titre</div>` plutôt qu'un `<thead><th colspan='N'>Titre</th></thead>`. Le `<thead>` est réservé à la ligne d'en-tête des colonnes.
+
+### Séparateurs entre sections
+
+Pour distinguer visuellement deux sections successives dans un même onglet (sans abuser de `o_marginT15`) :
+
+```html
+<hr class="o_<feature>Separ" />
+```
+
+```css
+hr.o_<feature > Separ {
+  border: 0;
+  border-top: 1px dashed currentColor;
+  opacity: 0.35;
+  margin: 18px 0 0;
+}
+```
+
+→ `currentColor` reprend automatiquement la `couleurTexte` de l'utilisateur — pas besoin de `monProfil.parametre[...]` côté JS.
+
+### Onglets à contenu long
+
+Quand un onglet (`#o_tabs<X>1`, `2`, …) risque de dépasser la hauteur du viewport (la `.o_content` est `position:fixed` + `draggable`, sans `max-height` global), poser le scroll **sur le div d'onglet entier** :
+
+```js
+$("#o_tabs<X>1").css({ "max-height": "70vh", "overflow-y": "auto" });
+```
+
+→ Préférer ce scroll unique aux scrollables imbriqués (textarea + tableau résultat + section calc, etc.) qui rendent la navigation pénible. Si le tableau résultat avait déjà un wrapper `style='max-height:200px;overflow:auto'`, l'enlever en même temps.
+
 ### Alternance de lignes (couleur2)
 
 Dans la méthode `css()` de la Boite, ajouter le sélecteur :
