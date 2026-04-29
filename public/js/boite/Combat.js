@@ -191,7 +191,7 @@ class BoiteCombat extends Boite {
               <thead>
                 <tr>
                   <th class='left'>Type d'unité</th>
-                  <th class='right'>Nb à envoyer</th>
+                  <th class='right'><span id='o_calcPlacementArmee' class='cursor'>${IMG_FLECHE} Nb à envoyer ${IMG_FLECHE}</span></th>
                   <th class='right'>Att AB</th>
                   <th class='right'>Nb à ajouter pour FdF</th>
                 </tr>
@@ -228,6 +228,35 @@ class BoiteCombat extends Boite {
     $("#o_calcArmes, #o_calcBouclier").spinner({ min: 0, max: 50, numberFormat: "d" });
     $(".o_calcUnite").spinner({ min: 0, numberFormat: "i" });
     $("#o_calcSonde input").on("input spin", () => this.actualiserCalcAttaque());
+    $("#o_calcPlacementArmee").click((e) => {
+      if (this._armee) this.placerArmeeCalc();
+      else {
+        this._armee = new Armee();
+        this._armee.getArmee().then((data) => {
+          this._armee.chargeData(data);
+          this.placerArmeeCalc();
+        });
+      }
+      return false;
+    });
+    return this.actualiserCalcAttaque();
+  }
+  /**
+   * Remplit les inputs "Nb à envoyer" du calc avec l'armée courante du joueur,
+   * ou les vide si elles correspondent déjà à l'armée chargée (toggle).
+   *
+   * @private
+   * @method placerArmeeCalc
+   */
+  placerArmeeCalc() {
+    let armeeTmp = new Array();
+    for (let i = 1; i <= 14; i++)
+      armeeTmp.push(numeral($(`.o_calcUnite[data-idx='${i}']`).val()).value() || 0);
+    let allMatch = this._armee.unite.every((elt, i) => {
+      return elt === armeeTmp[i];
+    });
+    for (let i = 1; i <= 14; i++)
+      $(`.o_calcUnite[data-idx='${i}']`).spinner("value", allMatch ? 0 : this._armee.unite[i - 1]);
     return this.actualiserCalcAttaque();
   }
   /**
