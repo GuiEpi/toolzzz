@@ -351,7 +351,7 @@ class PageRessource {
     $(".o_otherHfInputAlt").each((_, el) => {
       let $el = $(el),
         i = $el.data("idx"),
-        tdc = numeral($el.val()).value() || 0,
+        tdc = $el.spinner("value") || 0,
         dDiff = this._armee.calculDifficulte(tdc, nb, hf),
         p = this._armee.calculPerte(ratioIdx, dDiff);
       $(`.o_otherHfMin[data-idx='${i}']`).text(numeral(Math.round(p.MIN)).format());
