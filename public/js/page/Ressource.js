@@ -126,7 +126,7 @@ class PageRessource {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr class='gras'><td><span id='o_otherHfRefValue'>—</span> cm² <span class='small'>(votre TdC)</span></td><td class='right o_otherHfMin' data-idx='0'>—</td><td class='right o_otherHfAvg' data-idx='0'>—</td><td class='right o_otherHfMax' data-idx='0'>—</td><td class='right'>—</td></tr>
+                    <tr class='gras'><td><span id='o_otherHfRefValue'>—</span> cm² <span class='small'>(Terrain à l'arrivée)</span></td><td class='right o_otherHfMin' data-idx='0'>—</td><td class='right o_otherHfAvg' data-idx='0'>—</td><td class='right o_otherHfMax' data-idx='0'>—</td><td class='right'>—</td></tr>
                     ${[
                       1000000, 5000000, 10000000, 15000000, 20000000, 30000000, 40000000, 50000000,
                       75000000, 100000000,
