@@ -107,7 +107,7 @@ class BoiteCombat extends Boite {
     $("#o_tabsCombat1")
       .css({ "max-height": "70vh", "overflow-y": "auto" })
       .append(
-        "<textarea id='o_rcCombat' class='o_maxWidth' placeholder='Rapport de combat...'></textarea><div class='o_marginT15'><table id='o_resultatCombat' class='o_maxWidth'></table></div><div id='o_calcSonde' class='o_marginT15' style='display:none'></div>",
+        "<textarea id='o_rcCombat' class='o_maxWidth' placeholder='Rapport de combat/sonde...'></textarea><div class='o_marginT15'><table id='o_resultatCombat' class='o_maxWidth'></table></div><div id='o_calcSonde' class='o_marginT15' style='display:none'></div>",
       );
     return this.eventAnalyser();
   }
@@ -225,7 +225,11 @@ class BoiteCombat extends Boite {
               </tfoot>
             </table>`;
     $("#o_calcSonde").html(html).data("sonde", sonde).show();
-    $("#o_calcArmes, #o_calcBouclier").spinner({ min: 0, max: 50, numberFormat: "d" });
+    $("#o_calcArmes, #o_calcBouclier").spinner({
+      min: 0,
+      max: 50,
+      numberFormat: "d",
+    });
     $(".o_calcUnite").spinner({ min: 0, numberFormat: "i" });
     $("#o_calcSonde input").on("input spin", () => this.actualiserCalcAttaque());
     $("#o_calcPlacementArmee").click((e) => {
@@ -1016,7 +1020,10 @@ class BoiteCombat extends Boite {
       this.simulerMultiFlood();
     });
     // Spinner sur tous les inputs numériques (Terrain Final / Prise Max par cible et attaquant) — convention Toolzzz
-    $("#o_mfForm input.o_mfOpt, #o_mfForm input.o_mfAttOpt").spinner({ min: 0, numberFormat: "i" });
+    $("#o_mfForm input.o_mfOpt, #o_mfForm input.o_mfAttOpt").spinner({
+      min: 0,
+      numberFormat: "i",
+    });
     // Options par cible (Terrain Final / Prise Max / Arrondir) — re-simu sur change
     $("#o_mfForm .o_mfOpt").on("change", (e) => {
       let $el = $(e.currentTarget),
@@ -1415,7 +1422,10 @@ class BoiteCombat extends Boite {
         $("#o_mfLancer").text("Redéploiement…");
         Armee.deplacerApresFlood(cfg).then(
           () => {
-            $.toast({ ...TOAST_SUCCESS, text: "Multi-flood terminé. Troupes redéployées." });
+            $.toast({
+              ...TOAST_SUCCESS,
+              text: "Multi-flood terminé. Troupes redéployées.",
+            });
             $("#o_mfLancer").text("Lancer ces attaques");
           },
           (err) => {
@@ -1557,7 +1567,10 @@ class BoiteCombat extends Boite {
    *
    */
   _mfBindRedeployement() {
-    $("#o_mfRedeployTdcNb, #o_mfRedeployDomeNb").spinner({ min: 0, numberFormat: "i" });
+    $("#o_mfRedeployTdcNb, #o_mfRedeployDomeNb").spinner({
+      min: 0,
+      numberFormat: "i",
+    });
     $(
       "#o_mfRedeployEnable, #o_mfRedeployTdcNb, #o_mfRedeployTdcUnit, #o_mfRedeployDomeNb, #o_mfRedeployDomeUnit",
     ).on("change", () => this._mfSauverRedeployement());
