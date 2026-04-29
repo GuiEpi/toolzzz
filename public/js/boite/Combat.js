@@ -710,84 +710,92 @@ class BoiteCombat extends Boite {
   _mfRenderForm() {
     let cibles = [...this._mfCibles].sort((a, b) => a.tempsParcours - b.tempsParcours),
       arrondirOptions = [0, 5, 10, 100, 1000],
-      // Pour chaque cible : 5 cellules (une par ligne du form)
-      pseudoRow = cibles
-        .map(
-          (c) =>
-            `<td><input type="text" class="o_mfPseudoCell cursor" data-pseudo="${c.pseudo}" value="${c.pseudo}" readonly title="Cliquer pour retirer"/></td>`,
+      // Toujours 3 slots cibles : rempli / autocomplete (1er vide) / placeholder.
+      slot = (i, render) =>
+        i < cibles.length
+          ? render(cibles[i])
+          : i === cibles.length
+            ? `<td><input type="text" id="o_mfPseudoCible" placeholder="Pseudo…"/></td>`
+            : `<td><input type="text" disabled placeholder="—"/></td>`,
+      placeholder = `<td><input type="text" disabled placeholder="—"/></td>`,
+      arrondirPlaceholder = `<td><select disabled><option>Aucun</option></select></td>`,
+      pseudoRow = [0, 1, 2]
+        .map((i) =>
+          slot(
+            i,
+            (c) =>
+              `<td><input type="text" class="o_mfPseudoCell cursor" data-pseudo="${c.pseudo}" value="${c.pseudo}" readonly title="Cliquer pour retirer"/></td>`,
+          ),
         )
         .join(""),
-      terrainRow = cibles
-        .map(
-          (c) =>
-            `<td><input type="text" value="${numeral(c.terrain).format()} cm²" disabled/></td>`,
+      terrainRow = [0, 1, 2]
+        .map((i) =>
+          i < cibles.length
+            ? `<td><input type="text" value="${numeral(cibles[i].terrain).format()} cm²" disabled/></td>`
+            : placeholder,
         )
         .join(""),
-      terrainFinalRow = cibles
-        .map(
-          (c) =>
-            `<td><input type="text" class="o_mfOpt" data-pseudo="${c.pseudo}" data-opt="terrainFinal" value="${c.terrainFinal ?? ""}" placeholder="—"/></td>`,
+      terrainFinalRow = [0, 1, 2]
+        .map((i) =>
+          i < cibles.length
+            ? `<td><input type="text" class="o_mfOpt" data-pseudo="${cibles[i].pseudo}" data-opt="terrainFinal" value="${cibles[i].terrainFinal ?? ""}" placeholder="—"/></td>`
+            : placeholder,
         )
         .join(""),
-      priseMaxRow = cibles
-        .map(
-          (c) =>
-            `<td><input type="text" class="o_mfOpt" data-pseudo="${c.pseudo}" data-opt="priseMax" value="${c.priseMax ?? ""}" placeholder="—"/></td>`,
+      priseMaxRow = [0, 1, 2]
+        .map((i) =>
+          i < cibles.length
+            ? `<td><input type="text" class="o_mfOpt" data-pseudo="${cibles[i].pseudo}" data-opt="priseMax" value="${cibles[i].priseMax ?? ""}" placeholder="—"/></td>`
+            : placeholder,
         )
         .join(""),
-      arrondirRow = cibles
-        .map((c) => {
-          let opts = arrondirOptions
-            .map(
-              (v) =>
-                `<option value="${v}"${(c.arrondir ?? 0) == v ? " selected" : ""}>${v === 0 ? "Aucun" : v}</option>`,
-            )
-            .join("");
+      arrondirRow = [0, 1, 2]
+        .map((i) => {
+          if (i >= cibles.length) return arrondirPlaceholder;
+          let c = cibles[i],
+            opts = arrondirOptions
+              .map(
+                (v) =>
+                  `<option value="${v}"${(c.arrondir ?? 0) == v ? " selected" : ""}>${v === 0 ? "Aucun" : v}</option>`,
+              )
+              .join("");
           return `<td><select class="o_mfOpt" data-pseudo="${c.pseudo}" data-opt="arrondir">${opts}</select></td>`;
         })
-        .join(""),
-      // Cellule "vide" si aucune cible — pour que le tableau ait quand même la bonne forme
-      empty = cibles.length ? "" : `<td></td>`;
+        .join("");
     $("#o_mfFormWrap").html(`
         <table id="o_mfForm" class="o_maxWidth centre" cellspacing="0">
           <thead>
             <tr>
               <th>Attaquant</th>
               <th></th>
-              <th colspan="${cibles.length || 1}">Cibles</th>
-              <th></th>
+              <th colspan="3">Cibles</th>
             </tr>
           </thead>
           <tbody>
             <tr>
               <td><input type="text" value="${monProfil.pseudo}" disabled/></td>
               <td class="right">Pseudo</td>
-              ${pseudoRow}${empty}
-              <td><input type="text" id="o_mfPseudoCible" placeholder="Pseudo…"/></td>
+              ${pseudoRow}
             </tr>
             <tr>
               <td><input type="text" value="${numeral(Utils.terrain).format()}" disabled/></td>
               <td class="right">Terrain</td>
-              ${terrainRow}${empty}
-              <td><input type="text" disabled placeholder="—"/></td>
+              ${terrainRow}
             </tr>
             <tr>
               <td><input type="text" class="o_mfAttOpt" data-opt="terrainFinal" value="${this._mfAttaquantOpts?.terrainFinal ?? ""}" placeholder="—"/></td>
               <td class="right reduce">Terrain Final</td>
-              ${terrainFinalRow}${empty}
-              <td><input type="text" disabled placeholder="—"/></td>
+              ${terrainFinalRow}
             </tr>
             <tr>
               <td><input type="text" class="o_mfAttOpt" data-opt="priseMax" value="${this._mfAttaquantOpts?.priseMax ?? ""}" placeholder="—"/></td>
               <td class="right reduce">Prise Max</td>
-              ${priseMaxRow}${empty}
-              <td><input type="text" disabled placeholder="—"/></td>
+              ${priseMaxRow}
             </tr>
             <tr>
               <td></td>
               <td class="right reduce">Arrondir</td>
-              ${arrondirRow}${empty}
-              <td><select disabled><option>Aucun</option></select></td>
+              ${arrondirRow}
             </tr>
           </tbody>
         </table>`);
