@@ -192,22 +192,8 @@ class PageRessource {
         this.preparerChasse();
       }
     });
-    $("#o_chasseDiff").change((e) => {
-      let value = parseFloat(e.currentTarget.value);
-      switch (true) {
-        case value <= 4:
-          $(e.currentTarget).css("color", "black");
-          break;
-        case value > 4 && value <= 6:
-          $(e.currentTarget).css("color", "red");
-          break;
-        case value > 6 && value <= 7.5:
-          $(e.currentTarget).css("color", "orange");
-          break;
-        default:
-          $(e.currentTarget).css("color", "green");
-          break;
-      }
+    $("#o_chasseDiff").change(() => {
+      this._majCouleurDiff();
       this.preparerChasse();
     });
     $("#o_chasseJSN").on("input spin", (e, ui) => {
@@ -294,8 +280,27 @@ class PageRessource {
         simu.ratioRef,
         simu.iTabPerte,
       );
+      // Sync la dropdown Difficulté sur le ratio réellement atteignable
+      // (calculRefRatio peut renvoyer un ratio plus bas si l'armée ne peut
+      // pas tenir celui sélectionné par l'utilisateur).
+      let computed = parseFloat(simu.ratioRef).toString();
+      if ($("#o_chasseDiff").val() !== computed) {
+        $("#o_chasseDiff").val(computed);
+        this._majCouleurDiff();
+      }
       this.mettreAjourPertesTdc();
     }
+  }
+  /**
+   * Met à jour la couleur de la dropdown Difficulté selon le seuil de ratio.
+   *
+   * @private
+   * @method _majCouleurDiff
+   */
+  _majCouleurDiff() {
+    let value = parseFloat($("#o_chasseDiff").val()),
+      color = value <= 4 ? "black" : value <= 6 ? "red" : value <= 7.5 ? "orange" : "green";
+    $("#o_chasseDiff").css("color", color);
   }
   /**
    * Calcule le terrain par chasse suggéré pour qu'une chasse parte maintenant et
