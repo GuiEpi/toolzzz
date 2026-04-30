@@ -113,7 +113,7 @@ class PageRessource {
 			<tr class='ligne_paire'><td>Perte estimé</td><td>:</td><td id='o_chassePerte'></td></tr>
 			</table>
             <div class='o_marginT15'>
-              <a id='o_chassePertesTdcToggle' class='cursor souligne'>▼ Pertes selon le niveau de TdC à l'arrivée</a>
+              <a id='o_chassePertesTdcToggle' class='cursor souligne'>▼ Pertes selon le niveau de TdC à l'arrivée ▼</a>
               <div id='o_chassePertesTdc' style='display:none' class='o_marginT15'>
                 <table id='o_chassePertesTdcTable' class='o_maxWidth' cellspacing='0'>
                   <thead>
@@ -216,8 +216,9 @@ class PageRessource {
     $("#o_chassePertesTdcToggle").click(() => {
       let $div = $("#o_chassePertesTdc");
       $div.toggle();
+      let arrow = $div.is(":visible") ? "▲" : "▼";
       $("#o_chassePertesTdcToggle").text(
-        ($div.is(":visible") ? "▲" : "▼") + " Pertes selon le niveau de TdC à l'arrivée",
+        `${arrow} Pertes selon le niveau de TdC à l'arrivée ${arrow}`,
       );
     });
     $(".o_otherHfInputAlt").on("input spin", () => this.mettreAjourPertesTdc());
