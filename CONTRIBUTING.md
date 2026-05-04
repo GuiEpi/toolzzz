@@ -57,7 +57,7 @@ Si tu utilises un autre assistant IA (Codex, GitHub Copilot, Cursor, Windsurf...
 ln -s CLAUDE.md AGENTS.md
 
 # GitHub Copilot (instructions custom du repo)
-mkdir -p .github && ln -s ../CLAUDE.md .github/copilot-instructions.md
+ln -s CLAUDE.md .github/copilot-instructions.md
 
 # Cursor (format legacy, toujours supporté)
 ln -s CLAUDE.md .cursorrules
