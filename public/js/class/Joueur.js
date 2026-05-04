@@ -130,7 +130,7 @@ class Joueur {
       "methodeFlood",
       "Méthode de flood",
       "select",
-      0,
+      1,
       METHODE_FLOOD,
     );
     this._parametre["uniteAntisondeTerrain"] = new Parametre(
