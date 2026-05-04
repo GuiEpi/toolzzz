@@ -1622,7 +1622,7 @@ class BoiteCombat extends Boite {
     let html = `<table id="o_calculatriceCombat" class="centre">
             <thead><tr><th id="o_placementJ" class="cursor" colspan="2">${IMG_FLECHE} Joueur 1 ${IMG_FLECHE}</th><th></th><th>Joueur(s)</th></tr></thead>
             <tr><td></td><td><input type="text" id="o_pseudoTemps" placeholder="Pseudo"/></td><td>-></td><td><input type="text" id="o_cibleJoueurTemps" placeholder="Pseudo1, Pseudo2..."/></td></tr>
-            <tr><td>Vitesse d'attaque</td><td><input type="number" id="o_vaTemps" value="0" min="0" max="50"/></td><td></td><td></td></tr>
+            <tr><td>Vitesse d'attaque</td><td><input type="text" id="o_vaTemps" value="0" size="5"/></td><td></td><td></td></tr>
             <tr><td>Dernier mouvement</td><td><input id="o_dernierMvt" placeholder="JJ-MM-AAAA HH:mm"/></td><td></td><td><button id="o_calculerTemps">Calculer</button></td></tr>
             <tr class="reduce"><td colspan="4"><em>Le temps maximal d'un trajet est de <span id="o_indicationTemps">${this.calculerLimiteTemps(0)}</span>.</em></td></tr>
             </table>`;
@@ -1637,11 +1637,11 @@ class BoiteCombat extends Boite {
       // si les infos sont deja renseigné on vide
       if ($("#o_pseudoTemps").val() == monProfil.pseudo) {
         $("#o_pseudoTemps").val("");
-        $("#o_vaTemps").val(0);
+        $("#o_vaTemps").spinner("value", 0);
         $("#o_indicationTemps").text(this.calculerLimiteTemps(0));
       } else {
         $("#o_pseudoTemps").val(monProfil.pseudo);
-        $("#o_vaTemps").val(monProfil.niveauRecherche[6]);
+        $("#o_vaTemps").spinner("value", monProfil.niveauRecherche[6]);
         $("#o_indicationTemps").text(this.calculerLimiteTemps(monProfil.niveauRecherche[6]));
       }
     });
@@ -1682,8 +1682,10 @@ class BoiteCombat extends Boite {
       hourText: "Heure",
       minuteText: "Minute",
     });
-    $("#o_vaTemps").on("input", (e) => {
-      $("#o_indicationTemps").text(this.calculerLimiteTemps($(e.currentTarget).val()));
+    $("#o_vaTemps").spinner({ min: 0, max: 50, numberFormat: "i" });
+    $("#o_vaTemps").on("input spin", (e, ui) => {
+      let nombre = ui ? ui.value : $(e.currentTarget).spinner("value");
+      $("#o_indicationTemps").text(this.calculerLimiteTemps(nombre));
     });
     $("#o_calculerTemps").click(() => {
       let ref = new Joueur({ pseudo: $("#o_pseudoTemps").val() });

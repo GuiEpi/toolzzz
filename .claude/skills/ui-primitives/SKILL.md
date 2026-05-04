@@ -152,7 +152,7 @@ $("#o_truc").spinner({ min: 0, numberFormat: "i" });
 ### Autres widgets
 
 - `$("#x").autocomplete({ source, select, … })` — autocomplete (cf. `Joueur.rechercher` + `Utils.extraitRecherche`)
-- `$("#x").datetimepicker(DATEPICKER_OPTION)` — date/heure
+- `$("#x").datetimepicker(DATEPICKER_OPTION)` — date/heure. Sur l'`<input>` associé, **utiliser systématiquement `placeholder="JJ-MM-AAAA HH:mm"`** (le format affiché par `DATEPICKER_OPTION` + `dateFormat: "dd-mm-yy"`, `timeFormat: "HH:mm"`). Pas de `placeholder='—'` ni autre tiret — le tiret n'indique pas à l'utilisateur quel format saisir.
 - `$("#x").slider({ min, max, change })` — slider 0/1
 - `$("#x").tooltip({ position, content })` — tooltips
 
