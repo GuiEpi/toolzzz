@@ -108,8 +108,10 @@ Required GitHub Secrets:
 **AMO** — from https://addons.mozilla.org/developers/addon/api/key/.
 
 - `FIREFOX_EXTENSION_ID` — the gecko ID (`toolzzz@guiepi.github.io`)
-- `AMO_JWT_ISSUER`
-- `AMO_JWT_SECRET`
+- `FIREFOX_JWT_ISSUER`
+- `FIREFOX_JWT_SECRET`
+
+(Secret names match the env-var names that `publish-extension` expects, and what `bunx publish-extension init` writes to `.env.submit`.)
 
 Note: WXT 0.20.x doesn't expose `wxt submit init` — that subcommand only exists in newer WXT releases. Run `bunx publish-extension init` directly until WXT is upgraded.
 
