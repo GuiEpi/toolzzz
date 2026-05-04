@@ -90,16 +90,28 @@ Note: oxfmt's `.ts` config loader breaks in CI due to a Node version-check bug (
 
 ## Release pipeline
 
-`.github/workflows/release.yml` builds both zips, signs the Firefox xpi for self-distribution, and attaches all four artefacts (Chrome zip, Firefox zip, sources zip, signed Firefox xpi) to a GitHub Release on tag push.
+`.github/workflows/release.yml` builds both zips, submits them to the Chrome Web Store and AMO for review, and attaches the artefacts (Chrome zip, Firefox zip, sources zip) to a GitHub Release on tag push.
 
-Signing uses **`web-ext sign`** (Mozilla's official tool) — not `wxt submit` / `publish-browser-extension`. The distinction matters:
+Submission uses **`wxt submit`** (a thin wrapper around the `publish-extension` package). Both extensions are published as **listed** store entries — users install from the official stores, not from GitHub Releases. The GitHub Release is kept as an archive of the exact artefacts uploaded to the stores (useful for audit and rollback context).
 
-- `wxt submit` is built for **listed** publication: it uploads the zip to AMO for review and walks away. The signed xpi stays on AMO and users install it from the store listing. No local artefact to grab.
-- `web-ext sign` is built for **self-distribution / unlisted**: it uploads, waits for signing, and downloads the signed xpi locally via `--artifacts-dir`. That xpi is what we attach to the GitHub Release so Firefox users can install in one click without a store listing.
+To regenerate credentials locally without committing them, run `bunx publish-extension init` — it walks through the OAuth/JWT flow and writes to `.env.submit` (gitignored). Then copy each value into the corresponding GitHub Secret.
 
-If this project ever goes to a listed AMO listing, `wxt submit` becomes the right choice. Until then, `web-ext sign` is what the pipeline needs.
+Required GitHub Secrets:
 
-Required GitHub Secrets: `AMO_JWT_ISSUER` and `AMO_JWT_SECRET` (from https://addons.mozilla.org/developers/addon/api/key/).
+**Chrome Web Store** — OAuth client of type "Desktop" in Google Cloud Console → APIs & Services → Credentials. The OAuth consent screen must have your developer Google account on the test users list (or the app published) for the refresh-token flow to succeed.
+
+- `CHROME_EXTENSION_ID` — the public store ID (visible in the store URL)
+- `CHROME_CLIENT_ID`
+- `CHROME_CLIENT_SECRET`
+- `CHROME_REFRESH_TOKEN`
+
+**AMO** — from https://addons.mozilla.org/developers/addon/api/key/.
+
+- `FIREFOX_EXTENSION_ID` — the gecko ID (`toolzzz@guiepi.github.io`)
+- `AMO_JWT_ISSUER`
+- `AMO_JWT_SECRET`
+
+Note: WXT 0.20.x doesn't expose `wxt submit init` — that subcommand only exists in newer WXT releases. Run `bunx publish-extension init` directly until WXT is upgraded.
 
 ## Project-specific Claude skills
 

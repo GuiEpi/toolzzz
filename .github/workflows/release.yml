@@ -40,16 +40,24 @@ jobs:
       - name: Build & zip (Firefox)
         run: bun run zip:firefox
 
-      - name: Sign Firefox extension (self-distribution)
+      - name: Submit to Chrome Web Store and AMO
         if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+          CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
+          CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+          CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+          CHROME_PUBLISH_TARGET: default
+          FIREFOX_EXTENSION_ID: ${{ secrets.FIREFOX_EXTENSION_ID }}
+          FIREFOX_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
+          FIREFOX_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+          FIREFOX_CHANNEL: listed
         run: |
-          bunx web-ext sign \
-            --source-dir=.output/firefox-mv3 \
-            --api-key="${{ secrets.AMO_JWT_ISSUER }}" \
-            --api-secret="${{ secrets.AMO_JWT_SECRET }}" \
-            --channel=unlisted \
-            --artifacts-dir=.output \
-            --timeout=900000
+          VERSION="${GITHUB_REF_NAME#v}"
+          bun run wxt submit \
+            --chrome-zip ".output/toolzzz-${VERSION}-chrome.zip" \
+            --firefox-zip ".output/toolzzz-${VERSION}-firefox.zip" \
+            --firefox-sources-zip ".output/toolzzz-${VERSION}-sources.zip"
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
@@ -60,4 +68,3 @@ jobs:
             .output/toolzzz-*-chrome.zip
             .output/toolzzz-*-firefox.zip
             .output/toolzzz-*-sources.zip
-            .output/*.xpi
