@@ -43,6 +43,33 @@ Pour le formatage à la sauvegarde dans ton éditeur, consulte la [doc officiell
 
 Côté CI, chaque push et PR sur `master` lance `bun run format:check` — un PR non formaté échoue.
 
+## Assistants IA
+
+Le projet est annoté pour [Claude Code](https://docs.claude.com/claude-code) :
+
+- **`CLAUDE.md`** à la racine — instructions générales du projet (architecture WXT, convention de commit, pipeline release, etc.).
+- **`.claude/skills/`** — skills déclenchés conditionnellement (`analyze-fourmizzz`, `ui-primitives`, `release-notes`).
+
+Si tu utilises un autre assistant IA (Codex, GitHub Copilot, Cursor, Windsurf...), tu peux pointer son fichier d'instructions vers `CLAUDE.md` via un symlink local — pas besoin de dupliquer le contenu :
+
+```bash
+# OpenAI Codex CLI / standard agents.md
+ln -s CLAUDE.md AGENTS.md
+
+# GitHub Copilot (instructions custom du repo)
+mkdir -p .github && ln -s ../CLAUDE.md .github/copilot-instructions.md
+
+# Cursor (format legacy, toujours supporté)
+ln -s CLAUDE.md .cursorrules
+
+# Windsurf
+ln -s CLAUDE.md .windsurfrules
+```
+
+Pour les skills (`.claude/skills/`), le mécanisme de chargement conditionnel est spécifique à Claude — les autres outils ne sauront pas les déclencher. En revanche, leur contenu reste lisible : ton outil les trouvera s'il scanne les `.md` du repo, ou tu peux symlinker un skill précis vers le fichier d'instructions de ton outil si tu veux qu'il soit toujours en contexte.
+
+Ces symlinks sont **personnels** — ne les commit pas (le projet ne ship aucun fichier d'instruction non-Claude officiellement). Si tu veux les masquer de `git status`, ajoute-les à `.git/info/exclude` (local, jamais commit), pas au `.gitignore` versionné.
+
 ## Tester un build de production
 
 `bun run dev` charge toujours le build de développement. Pour valider un build de production avant une release (ou reproduire un bug qui n'apparaît qu'en prod), fais un build puis charge-le manuellement.
