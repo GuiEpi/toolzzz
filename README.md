@@ -15,8 +15,12 @@ L'objectif reste identique à celui du projet d'origine : intégrer directement 
 
 ## Installation
 
-- **Chrome / Chromium / Edge** : télécharger le zip `toolzzz-X.Y.Z-chrome.zip` depuis la page [Releases](https://github.com/GuiEpi/toolzzz/releases), le dézipper, puis dans `chrome://extensions` activer le mode développeur et cliquer sur _Charger l'extension non empaquetée_ en sélectionnant le dossier dézippé.
-- **Firefox** : télécharger le `.xpi` signé depuis la page [Releases](https://github.com/GuiEpi/toolzzz/releases) — un clic suffit pour installer.
+[link-chrome]: https://chromewebstore.google.com/detail/toolzzz/ehdkpodbbmnmojgijhoogcjakbkokfpe "Version published on Chrome Web Store"
+[link-firefox]: https://addons.mozilla.org/en-US/firefox/addon/toolzzz/ "Version published on Mozilla Add-ons"
+
+[<img src="https://raw.githubusercontent.com/alrra/browser-logos/90fdf03c/src/chrome/chrome.svg" width="48" alt="Chrome" valign="middle">][link-chrome] [<img valign="middle" src="https://img.shields.io/chrome-web-store/v/ehdkpodbbmnmojgijhoogcjakbkokfpe.svg?label=%20">][link-chrome] also compatible with [<img src="https://raw.githubusercontent.com/alrra/browser-logos/90fdf03c/src/edge/edge.svg" width="24" alt="Edge" valign="middle">][link-chrome] [<img src="https://raw.githubusercontent.com/alrra/browser-logos/90fdf03c/src/opera/opera.svg" width="24" alt="Opera" valign="middle">][link-chrome]
+
+[<img src="https://raw.githubusercontent.com/alrra/browser-logos/90fdf03c/src/firefox/firefox.svg" width="48" alt="Firefox" valign="middle">][link-firefox] [<img valign="middle" src="https://img.shields.io/amo/v/toolzzz.svg?label=%20">][link-firefox]
 
 ## Contribuer
 
