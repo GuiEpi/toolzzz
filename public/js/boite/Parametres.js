@@ -18,7 +18,7 @@ class BoiteParametre extends Boite {
     super(
       "o_boiteParametre",
       "Paramètres",
-      `<div id='o_tabsParametre' class='o_tabs'><ul><li><a href='#o_tabsParametre1'>Général</a></li><li><a href='#o_tabsParametre2'>Utilitaire</a></li><li><a href='#o_tabsParametre3'>Apparence</a></li></ul><div id='o_tabsParametre1'/><div id='o_tabsParametre2'/><div id='o_tabsParametre3'/></div>`,
+      `<div id='o_tabsParametre' class='o_tabs'><ul><li><a href='#o_tabsParametre1'>Général</a></li><li><a href='#o_tabsParametre2'>Utilitaire</a></li><li><a href='#o_tabsParametre3'>Apparence</a></li><li><a href='#o_tabsParametre4'>À propos</a></li></ul><div id='o_tabsParametre1'/><div id='o_tabsParametre2'/><div id='o_tabsParametre3'/><div id='o_tabsParametre4'/></div>`,
     );
     /**
      *
@@ -64,7 +64,7 @@ class BoiteParametre extends Boite {
           },
         })
         .removeClass("ui-widget");
-      this.parametreStyle().parametreUtilitaire().parametreGeneral().css().event();
+      this.parametreStyle().parametreUtilitaire().parametreGeneral().apropos().css().event();
     }
   }
   /**
@@ -153,6 +153,23 @@ class BoiteParametre extends Boite {
             <p class='left small'><em>Le nombre est choisi aléatoirement entre 90% du max et le max.</em></p>
             ${monProfil.parametre[this._paramGeneral[2]].getForm() + monProfil.parametre[this._paramGeneral[3]].getForm() + monProfil.parametre[this._paramGeneral[4]].getForm()}
         </form>`);
+    return this;
+  }
+  /**
+   *
+   */
+  apropos() {
+    const repo = "https://github.com/GuiEpi/toolzzz";
+    $("#o_tabsParametre4").append(`
+      <p class='left reduce gras'>Toolzzz v${VERSION}</p>
+      <p class='left reduce'>Extension open source pour Fourmizzz.fr.</p>
+      <ul class='left reduce'>
+        <li><a href='${repo}' target='_blank' rel='noopener'>Code source (GitHub)</a></li>
+        <li><a href='${repo}/issues/new?template=bug_report.yml' target='_blank' rel='noopener'>Signaler un bug</a></li>
+        <li><a href='${repo}/issues/new?template=feature_request.yml' target='_blank' rel='noopener'>Proposer une fonctionnalité</a></li>
+      </ul>
+      <p class='left reduce'>Fork de <a href='https://github.com/Hraesvelg/Outiiil' target='_blank' rel='noopener'>Outiiil</a> par Hraesvelg, sous licence <a href='${repo}/blob/master/LICENSE' target='_blank' rel='noopener'>GPL-3.0</a>.</p>
+    `);
     return this;
   }
 }
