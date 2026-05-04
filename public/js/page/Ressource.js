@@ -117,7 +117,7 @@ class PageRessource {
               <div id='o_chassePertesTdc' style='display:none' class='o_marginT15'>
                 <table id='o_chassePertesTdcTable' class='o_maxWidth' cellspacing='0'>
                   <thead>
-                    <tr class='gras'>
+                    <tr class='gras ligne_paire'>
                       <td>TdC à l'arrivée</td>
                       <td class='right'>Pertes Min</td>
                       <td class='right'>Pertes Avg</td>
@@ -133,7 +133,7 @@ class PageRessource {
                     ]
                       .map((v, k) => {
                         let i = k + 1;
-                        return `<tr ${i % 2 ? "" : "class='ligne_paire'"}><td><input class='o_otherHfInputAlt' data-idx='${i}' value='${v}' size='15'/> cm²</td><td class='right o_otherHfMin' data-idx='${i}'>—</td><td class='right o_otherHfAvg' data-idx='${i}'>—</td><td class='right o_otherHfMax' data-idx='${i}'>—</td><td class='right o_otherHfVar' data-idx='${i}'>—</td></tr>`;
+                        return `<tr ${i % 2 ? "class='ligne_paire'" : ""}><td><input class='o_otherHfInputAlt' data-idx='${i}' value='${v}' size='15'/> cm²</td><td class='right o_otherHfMin' data-idx='${i}'>—</td><td class='right o_otherHfAvg' data-idx='${i}'>—</td><td class='right o_otherHfMax' data-idx='${i}'>—</td><td class='right o_otherHfVar' data-idx='${i}'>—</td></tr>`;
                       })
                       .join("")}
                   </tbody>
