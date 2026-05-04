@@ -97,7 +97,8 @@ class PageRessource {
 			<tr><td>Difficulté</td><td><select id='o_chasseDiff' title='Ratio (Attaque de votre Armée) / (Difficulté de chasse) : détermine les pertes et taux de réplique de votre chasse...'><option value='1' class='black'>${RATIO_CHASSE[0].toFixed(1)} → Rep10% : ${REPLIQUE_CHASSE[0] >= 0.2 ? (100 * REPLIQUE_CHASSE[0]).toFixed(2) + "%" : "< 20%"}</option><option value='2' class='black'>${RATIO_CHASSE[1].toFixed(1)} → Rep10% : ${REPLIQUE_CHASSE[1] >= 0.2 ? (100 * REPLIQUE_CHASSE[1]).toFixed(2) + "%" : "< 20%"}</option><option value='3' class='black'>${RATIO_CHASSE[2].toFixed(1)} → Rep10% : ${REPLIQUE_CHASSE[2] >= 0.2 ? (100 * REPLIQUE_CHASSE[2]).toFixed(2) + "%" : "< 20%"}</option><option value='4' class='black'>${RATIO_CHASSE[3].toFixed(1)} → Rep10% : ${REPLIQUE_CHASSE[3] >= 0.2 ? (100 * REPLIQUE_CHASSE[3]).toFixed(2) + "%" : "< 20%"}</option><option value='5' class='red'>${RATIO_CHASSE[4].toFixed(1)} → Rep10% : ${REPLIQUE_CHASSE[4] >= 0.2 ? (100 * REPLIQUE_CHASSE[4]).toFixed(2) + "%" : "< 20%"}</option><option value='6' class='red'>${RATIO_CHASSE[5].toFixed(1)} → Rep10% : ${REPLIQUE_CHASSE[5] >= 0.2 ? (100 * REPLIQUE_CHASSE[5]).toFixed(2) + "%" : "< 20%"}</option><option value='6.5' class='orange'>${RATIO_CHASSE[6].toFixed(1)} → Rep10% : ${REPLIQUE_CHASSE[6] >= 0.2 ? (100 * REPLIQUE_CHASSE[6]).toFixed(2) + "%" : "< 20%"}</option><option value='7' class='orange'>${RATIO_CHASSE[7].toFixed(1)} → Rep10% : ${REPLIQUE_CHASSE[7] >= 0.2 ? (100 * REPLIQUE_CHASSE[7]).toFixed(2) + "%" : "< 20%"}</option><option value='7.5' class='orange'>${RATIO_CHASSE[8].toFixed(1)} → Rep10% : ${REPLIQUE_CHASSE[8] >= 0.2 ? (100 * REPLIQUE_CHASSE[8]).toFixed(2) + "%" : "< 20%"}</option><option value='8' class='green'>${RATIO_CHASSE[9].toFixed(1)} → Rep10% : ${REPLIQUE_CHASSE[9] >= 0.2 ? (100 * REPLIQUE_CHASSE[9]).toFixed(2) + "%" : "< 20%"}</option><option value='8.5' class='green'>${RATIO_CHASSE[10].toFixed(1)} → Rep10% : ${REPLIQUE_CHASSE[10] >= 0.2 ? (100 * REPLIQUE_CHASSE[10]).toFixed(2) + "%" : "< 20%"}</option><option value='9' class='green' selected>${RATIO_CHASSE[11].toFixed(1)} → Rep10% : ${REPLIQUE_CHASSE[11] >= 0.2 ? (100 * REPLIQUE_CHASSE[11]).toFixed(2) + "%" : "< 20%"}</option><option value='10' class='green'>${RATIO_CHASSE[12].toFixed(1)} → Rep10% : ${REPLIQUE_CHASSE[12] >= 0.2 ? (100 * REPLIQUE_CHASSE[12]).toFixed(2) + "%" : "< 20%"}</option></select></td><td></td></tr>
 			<tr class='ligne_paire'><td>Garder des JSN</td><td><input value='0' size='21' id='o_chasseJSN'/></td><td>max : ${numeral(this._armee.nbrJSN).format()}</td></tr>
 			<tr><td>Intervalle entre les chasses</td><td><select id='o_chasseInt' title='Intervalle entre les chasses'><option value='2' selected>2 secondes</option><option value='30'>30 secondes</option><option value='60'>1 minute</option><option value='120'>2 minutes</option></select></td><td></td></tr>
-			<tr class='ligne_paire'><td colspan='3'><em>Basé sur le lanceur de <a href='http://alliancead2.free.fr/HuntingSimulator.html' class='violet'>Calystene</a></em></td></tr>
+			<tr class='ligne_paire'><td>Date d'arrivée souhaitée</td><td><input value='' size='21' id='o_chasseDateArrivee' placeholder='—'/></td><td>Terrain par chasse suggéré : <span id='o_chasseDateArriveeTdc' class='gras'>—</span> <button type='button' id='o_chasseDateArriveeApply' disabled>Appliquer</button></td></tr>
+			<tr><td colspan='3'><em>Basé sur le lanceur de <a href='http://alliancead2.free.fr/Outils/Repository/HuntSimv2.00/Simulator_2.00.00.html' class='violet'>Calystene</a></em></td></tr>
 			</table>
             <br/><div id='o_simuChasse'><table id='o_simulationChasse' cellspacing=0 class='o_maxWidth'></table></div>
             <button class='o_button o_marginT15 f_success' type='button' id='o_chasseEnvoyer'>Envoyer</button>
@@ -110,14 +111,65 @@ class PageRessource {
 			<tr class='ligne_paire'><td>Rentabilité</td><td>:</td><td id='o_chasseRentabilite'></td></tr>
 			<tr><td>Difficulté</td><td>:</td><td id='o_chasseRefDiff'></td></tr>
 			<tr class='ligne_paire'><td>Perte estimé</td><td>:</td><td id='o_chassePerte'></td></tr>
-			</table></div>`);
+			</table>
+            <div class='o_marginT15'>
+              <a id='o_chassePertesTdcToggle' class='cursor souligne'>▼ Pertes selon le niveau de TdC à l'arrivée ▼</a>
+              <div id='o_chassePertesTdc' style='display:none' class='o_marginT15'>
+                <table id='o_chassePertesTdcTable' class='o_maxWidth' cellspacing='0'>
+                  <thead>
+                    <tr class='gras'>
+                      <td>TdC à l'arrivée</td>
+                      <td class='right'>Pertes Min</td>
+                      <td class='right'>Pertes Avg</td>
+                      <td class='right'>Pertes Max</td>
+                      <td class='right'>Variation moy.</td>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr class='gras'><td><span id='o_otherHfRefValue'>—</span> cm² <span class='small'>(Terrain à l'arrivée)</span></td><td class='right o_otherHfMin' data-idx='0'>—</td><td class='right o_otherHfAvg' data-idx='0'>—</td><td class='right o_otherHfMax' data-idx='0'>—</td><td class='right'>—</td></tr>
+                    ${[
+                      1000000, 5000000, 10000000, 15000000, 20000000, 30000000, 40000000, 50000000,
+                      75000000, 100000000,
+                    ]
+                      .map((v, k) => {
+                        let i = k + 1;
+                        return `<tr ${i % 2 ? "" : "class='ligne_paire'"}><td><input class='o_otherHfInputAlt' data-idx='${i}' value='${v}' size='15'/> cm²</td><td class='right o_otherHfMin' data-idx='${i}'>—</td><td class='right o_otherHfAvg' data-idx='${i}'>—</td><td class='right o_otherHfMax' data-idx='${i}'>—</td><td class='right o_otherHfVar' data-idx='${i}'>—</td></tr>`;
+                      })
+                      .join("")}
+                  </tbody>
+                </table>
+              </div>
+            </div></div>`);
     $("#o_chasseTDCDep").spinner({ min: 0, numberFormat: "i" });
-    $("#o_chasseJSN").spinner({ min: 0, max: this._armee.nbrJSN, numberFormat: "i" });
-    $("#o_chasseTDCRep").spinner({ min: 1, numberFormat: "i", disabled: true });
-    $("#o_chasseNbr").spinner({ min: 1, max: this._nbChasse, numberFormat: "i", disabled: true });
+    $("#o_chasseJSN").spinner({
+      min: 0,
+      max: this._armee.nbrJSN,
+      numberFormat: "i",
+    });
+    $("#o_chasseTDCRep").spinner({
+      min: 1,
+      numberFormat: "i",
+      disabled: true,
+    });
+    $("#o_chasseNbr").spinner({
+      min: 1,
+      max: this._nbChasse,
+      numberFormat: "i",
+      disabled: true,
+    });
     $("#o_chasseDiff, #o_chasseInt").outerWidth($("#o_chasseTDCDep").parent().width() + 4);
     $("#o_chasseDiff, #o_chasseInt").outerHeight($("#o_chasseTDCDep").parent().height());
     $("#o_chasseDiff").css("color", "green");
+    $("#o_chasseDateArrivee").datetimepicker({
+      ...DATEPICKER_OPTION,
+      dateFormat: "dd-mm-yy",
+      timeFormat: "HH:mm",
+      timeText: "Horaire",
+      hourText: "Heure",
+      minuteText: "Minute",
+      minDate: 0,
+    });
+    $(".o_otherHfInputAlt").spinner({ min: 0, numberFormat: "i" });
     // Completion des valeurs
     this.preparerChasse();
     // Event
@@ -140,22 +192,8 @@ class PageRessource {
         this.preparerChasse();
       }
     });
-    $("#o_chasseDiff").change((e) => {
-      let value = parseFloat(e.currentTarget.value);
-      switch (true) {
-        case value <= 4:
-          $(e.currentTarget).css("color", "black");
-          break;
-        case value > 4 && value <= 6:
-          $(e.currentTarget).css("color", "red");
-          break;
-        case value > 6 && value <= 7.5:
-          $(e.currentTarget).css("color", "orange");
-          break;
-        default:
-          $(e.currentTarget).css("color", "green");
-          break;
-      }
+    $("#o_chasseDiff").change(() => {
+      this._majCouleurDiff();
       this.preparerChasse();
     });
     $("#o_chasseJSN").on("input spin", (e, ui) => {
@@ -164,25 +202,49 @@ class PageRessource {
       this._armee.setJSN(nombre);
       this.preparerChasse();
     });
+    $("#o_chasseDateArrivee").on("change", () => this.calculerTdcDate());
+    $("#o_chasseDateArriveeApply").click(() => {
+      let tdc = $("#o_chasseDateArrivee").data("tdc");
+      if (tdc == null) return;
+      if ($("#o_chasseTDCRepAuto").is(":checked")) {
+        $("#o_chasseTDCRepAuto").prop("checked", false);
+        $("#o_chasseTDCRep").spinner("enable");
+      }
+      $("#o_chasseTDCRep").spinner("value", tdc);
+      this.preparerChasse();
+    });
+    $("#o_chassePertesTdcToggle").click(() => {
+      let $div = $("#o_chassePertesTdc");
+      $div.toggle();
+      let arrow = $div.is(":visible") ? "▲" : "▼";
+      $("#o_chassePertesTdcToggle").text(
+        `${arrow} Pertes selon le niveau de TdC à l'arrivée ${arrow}`,
+      );
+    });
+    $(".o_otherHfInputAlt").on("input spin", () => this.mettreAjourPertesTdc());
     // Lancement des chasses
     $("#o_chasseEnvoyer").click((e) => {
       if (this._armee.getSommeUnite()) {
         let terrainChasse = $("#o_chasseTDCRep").spinner("value"),
           nbChasse = $("#o_chasseNbr").spinner("value"),
           intervalle = $("#o_chasseInt").val() * 1000;
-        $.ajax({ url: "http://" + Utils.serveur + ".fourmizzz.fr/AcquerirTerrain.php" }).then(
-          (data) => {
-            let parsed = Utils.parseHtml(data);
-            this._armee.envoyerChasse(
-              terrainChasse,
-              nbChasse,
-              0,
-              intervalle,
-              parsed.find("#t:last").attr("name") + "=" + parsed.find("#t:last").attr("value"),
-            );
-          },
-        );
-      } else $.toast({ ...TOAST_ERROR, text: "Vous n'avez pas d'armée à envoyer." });
+        $.ajax({
+          url: "http://" + Utils.serveur + ".fourmizzz.fr/AcquerirTerrain.php",
+        }).then((data) => {
+          let parsed = Utils.parseHtml(data);
+          this._armee.envoyerChasse(
+            terrainChasse,
+            nbChasse,
+            0,
+            intervalle,
+            parsed.find("#t:last").attr("name") + "=" + parsed.find("#t:last").attr("value"),
+          );
+        });
+      } else
+        $.toast({
+          ...TOAST_ERROR,
+          text: "Vous n'avez pas d'armée à envoyer.",
+        });
       return false;
     });
     return this;
@@ -219,7 +281,95 @@ class PageRessource {
         simu.ratioRef,
         simu.iTabPerte,
       );
+      // Sync la dropdown Difficulté sur le ratio réellement atteignable
+      // (calculRefRatio peut renvoyer un ratio plus bas si l'armée ne peut
+      // pas tenir celui sélectionné par l'utilisateur).
+      let computed = parseFloat(simu.ratioRef).toString();
+      if ($("#o_chasseDiff").val() !== computed) {
+        $("#o_chasseDiff").val(computed);
+        this._majCouleurDiff();
+      }
+      this.mettreAjourPertesTdc();
     }
+  }
+  /**
+   * Met à jour la couleur de la dropdown Difficulté selon le seuil de ratio.
+   *
+   * @private
+   * @method _majCouleurDiff
+   */
+  _majCouleurDiff() {
+    let value = parseFloat($("#o_chasseDiff").val()),
+      color = value <= 4 ? "black" : value <= 6 ? "red" : value <= 7.5 ? "orange" : "green";
+    $("#o_chasseDiff").css("color", color);
+  }
+  /**
+   * Calcule le terrain par chasse suggéré pour qu'une chasse parte maintenant et
+   * revienne à la date saisie. Inverse de `temps = (Utils.terrain + tdc) × 0.9^niveau`
+   * (ligne 286 de majRecapitulatif).
+   *
+   * @private
+   * @method calculerTdcDate
+   */
+  calculerTdcDate() {
+    let raw = $("#o_chasseDateArrivee").val(),
+      reset = (msg) => {
+        $("#o_chasseDateArrivee").removeData("tdc");
+        $("#o_chasseDateArriveeTdc").text(msg || "—");
+        $("#o_chasseDateArriveeApply").prop("disabled", true);
+      };
+    if (!raw) return reset();
+    let target = moment(raw, "DD-MM-YYYY HH:mm");
+    if (!target.isValid()) return reset();
+    let secondsLeft = target.diff(moment(), "seconds");
+    if (secondsLeft <= 0) return reset("date passée");
+    let niveau = monProfil.niveauRecherche[5],
+      tdc = Math.round(secondsLeft / Math.pow(0.9, niveau) - Utils.terrain);
+    if (tdc <= 0) return reset("trop court");
+    $("#o_chasseDateArrivee").data("tdc", tdc);
+    $("#o_chasseDateArriveeTdc").text(numeral(tdc).format() + " cm²");
+    $("#o_chasseDateArriveeApply").prop("disabled", false);
+  }
+  /**
+   * Met à jour la table "Pertes selon TdC à l'arrivée" en réutilisant les paramètres
+   * courants (nb chasses, terrain par chasse, difficulté) mais en faisant varier
+   * uniquement le tdcDep sur les valeurs saisies par l'utilisateur. Affiche aussi
+   * la variation moyenne par rapport au tdcDep courant.
+   *
+   * @private
+   * @method mettreAjourPertesTdc
+   */
+  mettreAjourPertesTdc() {
+    let nb = $("#o_chasseNbr").spinner("value"),
+      hf = $("#o_chasseTDCRep").spinner("value"),
+      diff = parseFloat($("#o_chasseDiff").val()),
+      tdcCourant = $("#o_chasseTDCDep").spinner("value"),
+      ratioIdx = RATIO_CHASSE.indexOf(diff);
+    if (!nb || !hf || ratioIdx < 0) return;
+    let curDDiff = this._armee.calculDifficulte(tdcCourant, nb, hf),
+      curPertes = this._armee.calculPerte(ratioIdx, curDDiff);
+    // Ligne 0 = référence (TdC courant, miroir live de #o_chasseTDCDep)
+    $("#o_otherHfRefValue").text(numeral(tdcCourant).format());
+    $(".o_otherHfMin[data-idx='0']").text(numeral(Math.round(curPertes.MIN)).format());
+    $(".o_otherHfAvg[data-idx='0']").text(numeral(Math.round(curPertes.AVG)).format());
+    $(".o_otherHfMax[data-idx='0']").text(numeral(Math.round(curPertes.MAX)).format());
+    // Lignes 1..10 = alternatives, variation calculée vs ligne 0
+    $(".o_otherHfInputAlt").each((_, el) => {
+      let $el = $(el),
+        i = $el.data("idx"),
+        tdc = $el.spinner("value") || 0,
+        dDiff = this._armee.calculDifficulte(tdc, nb, hf),
+        p = this._armee.calculPerte(ratioIdx, dDiff);
+      $(`.o_otherHfMin[data-idx='${i}']`).text(numeral(Math.round(p.MIN)).format());
+      $(`.o_otherHfAvg[data-idx='${i}']`).text(numeral(Math.round(p.AVG)).format());
+      $(`.o_otherHfMax[data-idx='${i}']`).text(numeral(Math.round(p.MAX)).format());
+      let varAvg = curPertes.AVG > 0 ? ((p.AVG - curPertes.AVG) / curPertes.AVG) * 100 : 0,
+        sign = varAvg >= 0 ? "+" : "",
+        cls = varAvg > 0.5 ? "red" : varAvg < -0.5 ? "green" : "";
+      $(`.o_otherHfVar[data-idx='${i}']`).html(
+        `<span class='${cls}'>${sign}${varAvg.toFixed(1)} %</span>`,
+      );
+    });
   }
   /**
    * Affiche la répartition des unités pour les chasses.
@@ -285,7 +435,8 @@ class PageRessource {
       (Utils.terrain + terrainChasse) * Math.pow(0.9, monProfil.niveauRecherche[5]),
     );
     $("#o_chasseTemps").text(Utils.intToTime(temps));
-    $("#o_chasseRetour").text(Utils.roundMinute(temps).format("D MMM YYYY à HH[h]mm"));
+    let dateLong = Utils.roundMinute(temps).format("dddd D MMM YYYY [à] HH[h]mm");
+    $("#o_chasseRetour").text(dateLong.charAt(0).toUpperCase() + dateLong.slice(1));
     $("#o_chasseRentabilite").text(
       numeral(Math.round(((nbChasse * terrainChasse) / temps) * 86400)).format() + " cm² / jour",
     );
