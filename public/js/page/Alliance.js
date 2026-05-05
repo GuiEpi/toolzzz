@@ -493,11 +493,14 @@ class PageAlliance {
       const [i, j] = key.split("-").map(Number);
       return [spots[i], spots[j]];
     });
-    const lineData = [];
+    // Split en deux séries : liens vers moi (vert) vs entre autres membres (gris)
+    const myLineData = [];
+    const otherLineData = [];
     edges.forEach(([a, b]) => {
-      lineData.push([a.x, a.y]);
-      lineData.push([b.x, b.y]);
-      lineData.push([null, null]);
+      const target = a.isMyGroup || b.isMyGroup ? myLineData : otherLineData;
+      target.push([a.x, a.y]);
+      target.push([b.x, b.y]);
+      target.push([null, null]);
     });
     // Stats
     const allDists = [];
@@ -611,12 +614,26 @@ class PageAlliance {
         },
       },
       series: [
+        // Liens entre autres membres (gris discret, en arrière-plan)
         {
           type: "line",
           name: "Liens",
-          data: lineData,
+          data: otherLineData,
           color: "rgba(120, 140, 160, 0.35)",
           lineWidth: 1,
+          marker: { enabled: false },
+          enableMouseTracking: false,
+          states: { hover: { enabled: false } },
+          showInLegend: false,
+          animation: false,
+        },
+        // Liens vers moi (vert plus marqué, par-dessus les autres)
+        {
+          type: "line",
+          name: "Liens vers toi",
+          data: myLineData,
+          color: "rgba(39, 174, 96, 0.7)",
+          lineWidth: 1.5,
           marker: { enabled: false },
           enableMouseTracking: false,
           states: { hover: { enabled: false } },
