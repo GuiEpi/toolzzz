@@ -59,7 +59,7 @@ class Boite {
       );
       $("#" + this._id)
         .css({ top: Math.random() * 100 + 50 + "px", left: Math.random() * 250 + 100 + "px" })
-        .draggable({ handle: ".o_titre", stack: "div" });
+        .draggable({ handle: ".o_titre", stack: "div", containment: "window" });
       bCreate = true;
     }
     $("#" + this._id).show(EFFET[monProfil.parametre["boiteShow"].valeur].toLowerCase(), () => {
@@ -67,6 +67,18 @@ class Boite {
         "background-color": monProfil.parametre["couleur1"].valeur,
         "border-color": monProfil.parametre["couleur3"].valeur,
       });
+      if (bCreate) {
+        // À la 1ʳᵉ apparition, si l'aléatoire de top/left a placé la boîte hors
+        // viewport (cas mobile / petit écran), on la replace dans la fenêtre.
+        const $box = $("#" + this._id);
+        const rect = $box[0].getBoundingClientRect();
+        if (rect.right > window.innerWidth) {
+          $box.css("left", Math.max(0, window.innerWidth - rect.width - 10) + "px");
+        }
+        if (rect.bottom > window.innerHeight) {
+          $box.css("top", Math.max(0, window.innerHeight - rect.height - 10) + "px");
+        }
+      }
     });
     return bCreate;
   }

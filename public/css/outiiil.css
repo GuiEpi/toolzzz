@@ -417,6 +417,8 @@ select:required {
   display: block;
   font-size: 1.5em;
   margin-bottom: 10px;
+  touch-action: none;
+  user-select: none;
 }
 .o_titre:hover {
   cursor: all-scroll;

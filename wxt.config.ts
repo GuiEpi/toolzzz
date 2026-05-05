@@ -37,6 +37,7 @@ export default defineConfig({
         js: [
           "js/lib/jquery_3.2.1.js",
           "js/lib/jquery-ui_1.12.1.js",
+          "js/lib/jquery-ui-touch-punch_0.2.3.js",
           "js/lib/jquery-datetimepicker_1.6.3.js",
           "js/lib/jquery-toast_1.3.1.js",
           "js/lib/globalize_0.1.1.js",
