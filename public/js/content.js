@@ -498,6 +498,59 @@ const DATEPICKER_OPTION = {
         $(document).on("click", "#o_changelogLink", markSeen);
       }
 
+      // Enrichit les tooltips Nourriture / Matériaux du bandeau d'info avec la capacité
+      // max estimée et la place libre — répond directement à "il me reste combien pour
+      // un convoi". Le serveur expose juste le % rempli (arrondi entier) et la valeur
+      // courante ; on remonte le max via current / (percent/100), précis à ±0.5%.
+      //
+      // Approche : on vide le `title` du td (le tooltip natif de la page lit ce title
+      // via une content function par défaut, qui retournera donc une chaîne vide → pas
+      // de tooltip rendu côté page) et on attache notre propre popover sur mouseenter
+      // pour afficher le HTML riche. Tout reste dans l'isolated world, pas d'injection
+      // de script main-world.
+      // On réutilise les classes du widget jQuery UI tooltip + warning-tooltip de la
+      // page pour hériter automatiquement de leur style (couleur, bordure, ombre).
+      const $tip = $(
+        `<div id='o_boiteInfoTooltip' class='ui-tooltip ui-corner-all ui-widget-shadow ui-widget ui-widget-content warning-tooltip' role='tooltip' style='position:absolute;display:none;z-index:99999;pointer-events:none;'><div class='ui-tooltip-content'></div></div>`,
+      ).appendTo("body");
+      $(".tooltip_boite_info").each(function () {
+        const $td = $(this);
+        const original = $td.attr("title") || $td.attr("data-tooltip-original-title");
+        if (!original || !/rempli à \d+\s*%/.test(original)) return;
+        const $val = $td.find(".texte_ligne_boite_info");
+        if (!$val.length) return;
+        const value = numeral($val.text().trim()).value();
+        const match = original.match(/rempli à (\d+)\s*%/);
+        if (!match || !value) return;
+        const percent = parseInt(match[1], 10);
+        if (!percent) return;
+        const max = Math.round(value / (percent / 100));
+        const restant = Math.max(0, max - value);
+        const type = /nourriture/i.test(original)
+          ? "Nourriture"
+          : /matériaux|materiaux/i.test(original)
+            ? "Matériaux"
+            : "Stock";
+        const html = `<b>${type}</b><br/>Actuel : ${numeral(value).format()}<br/>Maximum : ${numeral(max).format()} (${percent}%)<br/><b style="color:#27ae60">Place libre : ${numeral(restant).format()}</b>`;
+        // Vide le title pour neutraliser le tooltip jQuery UI de la page (sa content
+        // fn par défaut retourne attr("title") = "" → pas de rendu).
+        $td.attr("title", "");
+        $td.attr("data-tooltip-original-title", "");
+        $td
+          .on("mouseenter.toolzzzInfo", () => {
+            $tip.find(".ui-tooltip-content").html(html);
+            $tip.show();
+            const offset = $td.offset();
+            $tip.css({
+              top: offset.top + $td.outerHeight() / 2 - $tip.outerHeight() / 2,
+              left: offset.left + $td.outerWidth() + 10,
+            });
+          })
+          .on("mouseleave.toolzzzInfo", () => {
+            $tip.hide();
+          });
+      });
+
       let uri = location.pathname,
         page = null;
       // Routing
