@@ -476,6 +476,28 @@ const DATEPICKER_OPTION = {
           );
       }
 
+      // Notification "Nouveautés" — toast sticky au 1er chargement après une mise à jour.
+      // hideAfter: false → reste visible tant que l'user ne ferme pas / ne clique pas le lien.
+      // La version est marquée vue dans les deux cas (close X ou clic lien) pour ne pas
+      // ré-apparaître. Si la clé est absente (install avant cette feature), on montre quand
+      // même : un nouvel utilisateur a aussi intérêt à voir le changelog une fois.
+      const LAST_SEEN_VERSION_KEY = "outiiil_lastSeenVersion";
+      if (localStorage.getItem(LAST_SEEN_VERSION_KEY) !== VERSION) {
+        const releaseUrl = `https://github.com/GuiEpi/toolzzz/releases/tag/v${VERSION}`;
+        const markSeen = () => localStorage.setItem(LAST_SEEN_VERSION_KEY, VERSION);
+        $.toast({
+          heading: "Toolzzz mis à jour",
+          text: `Nouvelle version <b>v${VERSION}</b>. <a href='${releaseUrl}' target='_blank' rel='noopener' id='o_changelogLink'>Voir les nouveautés</a>`,
+          hideAfter: false,
+          allowToastClose: true,
+          showHideTransition: "slide",
+          position: { top: 30, right: 100 },
+          icon: "info",
+          afterHidden: markSeen,
+        });
+        $(document).on("click", "#o_changelogLink", markSeen);
+      }
+
       let uri = location.pathname,
         page = null;
       // Routing
