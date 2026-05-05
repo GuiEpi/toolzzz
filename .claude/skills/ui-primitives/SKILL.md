@@ -34,7 +34,33 @@ Inventaire des classes CSS et patterns réutilisables pour rester cohérent visu
 ### Game-specific (du natif Fourmizzz, à éviter sauf si vraiment nécessaire)
 
 - `.ligne_paire` — fond alterné natif
-- `.boite_amelioration` `.simulateur` `.centre` — wrappers de boîtes natives
+- `.boite_amelioration` `.simulateur` `.centre` — wrappers de boîtes natives (cf. section « Conteneur de widget injecté » plus bas)
+
+## Conteneur de widget injecté dans une page
+
+Pour un widget Toolzzz qui s'ajoute en bas (ou au milieu) d'une page Fourmizzz native — typiquement injecté via `$("#alliance").after(...)` ou `$("#cadre").append(...)` — utiliser le **même pattern que `Lanceur de Chasses`** (cf. `public/js/page/Ressource.js:92`) pour s'intégrer visuellement comme une vraie « boîte » du jeu :
+
+```html
+<br />
+<div id="o_<feature>" class="boite_amelioration simulateur centre">
+  <h2>Titre du widget</h2>
+  <p class="reduce">Description courte (optionnelle).</p>
+  ...contenu (formulaire, tableau, chart, ...) ...
+</div>
+```
+
+Détails :
+
+- **`<div>` et pas `<fieldset>`** — fieldset donne le rendu HTML par défaut du browser (border grise + legend), qui sort du style Fourmizzz.
+- **`boite_amelioration`** = classe native Fourmizzz, donne le fond bois et la bordure ocre.
+- **`simulateur centre`** = overrides Toolzzz par-dessus (centrage, padding interne).
+- **`<h2>` pour le titre** — pas `<legend>` (réservé aux fieldsets), pas `<span class='titre'>` (réservé aux tables `boite_amelioration` natives type `<table>`).
+- **`<br/>` avant le `<div>`** — espace visuellement de la boîte précédente, comme le fait Fourmizzz nativement entre ses sections.
+
+⚠️ Distinction importante :
+
+- Pour un **widget injecté dans une page** (= `public/js/page/*.js`), utiliser ce pattern.
+- Pour une **Boite flottante** (= `public/js/boite/*.js`, fenêtre draggable affichée via `BoiteX.afficher()`), c'est la classe `Boite` qui gère le wrapper — passer juste le contenu via le constructeur `super(id, titre, html)`.
 
 ## Tableaux — pattern recommandé
 
