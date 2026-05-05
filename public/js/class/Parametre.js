@@ -139,14 +139,9 @@ class Parametre {
           min: 0,
           classes: { "ui-spinner": "o_number ui-corner-all" },
           numberFormat: "i",
-          stop: (event, ui) => {
-            this._valeur = numeral(event.target.value).value();
-            this.sauvegarde();
-          },
         });
-        $("#" + this._id).on("input", (e, ui) => {
-          this._valeur = numeral(e.currentTarget.value).value();
-          $(e.currentTarget).spinner("value", this._valeur);
+        $("#" + this._id).on("spinchange spinstop", (e) => {
+          this._valeur = $(e.currentTarget).spinner("value") ?? 0;
           this.sauvegarde();
         });
         break;
