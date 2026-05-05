@@ -450,6 +450,7 @@ class PageAlliance {
         <div class='centre o_marginT15'>
           <button id='o_carteAllianceRefresh' class='o_button f_info'>Charger / Actualiser</button>
           <button id='o_carteAllianceExport' class='o_button f_success' style='margin-left:8px;'>Exporter en image</button>
+          <button id='o_carteAllianceExportForum' class='o_button f_success' style='margin-left:8px;'>Exporter pour le forum</button>
           <span id='o_carteAllianceStatus' class='reduce' style='margin-left:12px;color:#666;'></span>
         </div>
         <div id='o_carteAllianceChart' style='height:800px;margin-top:15px;display:none;'></div>
@@ -467,6 +468,7 @@ class PageAlliance {
     }
     $("#o_carteAllianceRefresh").click(() => this._actualiserCarte());
     $("#o_carteAllianceExport").click(() => this._exporterCartePng());
+    $("#o_carteAllianceExportForum").click(() => this._exporterCarteForumPng());
     return this;
   }
   /**
@@ -616,6 +618,166 @@ class PageAlliance {
       $.toast({ ...TOAST_ERROR, text: "Erreur lors du chargement du SVG pour l'export." });
     };
     img.src = url;
+  }
+  /**
+   * Génère un PNG simple dessiné sur canvas, avec les vraies proportions du jeu
+   * (1 case = 5 unités X × 50 unités Y, donc pxPerY = pxPerX / 10). Image étroite
+   * et haute, sans grille ni axes — pensée pour partager dans le forum d'alliance.
+   * Utilise directement le cache des coords (pas besoin que le chart Highcharts
+   * soit rendu).
+   *
+   * @private
+   * @method _exporterCarteForumPng
+   */
+  _exporterCarteForumPng() {
+    const cacheKey = `outiiil_carteAlliance_${Utils.serveur}_${Utils.alliance}`;
+    let cached = null;
+    try {
+      cached = JSON.parse(localStorage.getItem(cacheKey));
+    } catch (e) {
+      cached = null;
+    }
+    if (!cached || !cached.members || !cached.members.length) {
+      $.toast({
+        ...TOAST_WARNING,
+        text: "Charge d'abord la carte avant de pouvoir l'exporter pour le forum.",
+      });
+      return;
+    }
+    const members = cached.members;
+    const xs = members.map((m) => m.x);
+    const ys = members.map((m) => m.y);
+    const xMin = Math.min(...xs);
+    const xMax = Math.max(...xs);
+    const yMin = Math.min(...ys);
+    const yMax = Math.max(...ys);
+    // Échelle : 1 case du jeu = 5 X × 50 Y → pxPerY = pxPerX / 10 pour rendre les
+    // cellules visuellement carrées (proportions réelles).
+    const PX_PER_X = 14;
+    const PX_PER_Y = PX_PER_X / 10;
+    // Padding suffisant pour les graduations d'axes (X en haut, Y à gauche)
+    const PAD_LEFT = 38;
+    const PAD_TOP = 26;
+    const PAD_BOTTOM = 16;
+    const PAD_RIGHT_MIN = 16;
+    const LABEL_LINE_H = 13;
+    const LABEL_GAP = 8;
+    // Pré-mesure des largeurs de label sur un canvas temporaire pour calculer les
+    // collisions avant de dimensionner le vrai canvas.
+    const tmp = document.createElement("canvas").getContext("2d");
+    tmp.font = "bold 11px sans-serif";
+    // Tri haut→bas, gauche→droite : algo glouton qui décale les labels vers le bas
+    // dès qu'ils chevaucheraient un label déjà placé.
+    const sorted = [...members].sort((a, b) => a.y - b.y || a.x - b.x);
+    const placed = [];
+    const positions = sorted.map((m) => {
+      const dotX = (m.x - xMin) * PX_PER_X + PAD_LEFT;
+      const dotY = (m.y - yMin) * PX_PER_Y + PAD_TOP;
+      const labelW = tmp.measureText(m.pseudo).width;
+      const labelX = dotX + LABEL_GAP;
+      let labelY = dotY;
+      while (
+        placed.some(
+          (p) =>
+            labelX < p.x + p.w + 4 &&
+            labelX + labelW + 4 > p.x &&
+            Math.abs(labelY - p.y) < LABEL_LINE_H,
+        )
+      ) {
+        labelY += LABEL_LINE_H;
+      }
+      placed.push({ x: labelX, y: labelY, w: labelW });
+      return { m, dotX, dotY, labelX, labelY, labelW };
+    });
+    // Dimensions du canvas en fonction des positions finales (labels potentiellement
+    // décalés vers le bas en cas de cluster dense). On étend aussi pour couvrir le
+    // tick supérieur arrondi (ceil) afin que le 50 / 1900 / etc. soit toujours visible.
+    const maxRight = Math.max(...positions.map((p) => p.labelX + p.labelW));
+    const maxBottom = Math.max(...positions.map((p) => Math.max(p.labelY + 6, p.dotY + 4)));
+    const yRange = yMax - yMin;
+    const yStep = yRange > 1500 ? 200 : yRange > 500 ? 100 : 50;
+    const xStep = 5;
+    const xTickEnd = Math.ceil(xMax / xStep) * xStep;
+    const yTickEnd = Math.ceil(yMax / yStep) * yStep;
+    const tickRight = (xTickEnd - xMin) * PX_PER_X + PAD_LEFT;
+    const tickBottom = (yTickEnd - yMin) * PX_PER_Y + PAD_TOP;
+    const W = Math.max(220, Math.max(maxRight, tickRight) + PAD_RIGHT_MIN);
+    const H = Math.max(220, Math.max(maxBottom, tickBottom) + PAD_BOTTOM);
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(W);
+    canvas.height = Math.round(H);
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Graduations d'axes — yStep et xStep déjà calculés plus haut.
+    ctx.strokeStyle = "#eee";
+    ctx.lineWidth = 0.5;
+    ctx.fillStyle = "#888";
+    ctx.font = "10px sans-serif";
+    // Grille verticale (X) + labels en haut. Ceil sur la borne sup pour inclure 50, etc.
+    ctx.textAlign = "center";
+    ctx.textBaseline = "alphabetic";
+    const xGridStart = Math.floor(xMin / xStep) * xStep;
+    for (let x = xGridStart; x <= xTickEnd; x += xStep) {
+      if (x < xMin) continue;
+      const px = (x - xMin) * PX_PER_X + PAD_LEFT;
+      ctx.beginPath();
+      ctx.moveTo(px, PAD_TOP);
+      ctx.lineTo(px, canvas.height - PAD_BOTTOM);
+      ctx.stroke();
+      ctx.fillText(x.toString(), px, PAD_TOP - 6);
+    }
+    // Grille horizontale (Y) + labels à gauche. Ceil sur la borne sup pour inclure 1900, etc.
+    ctx.textAlign = "right";
+    ctx.textBaseline = "middle";
+    const yGridStart = Math.floor(yMin / yStep) * yStep;
+    for (let y = yGridStart; y <= yTickEnd; y += yStep) {
+      if (y < yMin) continue;
+      const py = (y - yMin) * PX_PER_Y + PAD_TOP;
+      ctx.beginPath();
+      ctx.moveTo(PAD_LEFT, py);
+      ctx.lineTo(canvas.width - PAD_RIGHT_MIN, py);
+      ctx.stroke();
+      ctx.fillText(y.toString(), PAD_LEFT - 4, py);
+    }
+    ctx.font = "bold 11px sans-serif";
+    ctx.textBaseline = "middle";
+    ctx.textAlign = "left";
+    for (const pos of positions) {
+      const { m, dotX, dotY, labelX, labelY } = pos;
+      // Connecteur fin gris si le label a été décalé pour éviter une collision —
+      // sinon on ne sait plus quel label appartient à quel dot.
+      if (Math.abs(labelY - dotY) > 1) {
+        ctx.strokeStyle = "#bbb";
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(dotX + 4, dotY);
+        ctx.lineTo(labelX - 1, labelY);
+        ctx.stroke();
+      }
+      // Toutes les fourmilières en rouge — l'image est destinée au forum (partage),
+      // pas de raison de mettre en évidence l'auteur.
+      ctx.fillStyle = "#c0392b";
+      ctx.beginPath();
+      ctx.arc(dotX, dotY, 4, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.fillStyle = "#000";
+      ctx.fillText(m.pseudo, labelX, labelY);
+    }
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        $.toast({ ...TOAST_ERROR, text: "Erreur lors de la génération du PNG forum." });
+        return;
+      }
+      const date = new Date().toISOString().slice(0, 10);
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `toolzzz-carte-forum-${Utils.alliance}-${date}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+    }, "image/png");
   }
   /**
    * Affiche le timestamp en texte humain à côté du bouton.
