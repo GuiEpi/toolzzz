@@ -103,9 +103,13 @@ class PageAttaquer {
     $("input[name='ChoixArmee']").unwrap().wrap("<div id='o_btnLancer' class='right'></div>");
     // Ajout du bouton pour la synchro simple
     // Ajout du temps de trajet
+    const nbSonde = monProfil.parametre["uniteSonde"].valeur;
+    const titleSync = `Attend automatiquement le temps nécessaire pour que l'attaque arrive sur une minute pleine (utile pour synchroniser plusieurs attaques avec des alliés).`;
+    const titleSonde = `Envoie ${nbSonde} unité${nbSonde > 1 ? "s" : ""} de la première espèce disponible (configurable dans Paramètres → Général) en attaque synchronisée — révèle le nombre de défenseurs ennemis sans engager toute l'armée.`;
+    const titleSondeDirect = `Comme Sonder mais sans attendre la minute pleine — envoi immédiat. Utile quand le timing n'a pas d'importance.`;
     $("#o_btnLancer")
       .before(
-        `<div id="o_btnSynchro"><button id='o_synchro' class="o_button f_info">Synchroniser</button><button id='o_sonder' class="o_button f_error">Sonder</button></div>`,
+        `<div id="o_btnSynchro"><button id='o_synchro' class="o_button f_info" title="${titleSync}">Synchroniser</button><button id='o_sonder' class="o_button f_error" title="${titleSonde}">Sonder</button><button id='o_sonderDirect' class="o_button f_error" title="${titleSondeDirect}">Sonder direct</button></div>`,
       )
       .after(
         `<p class="centre reduce ligne_paire">Votre armée rentrera le <span id="o_retourArmee" class="gras">${moment().add(monProfil.getTempsParcours2(this._cible), "s").format("D MMM à HH[h]mm[m]ss[s]")}</span> (RC : <span id="o_retourArmeeRC" class="gras">${Utils.roundMinute(monProfil.getTempsParcours2(this._cible)).format("D MMM à HH[h]mm")}</span>).</p>`,
@@ -115,19 +119,28 @@ class PageAttaquer {
       this.lancerSynchro(this._cible.attenteSynchro());
       return false;
     });
-    // Bonton de sonde
-    $("#o_sonder").click((e) => {
+    // Remplit le formulaire avec une sonde (1ʳᵉ espèce dispo × paramètre uniteSonde)
+    const remplirFormulaireSonde = () => {
       let premiereUnite = true;
-      e.preventDefault();
-      // on prepare le formulaire pour la sonde
       $("#lieu").val(3);
       for (let i = 1; i < 15; i++)
         if ($("#unite" + i).length) {
           $("#unite" + i).val(premiereUnite ? monProfil.parametre["uniteSonde"].valeur : 0);
           premiereUnite = false;
         }
-      // une sonde est forcement synchro
+    };
+    // Sonde synchronisée (arrive sur la minute pleine)
+    $("#o_sonder").click((e) => {
+      e.preventDefault();
+      remplirFormulaireSonde();
       this.lancerSynchro(this._cible.attenteSynchro());
+      return false;
+    });
+    // Sonde directe (envoi immédiat, pas de synchro)
+    $("#o_sonderDirect").click((e) => {
+      e.preventDefault();
+      remplirFormulaireSonde();
+      $("input[name='ChoixArmee']").click();
       return false;
     });
     Utils.incrementTime(
@@ -165,61 +178,9 @@ class PageAttaquer {
 			<tr><td>Antisonde (<span id="o_pourcentAttaque0">0</span>%)</td><td><input value='0' size='12' id='o_floodAntiSonde'/></td><td></td><td>${numeral(Utils.terrain).format()}</td><td>${numeral(this._cible.terrain).format()}</td></tr>
             <tr class="gras reduce"><td colspan="3"></td><td><span id="o_supprimeAttaque" class="souligne cursor" ${methode == 1 ? "style=display:none;" : ""}>Supprimer une attaque</span></td><td><span id="o_ajouteAttaque" class="souligne cursor" ${methode == 1 ? "style=display:none;" : ""}>Ajouter une attaque</span></td></tr>
             </table>
-            <fieldset id="o_floodRedeployFs" class="o_marginT15"><legend><label><input type="checkbox" id="o_floodRedeployEnable"/> Redéployer après flood</label></legend>
-                <table class="o_maxWidth centre" cellspacing="0">
-                    <tbody>
-                        <tr>
-                            <td class="right reduce">Vers Terrain de chasse :</td>
-                            <td><input type="text" id="o_floodRedeployTdcNb" value="0"/></td>
-                            <td><select id="o_floodRedeployTdcUnit">${NOM_UNITE.slice(1)
-                              .map((nom, i) => `<option value="${i + 1}">${nom}</option>`)
-                              .join("")}</select></td>
-                        </tr>
-                        <tr>
-                            <td class="right reduce">Vers Dôme / Fourmilière :</td>
-                            <td><input type="text" id="o_floodRedeployDomeNb" value="0"/></td>
-                            <td><select id="o_floodRedeployDomeUnit">${NOM_UNITE.slice(1)
-                              .map((nom, i) => `<option value="${i + 1}">${nom}</option>`)
-                              .join("")}</select></td>
-                        </tr>
-                    </tbody>
-                </table>
-                <p class="reduce"><em>Les troupes restées en Loge sont redéployées juste avant le rechargement de la page.</em></p>
-            </fieldset>
             <button id='o_lanceFlood' class='o_marginT15 o_button f_success'>Flooder</button>
             <p class="reduce left">* : place les unités restantes sur l'attaque selectionnée.</p>
             </fieldset>`);
-    // Chargement / persistance du redéploiement (clé partagée avec la BoiteCombat multi-flood)
-    let redeployCfg;
-    try {
-      redeployCfg = JSON.parse(localStorage.getItem("outiiil_postFloodRedeploy")) || {};
-    } catch (e) {
-      redeployCfg = {};
-    }
-    $("#o_floodRedeployEnable").prop("checked", !!redeployCfg.enable);
-    $("#o_floodRedeployTdcNb").val(redeployCfg.tdc?.nbTroupes ?? 0);
-    $("#o_floodRedeployTdcUnit").val(redeployCfg.tdc?.indUnite ?? 1);
-    $("#o_floodRedeployDomeNb").val(redeployCfg.dome?.nbTroupes ?? 0);
-    $("#o_floodRedeployDomeUnit").val(redeployCfg.dome?.indUnite ?? 1);
-    $("#o_floodRedeployTdcNb, #o_floodRedeployDomeNb").spinner({ min: 0, numberFormat: "i" });
-    $(
-      "#o_floodRedeployEnable, #o_floodRedeployTdcNb, #o_floodRedeployTdcUnit, #o_floodRedeployDomeNb, #o_floodRedeployDomeUnit",
-    ).on("change", () => {
-      localStorage.setItem(
-        "outiiil_postFloodRedeploy",
-        JSON.stringify({
-          enable: $("#o_floodRedeployEnable").is(":checked"),
-          tdc: {
-            nbTroupes: parseInt($("#o_floodRedeployTdcNb").val()) || 0,
-            indUnite: parseInt($("#o_floodRedeployTdcUnit").val()) || 1,
-          },
-          dome: {
-            nbTroupes: parseInt($("#o_floodRedeployDomeNb").val()) || 0,
-            indUnite: parseInt($("#o_floodRedeployDomeUnit").val()) || 1,
-          },
-        }),
-      );
-    });
     $("#o_floodTDCA, #o_floodTDCB, #o_floodAntiSonde, input[id^='o_attaque']").spinner({
       min: 0,
       numberFormat: "i",
