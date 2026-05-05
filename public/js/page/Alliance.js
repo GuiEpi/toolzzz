@@ -449,6 +449,7 @@ class PageAlliance {
         <p class='reduce'>Carte interactive des positions des membres. <b>Survole</b> un point pour voir les temps de trajet depuis ta fourmilière. <b>Drag</b> pour zoomer sur une zone, <b>clic</b> sur un point pour zoomer 4× dessus (utile dans les clusters denses). Données chargées à la demande puis mises en cache localement.</p>
         <div class='centre o_marginT15'>
           <button id='o_carteAllianceRefresh' class='o_button f_info'>Charger / Actualiser</button>
+          <button id='o_carteAllianceExport' class='o_button f_success' style='margin-left:8px;'>Exporter en image</button>
           <span id='o_carteAllianceStatus' class='reduce' style='margin-left:12px;color:#666;'></span>
         </div>
         <div id='o_carteAllianceChart' style='height:800px;margin-top:15px;display:none;'></div>
@@ -465,6 +466,7 @@ class PageAlliance {
       this._afficherAge(cached.timestamp);
     }
     $("#o_carteAllianceRefresh").click(() => this._actualiserCarte());
+    $("#o_carteAllianceExport").click(() => this._exporterCartePng());
     return this;
   }
   /**
@@ -560,6 +562,60 @@ class PageAlliance {
           text: err.message || "Erreur lors du chargement des profils.",
         });
       });
+  }
+  /**
+   * Exporte le rendu Highcharts en PNG via SVG → canvas → blob → download.
+   * Pas de dépendance externe (le module highcharts-exporting officiel ferait appel
+   * à un serveur tiers, incompatible avec la doctrine "tout en local" de Toolzzz).
+   *
+   * @private
+   * @method _exporterCartePng
+   */
+  _exporterCartePng() {
+    const $svg = $("#o_carteAllianceChart svg").first();
+    if (!$svg.length) {
+      $.toast({
+        ...TOAST_WARNING,
+        text: "La carte doit d'abord être chargée pour pouvoir l'exporter.",
+      });
+      return;
+    }
+    const w = $svg[0].clientWidth;
+    const h = $svg[0].clientHeight;
+    const svgString = new XMLSerializer().serializeToString($svg[0]);
+    const svgBlob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(svgBlob);
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      // Fond blanc sinon les zones transparentes du SVG donnent un PNG à fond noir.
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          $.toast({ ...TOAST_ERROR, text: "Erreur lors de la génération du PNG." });
+          return;
+        }
+        const date = new Date().toISOString().slice(0, 10);
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `toolzzz-carte-${Utils.alliance}-${date}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(a.href);
+      }, "image/png");
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      $.toast({ ...TOAST_ERROR, text: "Erreur lors du chargement du SVG pour l'export." });
+    };
+    img.src = url;
   }
   /**
    * Affiche le timestamp en texte humain à côté du bouton.
