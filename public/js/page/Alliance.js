@@ -108,7 +108,104 @@ class PageAlliance {
           });
         },
       );
-    } else this.tableau();
+    } else this.tableauAvecCarteCache();
+    return this;
+  }
+  /**
+   * Variante de tableau() qui utilise le cache local de la Carte de l'alliance
+   * (rempli via le bouton "Charger / Actualiser") pour ajouter les colonnes
+   * Tdt + Retour aux alliances qui n'ont pas le SDC chef-bootstrappé.
+   * Si pas de cache → fallback sur tableau() basique.
+   *
+   * @method tableauAvecCarteCache
+   */
+  tableauAvecCarteCache() {
+    const cacheKey = `outiiil_carteAlliance_${Utils.serveur}_${Utils.alliance}`;
+    let cached = null;
+    try {
+      cached = JSON.parse(localStorage.getItem(cacheKey));
+    } catch (e) {
+      cached = null;
+    }
+    const hasCache = cached && cached.members && cached.members.length;
+    if (hasCache) {
+      // Hydrate les coords depuis le cache
+      const coordsByPseudo = new Map();
+      cached.members.forEach((m) => coordsByPseudo.set(m.pseudo, { x: m.x, y: m.y }));
+      for (const pseudo in this._alliance.joueurs) {
+        if (coordsByPseudo.has(pseudo)) {
+          Object.assign(this._alliance.joueurs[pseudo], coordsByPseudo.get(pseudo));
+        }
+      }
+      // Ajoute les colonnes Tdt + Retour entre Fourmilière et Etat
+      $("#tabMembresAlliance th:eq(8)").after(`<th>Tdt</th><th>Retour</th>`);
+      $("#tabMembresAlliance tfoot td:eq(0)").attr("colspan", 14);
+      $("#tabMembresAlliance tr:gt(0):lt(-1)").each((i, elt) => {
+        const pseudo = $(elt).find("td:eq(3)").text();
+        const j = this._alliance.joueurs[pseudo];
+        const has = j && j.x !== -1 && j.y !== -1;
+        let tdHtml;
+        if (has) {
+          const tdt = monProfil.getTempsParcours2(j);
+          const retour = Utils.roundMinute(tdt);
+          // data-order : DataTable trie sur l'attribut (entier brut) plutôt que sur
+          // le texte affiché ("22h 31m" sinon trié en alphabétique).
+          tdHtml = `<td data-order='${tdt}'>${Utils.intToTime(tdt)}</td><td data-order='${retour.unix()}'>${retour.format("D MMM à HH[h]mm")}</td>`;
+        } else {
+          tdHtml = `<td data-order='-1'>N/C</td><td data-order='-1'>N/C</td>`;
+        }
+        $(elt).find("td:eq(8)").after(tdHtml);
+      });
+      // DataTable — targets ajustés vs tableau() : Etat-2 et last passent de 10/11 à 12/13
+      $("#tabMembresAlliance th:eq(7), #tabMembresAlliance th:eq(8)").css({
+        maxWidth: "50px",
+        textOverflow: "ellipsis",
+        overflow: "hidden",
+      });
+      $("#tabMembresAlliance").DataTable({
+        bInfo: false,
+        bPaginate: false,
+        bAutoWidth: false,
+        dom: "Bfrti",
+        buttons: ["colvis", "copyHtml5", "csvHtml5", "excelHtml5"],
+        order: [],
+        stripeClasses: ["", "alt"],
+        responsive: true,
+        language: {
+          zeroRecords: "Aucun joueur trouvé",
+          infoEmpty: "Aucun enregistrement",
+          infoFiltered: "(Filtré par _MAX_ enregistrements)",
+          search: "Rechercher : ",
+          buttons: { colvis: "Colonne" },
+        },
+        columnDefs: [
+          { type: "quantite-grade", targets: 5 },
+          { sortable: false, targets: [0, 1, 4, 6, 12, 13] },
+        ],
+      });
+    } else {
+      this.tableau();
+    }
+    // Bouton Synchroniser — disponible dans tous les cas (bootstrap si pas de cache,
+    // refresh sinon). Recharge la page après sync pour que le tableau pick up les coords.
+    $("#tabMembresAlliance_wrapper .dt-buttons").prepend(
+      `<a id='o_syncCarteAlliance' class='dt-button' href='#'><span>Synchroniser</span></a>`,
+    );
+    $("#o_syncCarteAlliance").click((e) => {
+      e.preventDefault();
+      const $btn = $("#o_syncCarteAlliance");
+      $btn.addClass("disabled").find("span").text("Synchronisation...");
+      this._fetchAndCacheCoords()
+        .then(() => location.reload())
+        .catch((err) => {
+          $btn.removeClass("disabled").find("span").text("Synchroniser");
+          $.toast({
+            ...TOAST_ERROR,
+            text: err.message || "Erreur de synchronisation.",
+          });
+        });
+      return false;
+    });
     return this;
   }
   /**
@@ -367,7 +464,7 @@ class PageAlliance {
       this._renderCarte(cached.members);
       this._afficherAge(cached.timestamp);
     }
-    $("#o_carteAllianceRefresh").click(() => this._actualiserCarte(cacheKey));
+    $("#o_carteAllianceRefresh").click(() => this._actualiserCarte());
     return this;
   }
   /**
@@ -392,21 +489,19 @@ class PageAlliance {
     return this;
   }
   /**
-   * Fetch des coords pour tous les membres + persistance + render.
+   * Fetch des coords pour tous les membres + persistance localStorage.
+   * Ne touche pas à l'UI — résolveurs (Carte / tableau Membres) gèrent leur propre feedback.
    *
    * @private
-   * @method _actualiserCarte
+   * @method _fetchAndCacheCoords
+   * @returns {Promise<{members, timestamp}>}
    */
-  _actualiserCarte(cacheKey) {
+  _fetchAndCacheCoords() {
     const pseudos = Object.keys(this._alliance.joueurs);
     if (!pseudos.length) {
-      $.toast({ ...TOAST_WARNING, text: "Aucun membre détecté dans l'alliance." });
-      return;
+      return Promise.reject(new Error("Aucun membre détecté dans l'alliance."));
     }
-    $("#o_carteAllianceRefresh")
-      .prop("disabled", true)
-      .text(`Chargement de ${pseudos.length} profils...`);
-    $("#o_carteAllianceStatus").text("");
+    const cacheKey = `outiiil_carteAlliance_${Utils.serveur}_${Utils.alliance}`;
     const promises = pseudos.map((pseudo) => {
       const joueur = this._alliance.joueurs[pseudo];
       return joueur
@@ -417,27 +512,39 @@ class PageAlliance {
         })
         .catch(() => null);
     });
-    Promise.all(promises)
-      .then((joueurs) => {
-        const members = joueurs
-          .filter((j) => j && j.x !== -1 && j.y !== -1)
-          .map((j) => ({
-            pseudo: j.pseudo,
-            x: j.x,
-            y: j.y,
-            terrain: j.terrain || 0,
-          }));
-        if (!members.length) {
-          $("#o_carteAllianceRefresh").prop("disabled", false).text("Charger / Actualiser");
-          $.toast({ ...TOAST_ERROR, text: "Aucune coordonnée récupérée." });
-          return;
-        }
-        const timestamp = Date.now();
-        try {
-          localStorage.setItem(cacheKey, JSON.stringify({ timestamp, members }));
-        } catch (e) {
-          console.warn("outiiil: localStorage write failed", e);
-        }
+    return Promise.all(promises).then((joueurs) => {
+      const members = joueurs
+        .filter((j) => j && j.x !== -1 && j.y !== -1)
+        .map((j) => ({
+          pseudo: j.pseudo,
+          x: j.x,
+          y: j.y,
+          terrain: j.terrain || 0,
+        }));
+      if (!members.length) throw new Error("Aucune coordonnée récupérée.");
+      const timestamp = Date.now();
+      try {
+        localStorage.setItem(cacheKey, JSON.stringify({ timestamp, members }));
+      } catch (e) {
+        console.warn("outiiil: localStorage write failed", e);
+      }
+      return { members, timestamp };
+    });
+  }
+  /**
+   * Refresh de la Carte (UI Carte + render Highcharts).
+   *
+   * @private
+   * @method _actualiserCarte
+   */
+  _actualiserCarte() {
+    const pseudos = Object.keys(this._alliance.joueurs);
+    $("#o_carteAllianceRefresh")
+      .prop("disabled", true)
+      .text(`Chargement de ${pseudos.length} profils...`);
+    $("#o_carteAllianceStatus").text("");
+    this._fetchAndCacheCoords()
+      .then(({ members, timestamp }) => {
         $("#o_carteAllianceRefresh").prop("disabled", false).text("Charger / Actualiser");
         $.toast({
           ...TOAST_SUCCESS,
@@ -446,9 +553,12 @@ class PageAlliance {
         this._afficherAge(timestamp);
         this._renderCarte(members);
       })
-      .catch(() => {
+      .catch((err) => {
         $("#o_carteAllianceRefresh").prop("disabled", false).text("Charger / Actualiser");
-        $.toast({ ...TOAST_ERROR, text: "Erreur lors du chargement des profils." });
+        $.toast({
+          ...TOAST_ERROR,
+          text: err.message || "Erreur lors du chargement des profils.",
+        });
       });
   }
   /**
