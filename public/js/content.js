@@ -464,6 +464,18 @@ const DATEPICKER_OPTION = {
       let boiteRadar = new BoiteRadar();
       boiteRadar.afficher();
 
+      // Onglet "Carte" dans le menu d'alliance — injecté sur toutes les pages
+      // tant que le joueur a une alliance (présence du lien Membres = preuve).
+      // Lien réel vers ?Membres#carte : sur cette page, PageAlliance intercepte
+      // le clic pour un toggle client-side ; depuis ailleurs, navigation normale.
+      if ($("#menuAlliance .boutonMembres").length) {
+        $("#menuAlliance .boutonMembres")
+          .parent()
+          .after(
+            `<li><a id='o_ongletCarte' class='boutonCarte' href='alliance.php?Membres#carte'><span></span>Carte</a></li>`,
+          );
+      }
+
       let uri = location.pathname,
         page = null;
       // Routing

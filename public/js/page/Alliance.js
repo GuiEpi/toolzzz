@@ -28,11 +28,13 @@ class PageAlliance {
     if ($("#tabMembresAlliance").length) {
       this.traitementMembre();
       this.carte();
+      this.ongletCarte();
     } else {
       // Ajout des infos sur le tableau des membres
       let observer = new MutationObserver((mutationsList) => {
         this.traitementMembre();
         this.carte();
+        this.ongletCarte();
         observer.disconnect();
       });
       observer.observe($("#alliance")[0], { childList: true });
@@ -345,7 +347,7 @@ class PageAlliance {
     if ($("#o_carteAlliance").length) return this; // déjà rendue
     const cacheKey = `outiiil_carteAlliance_${Utils.serveur}_${Utils.alliance}`;
     $("#alliance").after(`
-      <br/><div id='o_carteAlliance' class='boite_amelioration simulateur centre'>
+      <div id='o_carteAlliance' class='boite_amelioration simulateur centre' style='display:none;'>
         <h2>Carte de l'alliance</h2>
         <p class='reduce'>Carte interactive des positions des membres. <b>Survole</b> un point pour voir les temps de trajet depuis ta fourmilière. <b>Drag</b> pour zoomer sur une zone, <b>clic</b> sur un point pour zoomer 4× dessus (utile dans les clusters denses). Données chargées à la demande puis mises en cache localement.</p>
         <div class='centre o_marginT15'>
@@ -366,6 +368,27 @@ class PageAlliance {
       this._afficherAge(cached.timestamp);
     }
     $("#o_carteAllianceRefresh").click(() => this._actualiserCarte(cacheKey));
+    return this;
+  }
+  /**
+   * Active l'onglet "Carte" du menu Alliance (injecté par content.js sur toutes
+   * les pages) : intercepte le clic pour un toggle client-side, et bascule
+   * automatiquement si la page est chargée avec le hash #carte (cas où on
+   * arrive depuis une autre page d'alliance).
+   *
+   * @method ongletCarte
+   */
+  ongletCarte() {
+    if (!$("#o_ongletCarte").length) return this;
+    const showCarte = () => {
+      $("#alliance").hide();
+      $("#o_carteAlliance").show();
+    };
+    $("#o_ongletCarte").click((e) => {
+      e.preventDefault();
+      showCarte();
+    });
+    if (location.hash === "#carte") showCarte();
     return this;
   }
   /**
@@ -453,6 +476,10 @@ class PageAlliance {
    */
   _renderCarte(members) {
     $("#o_carteAllianceChart").show();
+    // Désactive le warning Highcharts #15 : nos séries `line` représentent des arêtes
+    // arbitraires entre cases (a→b dans n'importe quelle direction), donc les x ne
+    // sont pas monotonement croissants. Le rendu marche, c'est juste un warning console.
+    Highcharts.seriesTypes.line.prototype.requireSorting = false;
     const K_NEIGHBORS = 3; // chaque case reliée à ses K cases les plus proches
     const niveauVitesseAttaque = monProfil.niveauRecherche[6] || 0;
     members.forEach((m) => {
