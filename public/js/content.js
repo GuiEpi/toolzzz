@@ -483,7 +483,10 @@ const DATEPICKER_OPTION = {
       // même : un nouvel utilisateur a aussi intérêt à voir le changelog une fois.
       const LAST_SEEN_VERSION_KEY = "outiiil_lastSeenVersion";
       if (localStorage.getItem(LAST_SEEN_VERSION_KEY) !== VERSION) {
-        const releaseUrl = `https://github.com/GuiEpi/toolzzz/releases/tag/v${VERSION}`;
+        // Pointe sur la page des releases (la dernière est en haut), histoire que
+        // l'utilisateur puisse aussi parcourir les versions précédentes qu'il aurait
+        // potentiellement ratées.
+        const releaseUrl = `https://github.com/GuiEpi/toolzzz/releases`;
         const markSeen = () => localStorage.setItem(LAST_SEEN_VERSION_KEY, VERSION);
         $.toast({
           heading: "Toolzzz mis à jour",
