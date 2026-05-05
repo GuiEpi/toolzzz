@@ -25,11 +25,14 @@ class PageAlliance {
    */
   executer() {
     // si les membres sont deja chargé on peux executé la fonction sinon on observe
-    if ($("#tabMembresAlliance").length) this.traitementMembre();
-    else {
+    if ($("#tabMembresAlliance").length) {
+      this.traitementMembre();
+      this.carte();
+    } else {
       // Ajout des infos sur le tableau des membres
       let observer = new MutationObserver((mutationsList) => {
         this.traitementMembre();
+        this.carte();
         observer.disconnect();
       });
       observer.observe($("#alliance")[0], { childList: true });
@@ -331,5 +334,346 @@ class PageAlliance {
       ],
     });
     return this;
+  }
+  /**
+   * Injecte la section "Carte de l'alliance" en bas de la page.
+   * Charge depuis localStorage si dispo ; refresh manuel via bouton.
+   *
+   * @method carte
+   */
+  carte() {
+    if ($("#o_carteAlliance").length) return this; // déjà rendue
+    const cacheKey = `outiiil_carteAlliance_${Utils.serveur}_${Utils.alliance}`;
+    $("#alliance").after(`
+      <br/><div id='o_carteAlliance' class='boite_amelioration simulateur centre'>
+        <h2>Carte de l'alliance</h2>
+        <p class='reduce'>Carte interactive des positions des membres. <b>Survole</b> un point pour voir les temps de trajet depuis ta fourmilière. <b>Drag</b> pour zoomer sur une zone, <b>clic</b> sur un point pour zoomer 4× dessus (utile dans les clusters denses). Données chargées à la demande puis mises en cache localement.</p>
+        <div class='centre o_marginT15'>
+          <button id='o_carteAllianceRefresh' class='o_button f_info'>Charger / Actualiser</button>
+          <span id='o_carteAllianceStatus' class='reduce' style='margin-left:12px;color:#666;'></span>
+        </div>
+        <div id='o_carteAllianceChart' style='height:800px;margin-top:15px;display:none;'></div>
+      </div>
+    `);
+    let cached = null;
+    try {
+      cached = JSON.parse(localStorage.getItem(cacheKey));
+    } catch (e) {
+      cached = null;
+    }
+    if (cached && cached.members && cached.members.length) {
+      this._renderCarte(cached.members);
+      this._afficherAge(cached.timestamp);
+    }
+    $("#o_carteAllianceRefresh").click(() => this._actualiserCarte(cacheKey));
+    return this;
+  }
+  /**
+   * Fetch des coords pour tous les membres + persistance + render.
+   *
+   * @private
+   * @method _actualiserCarte
+   */
+  _actualiserCarte(cacheKey) {
+    const pseudos = Object.keys(this._alliance.joueurs);
+    if (!pseudos.length) {
+      $.toast({ ...TOAST_WARNING, text: "Aucun membre détecté dans l'alliance." });
+      return;
+    }
+    $("#o_carteAllianceRefresh")
+      .prop("disabled", true)
+      .text(`Chargement de ${pseudos.length} profils...`);
+    $("#o_carteAllianceStatus").text("");
+    const promises = pseudos.map((pseudo) => {
+      const joueur = this._alliance.joueurs[pseudo];
+      return joueur
+        .getProfil()
+        .then((html) => {
+          joueur.chargerProfil(html);
+          return joueur;
+        })
+        .catch(() => null);
+    });
+    Promise.all(promises)
+      .then((joueurs) => {
+        const members = joueurs
+          .filter((j) => j && j.x !== -1 && j.y !== -1)
+          .map((j) => ({
+            pseudo: j.pseudo,
+            x: j.x,
+            y: j.y,
+            terrain: j.terrain || 0,
+          }));
+        if (!members.length) {
+          $("#o_carteAllianceRefresh").prop("disabled", false).text("Charger / Actualiser");
+          $.toast({ ...TOAST_ERROR, text: "Aucune coordonnée récupérée." });
+          return;
+        }
+        const timestamp = Date.now();
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify({ timestamp, members }));
+        } catch (e) {
+          console.warn("outiiil: localStorage write failed", e);
+        }
+        $("#o_carteAllianceRefresh").prop("disabled", false).text("Charger / Actualiser");
+        $.toast({
+          ...TOAST_SUCCESS,
+          text: `Carte mise à jour : ${members.length} membres positionnés.`,
+        });
+        this._afficherAge(timestamp);
+        this._renderCarte(members);
+      })
+      .catch(() => {
+        $("#o_carteAllianceRefresh").prop("disabled", false).text("Charger / Actualiser");
+        $.toast({ ...TOAST_ERROR, text: "Erreur lors du chargement des profils." });
+      });
+  }
+  /**
+   * Affiche le timestamp en texte humain à côté du bouton.
+   *
+   * @private
+   * @method _afficherAge
+   */
+  _afficherAge(timestamp) {
+    const minutes = Math.floor((Date.now() - timestamp) / 60000);
+    let age;
+    if (minutes < 1) age = "à l'instant";
+    else if (minutes < 60) age = `il y a ${minutes} min`;
+    else if (minutes < 1440) age = `il y a ${Math.floor(minutes / 60)}h`;
+    else age = `il y a ${Math.floor(minutes / 1440)}j`;
+    $("#o_carteAllianceStatus").text(`Données ${age}`);
+  }
+  /**
+   * Render Highcharts dans #o_carteAllianceChart.
+   * Regroupe les membres par case (x,y), trace les liens en-dessous d'un seuil,
+   * affiche le tooltip avec temps de trajet (sans / avec bonus Vitesse d'attaque).
+   *
+   * @private
+   * @method _renderCarte
+   */
+  _renderCarte(members) {
+    $("#o_carteAllianceChart").show();
+    const K_NEIGHBORS = 3; // chaque case reliée à ses K cases les plus proches
+    const niveauVitesseAttaque = monProfil.niveauRecherche[6] || 0;
+    members.forEach((m) => {
+      m.isMe = m.pseudo === monProfil.pseudo;
+    });
+    const me = members.find((m) => m.isMe) || { x: monProfil.x, y: monProfil.y };
+    const tempsParcours = (target, niveauVit) =>
+      Math.ceil(
+        Math.pow(0.9, niveauVit) *
+          637200 *
+          (1 - Math.exp(-Math.hypot(target.x - me.x, target.y - me.y) / 350)),
+      );
+    // Regroupement par case (x, y)
+    const spotMap = new Map();
+    for (const m of members) {
+      const key = `${m.x},${m.y}`;
+      if (!spotMap.has(key)) spotMap.set(key, { x: m.x, y: m.y, members: [] });
+      spotMap.get(key).members.push(m);
+    }
+    const spots = [...spotMap.values()].map((s) => ({
+      ...s,
+      isMyGroup: s.members.some((m) => m.isMe),
+    }));
+    // Liens : K plus proches voisins (s'adapte à l'étalement de l'alliance)
+    const edgeSet = new Set();
+    for (let i = 0; i < spots.length; i++) {
+      const others = spots
+        .map((s, j) => ({ idx: j, d: Math.hypot(s.x - spots[i].x, s.y - spots[i].y) }))
+        .filter((o) => o.idx !== i)
+        .sort((a, b) => a.d - b.d)
+        .slice(0, K_NEIGHBORS);
+      others.forEach((o) => {
+        const key = i < o.idx ? `${i}-${o.idx}` : `${o.idx}-${i}`;
+        edgeSet.add(key);
+      });
+    }
+    const edges = [...edgeSet].map((key) => {
+      const [i, j] = key.split("-").map(Number);
+      return [spots[i], spots[j]];
+    });
+    const lineData = [];
+    edges.forEach(([a, b]) => {
+      lineData.push([a.x, a.y]);
+      lineData.push([b.x, b.y]);
+      lineData.push([null, null]);
+    });
+    // Stats
+    const allDists = [];
+    for (let i = 0; i < spots.length; i++) {
+      for (let j = i + 1; j < spots.length; j++) {
+        allDists.push(Math.hypot(spots[i].x - spots[j].x, spots[i].y - spots[j].y));
+      }
+    }
+    const dMin = allDists.length ? Math.min(...allDists) : 0;
+    const dMax = allDists.length ? Math.max(...allDists) : 0;
+    const dAvg = allDists.length ? allDists.reduce((s, v) => s + v, 0) / allDists.length : 0;
+    Highcharts.chart("o_carteAllianceChart", {
+      chart: {
+        type: "scatter",
+        zoomType: "xy",
+        panKey: "shift",
+        backgroundColor: "#fff",
+        spacingTop: 25,
+      },
+      title: {
+        text: `${members.length} membres sur ${spots.length} cases • ${edges.length} liens (${K_NEIGHBORS} plus proches voisins)`,
+        style: { fontSize: "14px", fontWeight: "600" },
+      },
+      subtitle: {
+        text: allDists.length
+          ? `Distance min ${dMin.toFixed(0)} • max ${dMax.toFixed(0)} • moyenne ${dAvg.toFixed(0)}`
+          : "",
+        style: { fontSize: "11px", color: "#888" },
+      },
+      xAxis: {
+        title: { text: "X (coord monde)" },
+        gridLineWidth: 1,
+        gridLineColor: "#f0f0f0",
+      },
+      yAxis: { title: { text: "Y (coord monde)" }, gridLineColor: "#f0f0f0" },
+      credits: { enabled: false },
+      legend: { enabled: false },
+      tooltip: {
+        // Semi-transparent pour ne pas masquer le rectangle de drag-zoom derrière
+        backgroundColor: "rgba(255,255,255,0.7)",
+        borderColor: "#888",
+        useHTML: true,
+        formatter: function () {
+          const spot = this.point.spot;
+          const pos = `(${spot.x.toFixed(0)}, ${spot.y.toFixed(0)})`;
+          let html = "";
+          if (spot.members.length === 1) {
+            const m = spot.members[0];
+            html += `<b>${m.pseudo}</b><br/>`;
+            html += `Terrain : ${numeral(m.terrain).format()} cm²<br/>`;
+            html += `Position : ${pos}`;
+            if (m.isMe) {
+              html += `<br/><em style="color:#27ae60">C'est toi</em>`;
+            } else {
+              const tSans = tempsParcours(m, 0);
+              const tAvec = tempsParcours(m, niveauVitesseAttaque);
+              html += `<br/><br/><b>Temps de trajet</b><br/>`;
+              html += `&nbsp;&nbsp;Sans amélioration : ${Utils.intToTime(tSans)}<br/>`;
+              html += `&nbsp;&nbsp;Avec ton bonus (Vit. att. ${niveauVitesseAttaque}) : ${Utils.intToTime(tAvec)}`;
+            }
+          } else {
+            html += `<b>${spot.members.length} membres sur cette case</b><br/>`;
+            html += `Position : ${pos}`;
+            if (spot.isMyGroup) {
+              html += `<br/><em style="color:#27ae60">Tu es ici, avec :</em>`;
+              spot.members
+                .filter((m) => !m.isMe)
+                .forEach((m) => {
+                  html += `<br/>&nbsp;&nbsp;• ${m.pseudo} (${numeral(m.terrain).format()} cm²)`;
+                });
+            } else {
+              html += `<br/><br/>`;
+              spot.members.forEach((m) => {
+                html += `&nbsp;&nbsp;• <b>${m.pseudo}</b> (${numeral(m.terrain).format()} cm²)<br/>`;
+              });
+              const tSans = tempsParcours(spot, 0);
+              const tAvec = tempsParcours(spot, niveauVitesseAttaque);
+              html += `<br/><b>Temps de trajet</b> (commun, même case)<br/>`;
+              html += `&nbsp;&nbsp;Sans amélioration : ${Utils.intToTime(tSans)}<br/>`;
+              html += `&nbsp;&nbsp;Avec ton bonus (Vit. att. ${niveauVitesseAttaque}) : ${Utils.intToTime(tAvec)}`;
+            }
+          }
+          return html;
+        },
+      },
+      plotOptions: {
+        scatter: {
+          marker: {
+            symbol: "circle",
+            states: { hover: { lineColor: "#000", lineWidth: 2 } },
+          },
+          point: {
+            events: {
+              click: function () {
+                // Clic sur un point → zoom 4× autour (utile pour explorer les clusters denses).
+                // Cap : on stop si le viewport descendrait sous 1 unité de jeu (sinon clic infini).
+                const chart = this.series.chart;
+                const xExt = chart.xAxis[0].getExtremes();
+                const yExt = chart.yAxis[0].getExtremes();
+                const xR = (xExt.max - xExt.min) / 4;
+                const yR = (yExt.max - yExt.min) / 4;
+                if (xR < 1 || yR < 1) return;
+                chart.xAxis[0].setExtremes(this.x - xR / 2, this.x + xR / 2);
+                chart.yAxis[0].setExtremes(this.y - yR / 2, this.y + yR / 2);
+                // Force l'apparition du bouton natif "Reset zoom" (sinon il n'apparaît
+                // que quand le zoom est déclenché par drag-select, pas via setExtremes).
+                chart.showResetZoom();
+              },
+            },
+          },
+        },
+      },
+      series: [
+        {
+          type: "line",
+          name: "Liens",
+          data: lineData,
+          color: "rgba(120, 140, 160, 0.35)",
+          lineWidth: 1,
+          marker: { enabled: false },
+          enableMouseTracking: false,
+          states: { hover: { enabled: false } },
+          showInLegend: false,
+          animation: false,
+        },
+        {
+          type: "scatter",
+          name: "Membres",
+          data: spots.map((s) => {
+            const n = s.members.length;
+            const terrainMax = Math.max(...s.members.map((m) => m.terrain || 0));
+            let fill, line;
+            if (s.isMyGroup) {
+              fill = "#27ae60";
+              line = "#196f3d";
+            } else if (n > 1) {
+              fill = "#f39c12";
+              line = "#b9770e";
+            } else {
+              fill = "#c0392b";
+              line = "#fff";
+            }
+            let label;
+            if (n === 1) label = s.members[0].pseudo;
+            else if (s.isMyGroup) label = `Toi +${n - 1}`;
+            else label = `${[...s.members].map((m) => m.pseudo).sort()[0]} +${n - 1}`;
+            // Radius modeste : log(terrain) compressé pour limiter le stack visuel dans
+            // les clusters denses (alliances de 30+ membres souvent groupés).
+            const radiusBase = terrainMax > 0 ? 2 + Math.log10(terrainMax) / 2 : 4;
+            return {
+              x: s.x,
+              y: s.y,
+              spot: s,
+              name: label,
+              marker: {
+                radius: n > 1 ? 5 + Math.min(n - 1, 3) : Math.max(3, Math.min(radiusBase, 6)),
+                fillColor: fill,
+                lineColor: line,
+                lineWidth: n > 1 ? 2 : 1.5,
+              },
+            };
+          }),
+          dataLabels: {
+            enabled: true,
+            format: "{point.name}",
+            allowOverlap: false,
+            style: {
+              fontSize: "10px",
+              fontWeight: "normal",
+              color: "#222",
+              textOutline: "2px contrast",
+            },
+            y: -14,
+          },
+        },
+      ],
+    });
   }
 }
