@@ -290,7 +290,7 @@ class PageForum {
     // il faut etre chef pour preparer le fofo
     if ($("img[src='images/icone/outil.gif']").length && !$("#o_afficheMenuUtilitaire").length) {
       $("#cat_forum")
-        .prepend(`<span id="o_afficheMenuUtilitaire" class="o_forumOption categorie_forum"><img src="${IMG_OUTIIIL}" alt="outiiil"/></span>
+        .prepend(`<span id="o_afficheMenuUtilitaire" class="o_forumOption categorie_forum"><img src="${IMG_TOOLZZZ}" alt="toolzzz"/></span>
                 <span id="o_menuUtilitaire" class="ligne_paire o_prepareUtilitaire">
                     <a href="#" id="o_creerUtilitaire">» Préparer le forum pour un SDC</a><br/>
                     <a href="#" id="o_preparerGuerre">» Préparer une section pour une guerre</a>

@@ -299,7 +299,7 @@ const IMG_SPRITE_MENU = chrome.runtime.getURL("images/sprite_menu.png");
 const IMG_UTILITY = chrome.runtime.getURL("images/utility.png");
 const IMG_DOWN = chrome.runtime.getURL("images/down.png");
 const IMG_UP = chrome.runtime.getURL("images/up.png");
-const IMG_OUTIIIL = chrome.runtime.getURL("images/outiiil.png");
+const IMG_TOOLZZZ = chrome.runtime.getURL("images/toolzzz.png");
 
 const TOAST_ERROR = {
   heading: "Erreur",
