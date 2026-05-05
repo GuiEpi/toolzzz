@@ -118,6 +118,7 @@ class BoiteParametre extends Boite {
     for (let param of this._paramStyle) monProfil.parametre[param].ajouterEvent();
     for (let param of this._paramUtilitaire) monProfil.parametre[param].ajouterEvent();
     for (let param of this._paramGeneral) monProfil.parametre[param].ajouterEvent();
+    $("#dockPosition").on("change", () => Dock.appliquerPosition());
     return this;
   }
   /**

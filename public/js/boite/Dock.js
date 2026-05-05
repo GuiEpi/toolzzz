@@ -10,7 +10,7 @@ class Dock {
     /**
      *
      */
-    this._html = `<div id="o_toolbarOutiiil" class="${monProfil.parametre["dockPosition"].valeur == "1" ? "o_toolbarBas" : "o_toolbarDroite"}" ${monProfil.parametre["dockVisible"].valeur == 1 ? "" : "style='display:none'"}>
+    this._html = `<div id="o_toolbarOutiiil" ${monProfil.parametre["dockVisible"].valeur == 1 ? "" : "style='display:none'"}>
             <div id="o_toolbarItem1" class="o_toolbarItem" title="Ponte"><span id="o_itemPonte" style="background-image: url(${IMG_SPRITE_MENU})"/></div>
             <div id="o_toolbarItem2" class="o_toolbarItem" title="Chasse"><span id="o_itemChasse" style="background-image: url(${IMG_SPRITE_MENU})"/></div>
             <div id="o_toolbarItem3" class="o_toolbarItem" title="Combat"><span id="o_itemCombat" style="background-image: url(${IMG_SPRITE_MENU})"/></div>
@@ -41,22 +41,14 @@ class Dock {
    */
   afficher() {
     $("body").append(this._html);
-    $(".o_toolbarDroite .o_toolbarItem").tooltip({
+    $("#o_toolbarOutiiil .o_toolbarItem").tooltip({
       tooltipClass: "warning-tooltip",
       content: function () {
         return $(this).prop("title");
       },
-      position: { my: "left+10 center", at: "right center" },
       hide: { effect: "fade", duration: 10 },
     });
-    $(".o_toolbarBas .o_toolbarItem").tooltip({
-      tooltipClass: "warning-tooltip",
-      content: function () {
-        return $(this).prop("title");
-      },
-      position: { my: "center top", at: "center bottom+10" },
-      hide: { effect: "fade", duration: 10 },
-    });
+    Dock.appliquerPosition();
     // selon la pref on cache l'element
     if (monProfil.parametre["dockVisible"].valeur == "0") {
       $(document).mousemove((e) => {
@@ -92,5 +84,26 @@ class Dock {
           break;
       }
     });
+  }
+  /**
+   * Applique la position du dock (classe + position des tooltips) selon
+   * la préférence "dockPosition". Appelable à chaud quand l'utilisateur
+   * change le paramètre depuis la BoiteParametre.
+   *
+   * @static
+   * @method appliquerPosition
+   */
+  static appliquerPosition() {
+    let isBas = monProfil.parametre["dockPosition"].valeur == "1";
+    let position = isBas
+      ? { my: "center top", at: "center bottom+10" }
+      : { my: "left+10 center", at: "right center" };
+    $("#o_toolbarOutiiil")
+      .toggleClass("o_toolbarBas", isBas)
+      .toggleClass("o_toolbarDroite", !isBas)
+      .find(".o_toolbarItem")
+      .each((i, el) => {
+        if ($(el).tooltip("instance")) $(el).tooltip("option", "position", position);
+      });
   }
 }
