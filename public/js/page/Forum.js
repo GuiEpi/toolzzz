@@ -4,6 +4,19 @@
  **********************************************************************/
 
 /**
+ * Noms des sections cachées du forum d'alliance utilisées comme stockage
+ * partagé. Ordre = priorité de lecture : on essaie le nom Toolzzz d'abord,
+ * puis on retombe sur l'ancien Outiiil pour les alliances qui ont préparé
+ * leur forum à l'époque d'Outiiil v2 (ou d'une version pré-3.x de Toolzzz).
+ *
+ * À la création (Préparer le forum pour un SDC), on n'écrit que le nouveau
+ * nom — et seulement si aucun des deux n'existe déjà — pour éviter les
+ * doublons dans une alliance qui a hérité des anciennes sections.
+ */
+const FORUM_SECTION_COMMANDE = ["Toolzzz_Commande", "Outiiil_Commande"];
+const FORUM_SECTION_MEMBRE = ["Toolzzz_Membre", "Outiiil_Membre"];
+
+/**
  * Classe de fonction pour la page /alliance.php?forum_menu.
  *
  * @class PageForum
@@ -164,36 +177,37 @@ class PageForum {
     // ajoute les options pour outiiil
     if ($(element).find("div.simulateur").length) this.optionAdmin();
     // on enregistre les id des topic si on utilise l'utilitaire
-    if (
-      !monProfil.parametre["forumCommande"].valeur &&
-      $(element).find("span[class^='forum']:contains('Outiiil_Commande')").length
-    ) {
-      monProfil.parametre["forumCommande"].valeur = $(element)
-        .find("span[class^='forum']:contains('Outiiil_Commande')")
-        .attr("class")
-        .match(/\d+/)[0];
+    let $cmdSpan = PageForum.trouverSectionForum(element, FORUM_SECTION_COMMANDE);
+    if (!monProfil.parametre["forumCommande"].valeur && $cmdSpan.length) {
+      monProfil.parametre["forumCommande"].valeur = $cmdSpan.attr("class").match(/\d+/)[0];
       monProfil.parametre["forumCommande"].sauvegarde();
     }
-    if (
-      !monProfil.parametre["forumMembre"].valeur &&
-      $(element).find("span[class^='forum']:contains('Outiiil_Membre')").length
-    ) {
-      monProfil.parametre["forumMembre"].valeur = $(element)
-        .find("span[class^='forum']:contains('Outiiil_Membre')")
-        .attr("class")
-        .match(/\d+/)[0];
+    let $memSpan = PageForum.trouverSectionForum(element, FORUM_SECTION_MEMBRE);
+    if (!monProfil.parametre["forumMembre"].valeur && $memSpan.length) {
+      monProfil.parametre["forumMembre"].valeur = $memSpan.attr("class").match(/\d+/)[0];
       monProfil.parametre["forumMembre"].sauvegarde();
     }
     // selon la section ACTIVE on ajoute les outils necessaires
-    switch ($(element).find("span[class^='forum'][class$='ligne_paire']").html()) {
-      case "Outiiil_Commande":
-        // on verifie si on n'est dans un sujet mais bien sur la liste des topics
-        if ($("#form_cat").length && !$("#o_afficherEtat").length) this.optionAdminCommande();
-        break;
-      default:
-        break;
+    let actif = $(element).find("span[class^='forum'][class$='ligne_paire']").html();
+    if (FORUM_SECTION_COMMANDE.includes(actif)) {
+      // on verifie si on n'est dans un sujet mais bien sur la liste des topics
+      if ($("#form_cat").length && !$("#o_afficherEtat").length) this.optionAdminCommande();
     }
     return this;
+  }
+  /**
+   * Cherche la première section du forum dont le nom appartient à `noms`,
+   * dans l'ordre. Renvoie le `<span>` jQuery (vide si aucune trouvée).
+   *
+   * @static
+   * @method trouverSectionForum
+   */
+  static trouverSectionForum(element, noms) {
+    for (let nom of noms) {
+      let $span = $(element).find(`span[class^='forum']:contains('${nom}')`);
+      if ($span.length) return $span;
+    }
+    return $();
   }
   /**
    *
@@ -291,18 +305,24 @@ class PageForum {
       );
       // Creation de l'utilitaire
       $("#o_creerUtilitaire").click((e) => {
-        // Creation du sujet "Outiiil_Commande"
-        if (!$(`#cat_forum span:contains(Outiiil_Commande)`).length) {
-          this.creerSection("Outiiil_Commande").then(
+        // On ne crée la nouvelle section Toolzzz que si ni Toolzzz_* ni Outiiil_*
+        // n'existent déjà — pour ne pas dédoubler le stockage dans une alliance
+        // qui a déjà ses sections sous l'ancien nom.
+        let cmdExiste = FORUM_SECTION_COMMANDE.some(
+          (n) => $(`#cat_forum span:contains(${n})`).length,
+        );
+        if (!cmdExiste) {
+          let nomCmd = FORUM_SECTION_COMMANDE[0];
+          this.creerSection(nomCmd).then(
             (data) => {
               let response = Utils.parseHtml(Utils.parseHtml(data).find("cmd:eq(1)").html() || "");
               let idCat = $(response)
-                .find(`input[value='Outiiil_Commande']`)
+                .find(`input[value='${nomCmd}']`)
                 .parent()
                 .attr("id")
                 .match(/\d+/)[0];
               // on ne peut pas creer directement une section caché donc on cache aprés
-              this.modifierSection("Outiiil_Commande", idCat, "cache").then(
+              this.modifierSection(nomCmd, idCat, "cache").then(
                 (data) => {
                   $.toast({
                     ...TOAST_SUCCESS,
@@ -326,17 +346,21 @@ class PageForum {
           );
         } else $.toast({ ...TOAST_WARNING, text: "Section commande est déjà créée !" });
         // creation de la section membre pour les membres de l'alliance
-        if (!$(`#cat_forum span:contains(Outiiil_Membre)`).length) {
-          this.creerSection("Outiiil_Membre").then(
+        let memExiste = FORUM_SECTION_MEMBRE.some(
+          (n) => $(`#cat_forum span:contains(${n})`).length,
+        );
+        if (!memExiste) {
+          let nomMem = FORUM_SECTION_MEMBRE[0];
+          this.creerSection(nomMem).then(
             (data) => {
               let response = Utils.parseHtml(Utils.parseHtml(data).find("cmd:eq(1)").html() || "");
               let idCat = $(response)
-                .find(`input[value='Outiiil_Membre']`)
+                .find(`input[value='${nomMem}']`)
                 .parent()
                 .attr("id")
                 .match(/\d+/)[0];
               // on ne peut pas creer directement une section caché donc on cache aprés
-              this.modifierSection("Outiiil_Membre", idCat, "cache").then(
+              this.modifierSection(nomMem, idCat, "cache").then(
                 (data) => {
                   $.toast({
                     ...TOAST_SUCCESS,
