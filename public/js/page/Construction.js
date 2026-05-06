@@ -56,8 +56,11 @@ class PageConstruction {
       .join("");
     let archiNiveau = monProfil.niveauRecherche[3] || 0;
     let saNiveau = monProfil.niveauConstruction[6] || 0;
+    // Pas d'ancre <a id='cout'> : on garde le hash pour le toggle (hashchange
+    // listener) mais on évite le scroll-to-anchor du navigateur — devenu
+    // inutile depuis qu'on masque la simulation native, le widget est déjà
+    // tout seul en haut du viewport.
     $("#cadre, #centre").last().append(`
-        <a id='cout'></a>
         <div id='o_couts' class='boite_amelioration simulateur centre' style='display:none;'>
           <h2>Coûts & temps de développement</h2>
           <p class='reduce'>Choisis un item dans chaque liste ; les courbes affichent le temps de construction/recherche, le coût en matériaux (et pommes pour les recherches), et la capacité ou production quand applicable. Tenir compte de tes améliorations applique le bonus Architecture (-10%/niv sur le temps de construction) et Salle d'analyse (-10%/niv sur le temps de recherche).</p>
