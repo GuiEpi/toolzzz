@@ -114,12 +114,17 @@ class PageConstruction {
    */
   _appliquerHashCouts() {
     let surCouts = location.hash === "#cout";
+    // On cible la table parente des .ligneAmelioration (= toute la simulation
+    // native) plutôt que `#centre > .simulateur` qui rate le DOM si la table
+    // est wrappée dans un autre conteneur. On ajoute aussi le strong de la
+    // construction en cours et les <br> séparateurs autour.
+    let $natif = $(".ligneAmelioration").closest("table").add("#centre > strong, #centre > br");
     if (surCouts) {
-      $("#centre > .simulateur, #centre > strong, #centre > br").hide();
+      $natif.hide();
       $("#o_couts").show();
       this._renderCoutsCharts();
     } else {
-      $("#centre > .simulateur, #centre > strong, #centre > br").show();
+      $natif.show();
       $("#o_couts").hide();
     }
   }
