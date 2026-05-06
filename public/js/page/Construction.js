@@ -117,20 +117,14 @@ class PageConstruction {
    * @method _appliquerHashCouts
    */
   _appliquerHashCouts() {
+    // Le masquage de la simulation native est géré par CSS (`.toolzzz-mode-couts`
+    // posée sur <html> par bootstrap.js dès le document_start) — on n'a plus
+    // qu'à toggler notre widget côté JS.
     let surCouts = location.hash === "#cout";
-    // On cible la table parente des .ligneAmelioration (= toute la simulation
-    // native) plutôt que `#centre > .simulateur` qui rate le DOM si la table
-    // est wrappée dans un autre conteneur. On ajoute aussi le strong de la
-    // construction en cours et les <br> séparateurs autour.
-    let $natif = $(".ligneAmelioration")
-      .closest("table")
-      .add("#centre > strong, #centre > br, #centre > small, #centre > span.small");
     if (surCouts) {
-      $natif.hide();
       $("#o_couts").show();
       this._renderCoutsCharts();
     } else {
-      $natif.show();
       $("#o_couts").hide();
     }
   }
