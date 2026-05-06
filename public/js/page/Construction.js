@@ -48,13 +48,6 @@ class PageConstruction {
    */
   couts() {
     if ($("#o_couts").length) return this;
-    // Trigger : on s'aligne sur le pattern natif Fourmizzz (`boutonDescription`)
-    // qu'on retrouve par exemple sur la page Alliance pour ouvrir « Description ».
-    if (!$("#o_coutsBouton").length) {
-      $(".simulateur:first").before(
-        `<a id='o_coutsBouton' class='boutonDescription' href='#cout' title='Visualiser les coûts et temps par niveau'><span></span>Coûts</a>`,
-      );
-    }
     let optionsConstru = Object.entries(COUTS_CONSTRUCTIONS)
       .map(([id, c]) => `<option value='${id}'>${c.nom}</option>`)
       .join("");

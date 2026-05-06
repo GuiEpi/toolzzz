@@ -476,6 +476,18 @@ const DATEPICKER_OPTION = {
           );
       }
 
+      // Onglet "Coûts" dans le menu colonie (Fourmilière) — injecté sur toutes
+      // les pages, juste après "Construction" puisque la feature vit sur cette
+      // page (#cout). On réutilise la classe `boutonDescription` qui a un look
+      // graphique cohérent avec une vue de courbes.
+      if ($("#menuFourmiliere .boutonConstruction").length && !$("#o_ongletCouts").length) {
+        $("#menuFourmiliere .boutonConstruction")
+          .parent()
+          .after(
+            `<li><a id='o_ongletCouts' class='boutonDescription' href='construction.php#cout'><span></span>Coûts</a></li>`,
+          );
+      }
+
       // Notification "Nouveautés" — toast sticky au 1er chargement après une mise à jour.
       // hideAfter: false → reste visible tant que l'user ne ferme pas / ne clique pas le lien.
       // La version est marquée vue dans les deux cas (close X ou clic lien) pour ne pas
