@@ -180,7 +180,17 @@ $("#o_truc").spinner({ min: 0, numberFormat: "i" });
 - `$("#x").autocomplete({ source, select, … })` — autocomplete (cf. `Joueur.rechercher` + `Utils.extraitRecherche`)
 - `$("#x").datetimepicker(DATEPICKER_OPTION)` — date/heure. Sur l'`<input>` associé, **utiliser systématiquement `placeholder="JJ-MM-AAAA HH:mm"`** (le format affiché par `DATEPICKER_OPTION` + `dateFormat: "dd-mm-yy"`, `timeFormat: "HH:mm"`). Pas de `placeholder='—'` ni autre tiret — le tiret n'indique pas à l'utilisateur quel format saisir.
 - `$("#x").slider({ min, max, change })` — slider 0/1
+- `$("#x").slider({ range: true, min, max, values: [a, b], slide })` — **range slider** (sélection d'une plage). Cf. la plage de niveaux du widget Coûts (`PageConstruction.couts`). Pour avoir des paliers nets, `step: Math.max(1, Math.floor((max - min) / N))` avec N ≈ 20–50 ; jQuery UI exige que `(max - min) % step == 0` pour snapper proprement.
 - `$("#x").tooltip({ position, content })` — tooltips
+
+### Préférer un input éditable à une checkbox + valeur figée
+
+Quand l'utilisateur a un « niveau actuel » et qu'on voudrait permettre une simulation hypothétique (« et si j'avais Archi 30 ? »), l'idiome est :
+
+- ❌ Checkbox « Tenir compte de mes améliorations » + label `Architecture 16` figé
+- ✅ Spinner pré-rempli avec sa vraie valeur, modifiable
+
+Le spinner conserve la valeur par défaut utile (= ce que l'utilisateur veut **par défaut**) et débloque la simulation gratuitement. Cf. inputs Architecture / Salle d'analyse de `PageConstruction.couts`.
 
 ## Toasts (feedback utilisateur)
 
@@ -220,6 +230,38 @@ Dans `public/js/content.js` :
 - `IMG_FLECHE` `IMG_VIE` `IMG_ATT` `IMG_DEF` `IMG_COPY` `IMG_GAUCHE` `IMG_DROITE` — icônes inline (chaînes HTML)
 - `LIEU.TERRAIN` `LIEU.DOME` `LIEU.LOGE` — enums lieux d'attaque
 - `DATEPICKER_OPTION` — options par défaut pour datetimepicker
+
+## Vue qui prend la page en otage (« page takeover »)
+
+Pour une feature qui remplace temporairement le contenu natif d'une page (ex. carte alliance sur `alliance.php?Membres#carte`, courbes coûts sur `construction.php#cout`), le pattern est :
+
+1. **Trigger dans le menu colonne natif** — injecter un `<li>` avec une classe `boutonX` existante dans `#menuFourmiliere` ou `#menuAlliance`, l'`href` pointe vers la page cible avec un hash distinct.
+2. **Toggle hash-based** — `location.hash === "#xxx"` détermine si on cache le natif et montre le widget. Un listener `hashchange` permet de basculer sans rechargement.
+3. **Anti-flash via bootstrap au document_start** — voir `public/js/bootstrap.js` qui pose une classe `toolzzz-mode-X` sur `<html>` dès le `document_start`. Une règle CSS dans `outiiil.css` cache le contenu natif pendant le parse, avant même que le content_script principal (chargé à `document_idle` par défaut) ne tourne.
+
+```js
+// public/js/bootstrap.js — second content_scripts entry, run_at: document_start
+(function () {
+  let appliquer = () =>
+    document.documentElement.classList.toggle("toolzzz-mode-X", location.hash === "#X");
+  appliquer();
+  window.addEventListener("hashchange", appliquer);
+})();
+```
+
+```css
+/* outiiil.css — :has() pour cibler le parent natif sans ID stable */
+.toolzzz-mode-X table:has(.ligneAmelioration),
+.toolzzz-mode-X #centre > strong {
+  display: none !important;
+}
+```
+
+→ Le CSS `content_scripts.css` est injecté à `document_start` peu importe le `run_at` du JS — la règle est en effet dès le parse du body.
+
+→ Côté JS principal, ne **plus** faire `.hide()/.show()` sur les éléments natifs : laisser le CSS gérer. Sinon les inline styles deviennent prioritaires sur la classe `toolzzz-mode-X` quand on bascule.
+
+→ `:has()` est dispo en Chrome 105+ et Firefox 121+, on est largement au-dessus du `strict_min_version: 142.0`.
 
 ## Règle d'or
 
