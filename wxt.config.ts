@@ -31,6 +31,15 @@ export default defineConfig({
     permissions: [],
     host_permissions: ["http://*.fourmizzz.fr/*"],
     content_scripts: [
+      // Bootstrap au document_start : pose des classes CSS sur <html> dès
+      // l'arrivée du HTML, avant le parsing du body. Permet d'éviter le flash
+      // de contenu natif (sur construction.php#cout notamment) en laissant
+      // outiiil.css cacher la simulation pendant le parse.
+      {
+        matches: ["http://*.fourmizzz.fr/*"],
+        js: ["js/bootstrap.js"],
+        run_at: "document_start",
+      },
       {
         matches: ["http://*.fourmizzz.fr/*"],
         css: ["css/outiiil.css", "css/toasts.css", "css/datatables.css"],
@@ -53,6 +62,7 @@ export default defineConfig({
           "js/lib/moment_2.19.1.js",
           "js/lib/moment-locale-fr.js",
           "js/lib/moment-duration-format.js",
+          "js/data/couts.js",
           "js/class/Utils.js",
           "js/class/Alliance.js",
           "js/class/Armee.js",

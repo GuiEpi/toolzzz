@@ -978,3 +978,21 @@ center > div > #tabMembresAlliance {
     padding: 0px !important;
   }
 }
+
+/* Mode "Coûts" sur construction.php#cout : on cache la simulation native dès
+ * le parse du HTML (le bootstrap script pose la classe sur <html> au
+ * document_start) pour éviter le flash de contenu natif avant que JS ne
+ * prenne la main.
+ *
+ * `:has()` permet de cibler le <table> parent des .ligneAmelioration sans
+ * ID stable. Supporté Chrome 105+ et Firefox 121+ — couvre largement notre
+ * strict_min_version Firefox 142.
+ */
+.toolzzz-mode-couts table:has(> tbody > tr.ligneAmelioration),
+.toolzzz-mode-couts table:has(> tr.ligneAmelioration),
+.toolzzz-mode-couts #centre > strong,
+.toolzzz-mode-couts #centre > br,
+.toolzzz-mode-couts #centre > small,
+.toolzzz-mode-couts #centre > span.small {
+  display: none !important;
+}
