@@ -107,6 +107,45 @@ class PageReine {
       );
       $("#cout_nourriture" + i).text(e.currentTarget.value);
     });
+    // Slider de ponte (équivalent du slider natif Compte+) — uniquement
+    // pour les unités déverrouillées, identifiées par la présence du champ
+    // input_cout_nombre. Plage 1 → max sur 7 jours, comme en Compte+.
+    const SECONDES_7J = 7 * 24 * 3600;
+    $("input[id^='input_cout_nombre']").each((idx, input) => {
+      let suffix = $(input).attr("id").replace("input_cout_nombre", ""),
+        iUnite = suffix === "" ? 0 : parseInt(suffix),
+        tempsParUnite = TEMPS_UNITE[iUnite] * Math.pow(0.9, monProfil.getTDP()),
+        max7j = Math.floor(SECONDES_7J / tempsParUnite);
+      if (max7j < 1) return;
+      let sliderId = "o_sliderPonte" + suffix;
+      $(input)
+        .closest("form")
+        .find("table:first tbody")
+        .prepend(
+          `<tr><td colspan="2"><div id="${sliderId}" class="slider tooltip_haut" title="Vous pouvez aussi cliquer sur les nombres." style="margin:3px;margin-right:12px;"></div></td></tr>`,
+        );
+      // 20 paliers visibles le long de la course. jQuery UI exige que
+      // (max - min) soit un multiple exact de step pour snapper proprement,
+      // donc on aligne `slidMax` sur `1 + 20*step`, et on remappe la
+      // dernière position vers `max7j` pour atteindre exactement 7 jours.
+      const PALIERS = 20;
+      let step = Math.max(1, Math.floor((max7j - 1) / PALIERS));
+      let slidMax = 1 + PALIERS * step;
+      $("#" + sliderId).slider({
+        min: 1,
+        max: slidMax,
+        value: 1,
+        step: step,
+        slide: (event, ui) => {
+          let nombre = ui.value === slidMax ? max7j : ui.value;
+          $("#cout_nombre" + suffix).text(numeral(nombre).format());
+          $("#input_cout_nombre" + suffix).val(nombre);
+          $("#nombre_de_ponte" + suffix).attr("value", nombre);
+          $("#cout_temps" + suffix).text(Utils.intToTime(nombre * tempsParUnite));
+          $("#cout_nourriture" + suffix).text(numeral(nombre * COUT_UNITE[iUnite]).format("0 a"));
+        },
+      });
+    });
     // Sauvegarde de la ponte en cours
     let listePonte = new Array();
     for (let i = 1, l = $(".tableau_leger:eq(0) tr").length; i < l; i++) {
