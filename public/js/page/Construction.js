@@ -110,19 +110,118 @@ class PageConstruction {
   }
   /**
    * (Re)dessine les deux charts en fonction des sélections actuelles.
-   * Stub pour l'instant : sera complété au commit suivant avec Highcharts.
+   * Croissance exponentielle des coûts → log sur l'axe Y de droite, axe linéaire
+   * (formaté en durée) à gauche pour le temps.
    *
    * @private
    * @method _renderCoutsCharts
    */
   _renderCoutsCharts() {
-    let [niveauMin, niveauMax] = $("#o_coutsSlider").slider("values");
-    $("#o_coutsChartConstru").html(
-      `<em class='reduce'>Construction ${$("#o_coutsConstru").val()} de N${niveauMin} à N${niveauMax} — chart à venir</em>`,
-    );
-    $("#o_coutsChartRecherche").html(
-      `<em class='reduce'>Recherche ${$("#o_coutsRecherche").val()} de N${niveauMin} à N${niveauMax} — chart à venir</em>`,
-    );
+    let [niveauMin, niveauMax] = $("#o_coutsSlider").slider("values"),
+      withBonus = $("#o_coutsBonus").is(":checked"),
+      archi = withBonus ? monProfil.niveauRecherche[3] || 0 : 0,
+      sa = withBonus ? monProfil.niveauConstruction[6] || 0 : 0,
+      construId = $("#o_coutsConstru").val(),
+      construItem = COUTS_CONSTRUCTIONS[construId],
+      labId = $("#o_coutsRecherche").val(),
+      labItem = COUTS_RECHERCHES[labId];
+    // Construction chart
+    if (construItem) {
+      let max = Math.min(niveauMax, construItem.max),
+        levels = [],
+        timeData = [],
+        matData = [],
+        extraData = [],
+        extraName = construId === "cons5" ? "Production / jour" : "Capacité";
+      for (let n = niveauMin; n <= max; n++) {
+        levels.push(n);
+        timeData.push(coutsTempsConstru(construItem, n, archi));
+        matData.push(coutsMat(construItem, n));
+        if (construId === "cons3" || construId === "cons4") {
+          extraData.push(coutsCapaEntrepot(n));
+        } else if (construId === "cons5") {
+          extraData.push(coutsProdChampi(construItem, n));
+        }
+      }
+      let series = [
+        { name: "Temps", data: timeData, yAxis: 0, color: "#3498db" },
+        { name: "Matériaux", data: matData, yAxis: 1, color: "#e67e22" },
+      ];
+      if (extraData.length) {
+        series.push({ name: extraName, data: extraData, yAxis: 1, color: "#27ae60" });
+      }
+      this._renderCoutsChart("o_coutsChartConstru", construItem.nom, levels, series);
+    }
+    // Recherche chart
+    if (labItem) {
+      let max = Math.min(niveauMax, labItem.max),
+        levels = [],
+        timeData = [],
+        pomData = [],
+        matData = [];
+      for (let n = niveauMin; n <= max; n++) {
+        levels.push(n);
+        timeData.push(coutsTempsRecherche(labItem, n, sa));
+        pomData.push(coutsPom(labItem, n));
+        matData.push(coutsMat(labItem, n));
+      }
+      let series = [
+        { name: "Temps", data: timeData, yAxis: 0, color: "#3498db" },
+        { name: "Pommes", data: pomData, yAxis: 1, color: "#e74c3c" },
+        { name: "Matériaux", data: matData, yAxis: 1, color: "#e67e22" },
+      ];
+      this._renderCoutsChart("o_coutsChartRecherche", labItem.nom, levels, series);
+    }
+  }
+  /**
+   * @private
+   * @method _renderCoutsChart
+   */
+  _renderCoutsChart(containerId, titre, levels, series) {
+    Highcharts.chart(containerId, {
+      chart: { backgroundColor: "transparent" },
+      title: { text: titre },
+      xAxis: { categories: levels, title: { text: "Niveau" } },
+      yAxis: [
+        {
+          title: { text: "Temps", style: { color: "#3498db" } },
+          labels: {
+            formatter: function () {
+              return this.value > 0 ? Utils.intToTime(this.value) : "0";
+            },
+            style: { color: "#3498db" },
+          },
+        },
+        {
+          title: { text: "Coût / Capacité", style: { color: "#e67e22" } },
+          type: "logarithmic",
+          opposite: true,
+          labels: {
+            formatter: function () {
+              return numeral(this.value).format("0a");
+            },
+            style: { color: "#e67e22" },
+          },
+        },
+      ],
+      tooltip: {
+        shared: true,
+        formatter: function () {
+          let html = `<b>Niveau ${this.x}</b><br/>`;
+          this.points.forEach((p) => {
+            let val = p.series.name === "Temps" ? Utils.intToTime(p.y) : numeral(p.y).format();
+            html += `<span style="color:${p.series.color}">●</span> ${p.series.name} : <b>${val}</b><br/>`;
+          });
+          return html;
+        },
+      },
+      plotOptions: {
+        series: { marker: { enabled: levels.length <= 25 } },
+      },
+      series: series,
+      credits: { enabled: false },
+      legend: { itemStyle: { fontSize: "12px" } },
+    });
   }
   /**
    * Ajoute un title detaillé pour connaitre la rentabilité de la construction : etable à pucerons.
