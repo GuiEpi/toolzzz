@@ -508,7 +508,7 @@ class PageRessource {
     // Affectation des ouvriéres inutilisé si on a la pref
     if (affection) {
       let RecolteMateriaux = numeral($("#RecolteMateriaux").val()).value(),
-        RecolteNourriture = numeral($("#RecolteMRecolteNourritureateriaux").val()).value();
+        RecolteNourriture = numeral($("#RecolteNourriture").val()).value();
       // si on ne couvre pas le terrain et qu'on a assez d'ouvriére
       if (
         RecolteMateriaux + RecolteNourriture < Utils.terrain &&
