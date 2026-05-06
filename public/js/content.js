@@ -516,25 +516,48 @@ const DATEPICKER_OPTION = {
       const $tip = $(
         `<div id='o_boiteInfoTooltip' class='ui-tooltip ui-corner-all ui-widget-shadow ui-widget ui-widget-content warning-tooltip' role='tooltip' style='position:absolute;display:none;z-index:99999;pointer-events:none;'><div class='ui-tooltip-content'></div></div>`,
       ).appendTo("body");
+      // Capacité d'entrepôt = 500 + 1200 × 2^niveau (formule identique pour
+      // Nourriture et Matériaux, vérifiée sur s1/s2/s3/test via la table de
+      // référence toolzzz.fr/couts.php). On préfère la formule au ratio
+      // current/percent, qui est inutilisable à 0% affiché et imprécis à
+      // bas niveau de remplissage.
+      const maxEntrepot = (niveau) => 500 + 1200 * Math.pow(2, niveau);
+      const niveauEntrepot = (type) => {
+        if (type === "Nourriture") return monProfil.niveauConstruction[1];
+        if (type === "Matériaux") return monProfil.niveauConstruction[2];
+        return undefined;
+      };
       $(".tooltip_boite_info").each(function () {
         const $td = $(this);
         const original = $td.attr("title") || $td.attr("data-tooltip-original-title");
         if (!original || !/rempli à \d+\s*%/.test(original)) return;
         const $val = $td.find(".texte_ligne_boite_info");
         if (!$val.length) return;
-        const value = numeral($val.text().trim()).value();
+        const value = numeral($val.text().trim()).value() ?? 0;
         const match = original.match(/rempli à (\d+)\s*%/);
-        if (!match || !value) return;
-        const percent = parseInt(match[1], 10);
-        if (!percent) return;
-        const max = Math.round(value / (percent / 100));
-        const restant = Math.max(0, max - value);
+        if (!match) return;
+        const percentAffiche = parseInt(match[1], 10);
         const type = /nourriture/i.test(original)
           ? "Nourriture"
           : /matériaux|materiaux/i.test(original)
             ? "Matériaux"
             : "Stock";
-        const html = `<b>${type}</b><br/>Actuel : ${numeral(value).format()}<br/>Maximum : ${numeral(max).format()} (${percent}%)<br/><b style="color:#27ae60">Place libre : ${numeral(restant).format()}</b>`;
+        const niveau = niveauEntrepot(type);
+        let html;
+        if (niveau !== undefined) {
+          const max = maxEntrepot(niveau);
+          const restant = Math.max(0, max - value);
+          const percentReel = max > 0 ? Math.round((value / max) * 1000) / 10 : 0;
+          html = `<b>${type}</b><br/>Actuel : ${numeral(value).format()}<br/>Maximum : ${numeral(max).format()} (${percentReel}%)<br/><b style="color:#27ae60">Place libre : ${numeral(restant).format()}</b>`;
+        } else if (percentAffiche > 0 && value > 0) {
+          // Fallback : type non reconnu (ni Nourriture ni Matériaux) ou
+          // niveauConstruction non chargé. On retombe sur l'ancien ratio.
+          const max = Math.round(value / (percentAffiche / 100));
+          const restant = Math.max(0, max - value);
+          html = `<b>${type}</b><br/>Actuel : ${numeral(value).format()}<br/>Maximum : ${numeral(max).format()} (${percentAffiche}%)<br/><b style="color:#27ae60">Place libre : ${numeral(restant).format()}</b>`;
+        } else {
+          html = `<b>${type}</b><br/>Actuel : ${numeral(value).format()}`;
+        }
         // Vide le title pour neutraliser le tooltip jQuery UI de la page (sa content
         // fn par défaut retourne attr("title") = "" → pas de rendu).
         $td.attr("title", "");
