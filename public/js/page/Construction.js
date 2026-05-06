@@ -63,7 +63,7 @@ class PageConstruction {
     $("#cadre, #centre").last().append(`
         <div id='o_couts' class='boite_amelioration simulateur centre' style='display:none;'>
           <h2>Coûts & temps de développement</h2>
-          <p class='reduce'>Choisis un item dans chaque liste ; les courbes affichent le temps de construction/recherche, le coût en matériaux (et pommes pour les recherches), et la capacité ou production quand applicable. Tenir compte de tes améliorations applique le bonus Architecture (-10%/niv sur le temps de construction) et Salle d'analyse (-10%/niv sur le temps de recherche).</p>
+          <p class='reduce'>Choisis un item dans chaque liste ; les courbes affichent le temps de construction/recherche, le coût en matériaux, en pommes et en ouvrières (selon la recherche), ainsi que la capacité ou production quand applicable. Les niveaux d'Architecture et de Salle d'analyse sont pré-remplis avec les tiens — modifie-les pour simuler un autre profil (-10%/niv de temps).</p>
           <table class='o_maxWidth o_marginT15' id='o_coutsControls'>
             <tr>
               <td><b>Construction</b></td>
@@ -79,9 +79,10 @@ class PageConstruction {
               </td>
             </tr>
             <tr>
-              <td colspan='4' class='left'>
-                <label><input type='checkbox' id='o_coutsBonus' checked/> Tenir compte de mes améliorations (Architecture <b>${archiNiveau}</b>, Salle d'analyse <b>${saNiveau}</b>)</label>
-              </td>
+              <td>Architecture</td>
+              <td><input type='text' id='o_coutsArchi' value='${archiNiveau}' size='3'/></td>
+              <td>Salle d'analyse</td>
+              <td><input type='text' id='o_coutsSa' value='${saNiveau}' size='3'/></td>
             </tr>
           </table>
           <div id='o_coutsChartConstru' style='height:380px;margin-top:15px;'></div>
@@ -91,16 +92,16 @@ class PageConstruction {
     $("#o_coutsSlider").slider({
       range: true,
       min: 1,
-      max: 45,
+      max: 50,
       values: [1, 20],
       slide: (event, ui) => {
         $("#o_coutsSliderLabel").text(`${ui.values[0]} – ${ui.values[1]}`);
         this._renderCoutsCharts();
       },
     });
-    $("#o_coutsConstru, #o_coutsRecherche, #o_coutsBonus").on("change", () =>
-      this._renderCoutsCharts(),
-    );
+    $("#o_coutsArchi, #o_coutsSa").spinner({ min: 0, max: 45, numberFormat: "i" });
+    $("#o_coutsConstru, #o_coutsRecherche").on("change", () => this._renderCoutsCharts());
+    $("#o_coutsArchi, #o_coutsSa").on("input spin", () => this._renderCoutsCharts());
     // Toggle natif <-> widget selon le hash : sur #cout on masque la simulation
     // native (build queue, lignes d'amélioration) pour ne montrer que les
     // courbes. Sans hash, comportement habituel. hashchange permet de
@@ -143,9 +144,8 @@ class PageConstruction {
    */
   _renderCoutsCharts() {
     let [niveauMin, niveauMax] = $("#o_coutsSlider").slider("values"),
-      withBonus = $("#o_coutsBonus").is(":checked"),
-      archi = withBonus ? monProfil.niveauRecherche[3] || 0 : 0,
-      sa = withBonus ? monProfil.niveauConstruction[6] || 0 : 0,
+      archi = parseInt($("#o_coutsArchi").spinner("value")) || 0,
+      sa = parseInt($("#o_coutsSa").spinner("value")) || 0,
       construId = $("#o_coutsConstru").val(),
       construItem = COUTS_CONSTRUCTIONS[construId],
       labId = $("#o_coutsRecherche").val(),
@@ -182,19 +182,22 @@ class PageConstruction {
       let max = Math.min(niveauMax, labItem.max),
         levels = [],
         timeData = [],
+        ouvData = [],
         pomData = [],
         matData = [];
       for (let n = niveauMin; n <= max; n++) {
         levels.push(n);
         timeData.push(coutsTempsRecherche(labItem, n, sa));
+        if (labItem.o) ouvData.push(coutsOuv(labItem, n));
         pomData.push(coutsPom(labItem, n));
         matData.push(coutsMat(labItem, n));
       }
-      let series = [
-        { name: "Temps", data: timeData, yAxis: 0, color: "#3498db" },
-        { name: "Pommes", data: pomData, yAxis: 1, color: "#e74c3c" },
-        { name: "Matériaux", data: matData, yAxis: 1, color: "#e67e22" },
-      ];
+      let series = [{ name: "Temps", data: timeData, yAxis: 0, color: "#3498db" }];
+      if (ouvData.length) {
+        series.push({ name: "Ouvrières", data: ouvData, yAxis: 1, color: "#9b59b6" });
+      }
+      series.push({ name: "Pommes", data: pomData, yAxis: 1, color: "#e74c3c" });
+      series.push({ name: "Matériaux", data: matData, yAxis: 1, color: "#e67e22" });
       this._renderCoutsChart("o_coutsChartRecherche", labItem.nom, levels, series);
     }
   }
