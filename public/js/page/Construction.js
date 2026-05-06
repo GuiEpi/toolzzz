@@ -58,7 +58,7 @@ class PageConstruction {
     let saNiveau = monProfil.niveauConstruction[6] || 0;
     $("#cadre, #centre").last().append(`
         <a id='cout'></a>
-        <div id='o_couts' class='boite_amelioration simulateur centre'>
+        <div id='o_couts' class='boite_amelioration simulateur centre' style='display:none;'>
           <h2>Coûts & temps de développement</h2>
           <p class='reduce'>Choisis un item dans chaque liste ; les courbes affichent le temps de construction/recherche, le coût en matériaux (et pommes pour les recherches), et la capacité ou production quand applicable. Tenir compte de tes améliorations applique le bonus Architecture (-10%/niv sur le temps de construction) et Salle d'analyse (-10%/niv sur le temps de recherche).</p>
           <table class='o_maxWidth o_marginT15' id='o_coutsControls'>
@@ -98,8 +98,30 @@ class PageConstruction {
     $("#o_coutsConstru, #o_coutsRecherche, #o_coutsBonus").on("change", () =>
       this._renderCoutsCharts(),
     );
-    this._renderCoutsCharts();
+    // Toggle natif <-> widget selon le hash : sur #cout on masque la simulation
+    // native (build queue, lignes d'amélioration) pour ne montrer que les
+    // courbes. Sans hash, comportement habituel. hashchange permet de
+    // basculer sans recharger la page (depuis une autre entrée du menu).
+    // Highcharts.render est appelé seulement quand le widget devient visible
+    // (sinon il calcule des dimensions à 0).
+    this._appliquerHashCouts();
+    $(window).on("hashchange.couts", () => this._appliquerHashCouts());
     return this;
+  }
+  /**
+   * @private
+   * @method _appliquerHashCouts
+   */
+  _appliquerHashCouts() {
+    let surCouts = location.hash === "#cout";
+    if (surCouts) {
+      $("#centre > .simulateur, #centre > strong, #centre > br").hide();
+      $("#o_couts").show();
+      this._renderCoutsCharts();
+    } else {
+      $("#centre > .simulateur, #centre > strong, #centre > br").show();
+      $("#o_couts").hide();
+    }
   }
   /**
    * (Re)dessine les deux charts en fonction des sélections actuelles.

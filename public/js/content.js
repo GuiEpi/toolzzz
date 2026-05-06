@@ -476,16 +476,15 @@ const DATEPICKER_OPTION = {
           );
       }
 
-      // Onglet "Coûts" dans le menu colonie (Fourmilière) — injecté sur toutes
-      // les pages, juste après "Construction" puisque la feature vit sur cette
-      // page (#cout). On réutilise la classe `boutonDescription` qui a un look
-      // graphique cohérent avec une vue de courbes.
-      if ($("#menuFourmiliere .boutonConstruction").length && !$("#o_ongletCouts").length) {
-        $("#menuFourmiliere .boutonConstruction")
-          .parent()
-          .after(
-            `<li><a id='o_ongletCouts' class='boutonDescription' href='construction.php#cout'><span></span>Coûts</a></li>`,
-          );
+      // Onglet "Coûts" dans le menu colonie (Fourmilière) — injecté en bout de
+      // liste, sur toutes les pages où le menu existe. La feature vit sur
+      // construction.php (#cout) ; PageConstruction intercepte le hash pour
+      // masquer la simulation native et n'afficher que les courbes. Classe
+      // `boutonDescription` réutilisée pour le look graphique cohérent.
+      if ($("#menuFourmiliere").length && !$("#o_ongletCouts").length) {
+        $("#menuFourmiliere").append(
+          `<li><a id='o_ongletCouts' class='boutonDescription' href='construction.php#cout'><span></span>Coûts</a></li>`,
+        );
       }
 
       // Notification "Nouveautés" — toast sticky au 1er chargement après une mise à jour.
