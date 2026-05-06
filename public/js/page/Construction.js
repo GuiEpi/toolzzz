@@ -118,7 +118,9 @@ class PageConstruction {
     // native) plutôt que `#centre > .simulateur` qui rate le DOM si la table
     // est wrappée dans un autre conteneur. On ajoute aussi le strong de la
     // construction en cours et les <br> séparateurs autour.
-    let $natif = $(".ligneAmelioration").closest("table").add("#centre > strong, #centre > br");
+    let $natif = $(".ligneAmelioration")
+      .closest("table")
+      .add("#centre > strong, #centre > br, #centre > small, #centre > span.small");
     if (surCouts) {
       $natif.hide();
       $("#o_couts").show();
