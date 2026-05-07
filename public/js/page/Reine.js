@@ -131,20 +131,24 @@ class PageReine {
       const PALIERS = 20;
       let step = Math.max(1, Math.floor((max7j - 1) / PALIERS));
       let slidMax = 1 + PALIERS * step;
+      let sync = (nombre) => {
+        $("#cout_nombre" + suffix).text(numeral(nombre).format());
+        $("#input_cout_nombre" + suffix).val(nombre);
+        $("#nombre_de_ponte" + suffix).attr("value", nombre);
+        $("#cout_temps" + suffix).text(Utils.intToTime(nombre * tempsParUnite));
+        $("#cout_nourriture" + suffix).text(numeral(nombre * COUT_UNITE[iUnite]).format("0 a"));
+      };
       $("#" + sliderId).slider({
         min: 1,
         max: slidMax,
         value: 1,
         step: step,
-        slide: (event, ui) => {
-          let nombre = ui.value === slidMax ? max7j : ui.value;
-          $("#cout_nombre" + suffix).text(numeral(nombre).format());
-          $("#input_cout_nombre" + suffix).val(nombre);
-          $("#nombre_de_ponte" + suffix).attr("value", nombre);
-          $("#cout_temps" + suffix).text(Utils.intToTime(nombre * tempsParUnite));
-          $("#cout_nourriture" + suffix).text(numeral(nombre * COUT_UNITE[iUnite]).format("0 a"));
-        },
+        slide: (event, ui) => sync(ui.value === slidMax ? max7j : ui.value),
       });
+      // Sync initial : sans cet appel, les displays nombre/temps/nourriture
+      // gardent l'état natif (typiquement 0 ou la valeur courante de la ponte
+      // en cours) alors que le slider est posé à 1 — incohérence visuelle.
+      sync(1);
     });
     // Sauvegarde de la ponte en cours
     let listePonte = new Array();
