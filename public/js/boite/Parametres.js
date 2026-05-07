@@ -161,9 +161,15 @@ class BoiteParametre extends Boite {
    *
    */
   parametreGeneral() {
+    // L'affectation auto Toolzzz vit dans PageRessource.plus(), gated non-C+.
+    // En C+ l'option ne fait rien (et le jeu propose sa propre affectation auto
+    // côté serveur), donc on la masque pour éviter la confusion.
+    let blocAffectation = Utils.comptePlus
+      ? ""
+      : `<p class='left reduce gras'>L'affectation sera automatique lors de la consultation de la page ressource</p>
+         ${monProfil.parametre[this._paramGeneral[0]].getForm()}`;
     $("#o_tabsParametre1").append(`<form>
-            <p class='left reduce gras'>L'affectation sera automatique lors de la consultation de la page ressource</p>
-            ${monProfil.parametre[this._paramGeneral[0]].getForm()}
+            ${blocAffectation}
             <p class='left reduce gras'>La méthode sera sélectionnée par défaut dans le lanceur de flood</p>
             ${monProfil.parametre[this._paramGeneral[1]].getForm()}
             <p class='left reduce gras'>Indiquez le nombre d'unité selon l'objectif</p>
