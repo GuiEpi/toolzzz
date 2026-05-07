@@ -237,27 +237,30 @@ Pour une feature qui remplace temporairement le contenu natif d'une page (ex. ca
 
 1. **Trigger dans le menu colonne natif** — injecter un `<li>` avec une classe `boutonX` existante dans `#menuFourmiliere` ou `#menuAlliance`, l'`href` pointe vers la page cible avec un hash distinct.
 2. **Toggle hash-based** — `location.hash === "#xxx"` détermine si on cache le natif et montre le widget. Un listener `hashchange` permet de basculer sans rechargement.
-3. **Anti-flash via bootstrap au document_start** — voir `public/js/bootstrap.js` qui pose une classe `toolzzz-mode-X` sur `<html>` dès le `document_start`. Une règle CSS dans `outiiil.css` cache le contenu natif pendant le parse, avant même que le content_script principal (chargé à `document_idle` par défaut) ne tourne.
+3. **Anti-flash via bootstrap au document_start** — voir `public/js/bootstrap.js`, déclaré comme content_script séparé avec `run_at: "document_start"`. Le script (a) injecte un `<style>` inline avec les règles de masquage, et (b) pose une classe `toolzzz-mode-X` sur `<html>` selon `location.hash`. Comme tout est appliqué avant le parse du body, le natif n'a jamais l'occasion de flasher.
 
 ```js
-// public/js/bootstrap.js — second content_scripts entry, run_at: document_start
+// public/js/bootstrap.js — content_scripts entry séparée, run_at: document_start
 (function () {
+  // ⚠️ Ne PAS compter sur content_scripts.css du manifest pour ce CSS-là :
+  // il suit le run_at de son entrée. Chrome est rapide donc ça passe parfois,
+  // mais Firefox laisse passer un flash visible. L'injection inline depuis
+  // ce script document_start est la seule approche fiable cross-browser.
+  let style = document.createElement("style");
+  style.textContent = `
+    .toolzzz-mode-X table:has(.ligneAmelioration),
+    .toolzzz-mode-X #centre > strong {
+      display: none !important;
+    }
+  `;
+  (document.head || document.documentElement).appendChild(style);
+
   let appliquer = () =>
     document.documentElement.classList.toggle("toolzzz-mode-X", location.hash === "#X");
   appliquer();
   window.addEventListener("hashchange", appliquer);
 })();
 ```
-
-```css
-/* outiiil.css — :has() pour cibler le parent natif sans ID stable */
-.toolzzz-mode-X table:has(.ligneAmelioration),
-.toolzzz-mode-X #centre > strong {
-  display: none !important;
-}
-```
-
-→ Le CSS `content_scripts.css` est injecté à `document_start` peu importe le `run_at` du JS — la règle est en effet dès le parse du body.
 
 → Côté JS principal, ne **plus** faire `.hide()/.show()` sur les éléments natifs : laisser le CSS gérer. Sinon les inline styles deviennent prioritaires sur la classe `toolzzz-mode-X` quand on bascule.
 
