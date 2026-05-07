@@ -40,7 +40,35 @@ class PageReine {
         `<table class="tab_stat" style="display: none;"><tbody><tr><td style="text-align:center;font-size:0.8em;height:30px;" colspan="2"> Avec Bonus</td></tr><tr title="Vie avec Bouclier niveau ${monProfil.niveauRecherche[1]}"><td class="icone_vie" style="position:relative; top:4px">${IMG_VIE}</td><td class="vie" style="white-space:nowrap">${VIE_UNITE[index] + ((VIE_UNITE[index] / 10) * monProfil.niveauRecherche[1]).toFixed(1) / 1}</td></tr><tr title="Dégâts en Attaque avec Armes niveau ${monProfil.niveauRecherche[2]}"><td class="icone_degat_attaque" style="position:relative;top:3px">${IMG_ATT}</td><td class="degat_defense" style="white-space:nowrap">${ATT_UNITE[index] + ((ATT_UNITE[index] / 10) * monProfil.niveauRecherche[2]).toFixed(1) / 1}</td></tr><tr title="Dégâts en Défense avec Armes niveau ${monProfil.niveauRecherche[2]}"><td class="icone_degat_defense" style="position:relative;top:3px">${IMG_DEF}</td><td class="degat_defense" style="white-space:nowrap">${DEF_UNITE[index] + ((DEF_UNITE[index] / 10) * monProfil.niveauRecherche[2]).toFixed(1) / 1}</td></tr><tr><td style="height:30px;" colspan="2"></td></tr></tbody></table>`,
       );
     });
-    // Switch entre les inputs
+    // Switch entre les inputs : clic sur un bouton-span → on ouvre son input
+    // (et on referme les autres). Les natifs Fourmizzz appellent
+    // `ouvrir_input` / `fermer_input` via des inline `onclick` / `onblur`,
+    // mais ces fonctions semblent C+-only — chez nous elles peuvent throw
+    // silencieusement et bloquer le reste. On vire les attributs inline pour
+    // que seuls nos handlers jQuery (plus bas) prennent la main.
+    $(
+      "span[id^='bouton_cout_nombre'], span[id^='bouton_cout_temps'], span[id^='bouton_cout_nourriture']",
+    ).removeAttr("onclick");
+    $(
+      "input[id^='input_cout_nombre'], input[id^='input_cout_temps'], input[id^='input_cout_nourriture']",
+    )
+      .removeAttr("onblur")
+      .removeAttr("onkeyup");
+    // Le HTML natif non-C+ oublie height/width sur #cout_nombre alors que
+    // cout_temps et cout_nourriture les ont — du coup le span fourmi se
+    // redimensionne au contenu et casse l'alignement visuel avec les deux
+    // autres. On aligne ici.
+    $("span[id^='cout_nombre']").css({ height: "20px", width: "85px" });
+    // État initial forcé : tous les spans visibles, tous les inputs cachés.
+    // Sans ça, l'input nombre de la page native peut apparaître ouvert dès le
+    // chargement (au lieu d'être en mode display compact comme côté C+).
+    $("span[id^='cout_nombre'], span[id^='cout_temps'], span[id^='cout_nourriture']").css(
+      "display",
+      "inline-block",
+    );
+    $(
+      "input[id^='input_cout_nombre'], input[id^='input_cout_temps'], input[id^='input_cout_nourriture']",
+    ).hide();
     let element = ["cout_nombre", "cout_temps", "cout_nourriture"];
     for (let i = 0; i < 3; i++) {
       $("span[id^='bouton_" + element[i] + "']").click((e) => {
@@ -49,7 +77,9 @@ class PageReine {
           : "";
 
         $("#input_" + element[i] + j).val($("#" + element[i] + j).text());
-        $("#input_" + element[i] + j).show();
+        $("#input_" + element[i] + j)
+          .show()
+          .focus();
 
         $("#" + element[(i + 1) % 3] + j + ", #" + element[(i + 2) % 3] + j).css(
           "display",
@@ -68,6 +98,21 @@ class PageReine {
         ).hide();
       });
     }
+    // Blur handler : referme l'input et restaure le span quand l'utilisateur
+    // sort du champ (clic ailleurs, Tab, etc.). Délégué via document pour
+    // couvrir aussi les inputs créés dynamiquement plus bas (cout_temps /
+    // cout_nourriture).
+    $(document).on(
+      "blur",
+      "input[id^='input_cout_nombre'], input[id^='input_cout_temps'], input[id^='input_cout_nourriture']",
+      (e) => {
+        let id = $(e.currentTarget).attr("id"),
+          m = id.match(/^input_(cout_(?:nombre|temps|nourriture))(\d*)$/);
+        if (!m) return;
+        $(e.currentTarget).hide();
+        $("#" + m[1] + m[2]).css("display", "inline-block");
+      },
+    );
     // Gestion du temps pour la ponte
     $("span[id^='bouton_cout_temps']").each((i, elt) => {
       $(elt).append(
