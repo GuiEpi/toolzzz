@@ -304,6 +304,32 @@ class BoiteComptePlus {
     });
   }
   /**
+   * Construit le bloc de raccourcis « menu rapide » (cf. MENU_RAPIDE) à
+   * partir des préférences stockées par `PageCompte`. Renvoie une chaîne
+   * vide si aucune préférence n'est cochée — pas de bloc fantôme.
+   *
+   * @private
+   * @method _htmlRaccourcisMenuRapide
+   * @returns {string}
+   */
+  _htmlRaccourcisMenuRapide() {
+    let prefs = {};
+    try {
+      prefs = JSON.parse(localStorage.getItem(MENU_RAPIDE_KEY)) || {};
+    } catch (e) {
+      return "";
+    }
+    let actifs = MENU_RAPIDE.filter((item) => prefs[item.name]);
+    if (!actifs.length) return "";
+    let liens = actifs
+      .map(
+        (item) =>
+          `<a href='${item.url}' class='reduce' style='display:inline-block;margin:2px 6px;white-space:nowrap;'>${item.label}</a>`,
+      )
+      .join("");
+    return `<div class='o_menuRapide centre' style='padding:6px 4px;border-top:1px solid rgba(255,255,255,0.15);margin-top:4px;'>${liens}</div>`;
+  }
+  /**
    * Affiche la boite.
    *
    * @private
@@ -334,7 +360,9 @@ class BoiteComptePlus {
           // Ligne Convoi
           "<tr class='lien' title='Aller sur Convoi'><td><a href='commerce.php'><div style='position:relative;height:27px;padding-left:5px;'><div class='mini_icone_convoi'/><div id='o_resteConvoi' class='o_labelBoite'></div><div id='o_tempsConvoi' class='o_labelTempsBoite'></div><div id='o_progressConvoi'/></div></a></td></tr>" +
           // Formulaire de recherche
-          "</table><form method='post' action='classementAlliance.php' style='text-align:center;margin-top:5px;'><input type='text' name='requete' id='recherche' placeholder='Joueur ou Alliance'/></form></div></div>",
+          "</table>" +
+          this._htmlRaccourcisMenuRapide() +
+          "<form method='post' action='classementAlliance.php' style='text-align:center;margin-top:5px;'><input type='text' name='requete' id='recherche' placeholder='Joueur ou Alliance'/></form></div></div>",
       );
       // Remplissage des champs
       this.verifierDonnees()

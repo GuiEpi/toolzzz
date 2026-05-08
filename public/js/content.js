@@ -616,6 +616,10 @@ const DATEPICKER_OPTION = {
           page = new PageCommerce(boiteComptePlus);
           page.executer();
           break;
+        case uri == "/compte.php":
+          page = new PageCompte();
+          page.executer();
+          break;
         case uri == "/messagerie.php":
           page = new PageMessagerie();
           page.executer();
