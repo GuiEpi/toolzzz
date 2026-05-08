@@ -188,7 +188,11 @@ class PageReine {
         max: slidMax,
         value: 1,
         step: step,
-        slide: (event, ui) => sync(ui.value === slidMax ? max7j : ui.value),
+        // Snap vers max7j dès qu'on est dans le dernier cran (pas seulement à
+        // la valeur exacte) : sur Firefox la barre s'arrête parfois un palier
+        // avant slidMax, ce qui empêchait l'égalité stricte de matcher et
+        // affichait ~6j au lieu de 7j sur le dernier cran.
+        slide: (event, ui) => sync(ui.value >= slidMax - step ? max7j : ui.value),
       });
       // Sync initial : sans cet appel, les displays nombre/temps/nourriture
       // gardent l'état natif (typiquement 0 ou la valeur courante de la ponte
