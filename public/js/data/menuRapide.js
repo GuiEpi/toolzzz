@@ -9,12 +9,15 @@
  * Section "Compte+" volontairement omise — les fonctions concernées
  * (simulateurs, bloc note, etc.) ne sont accessibles qu'aux Compte+.
  *
- * Les URLs marquées /* TODO *\/ sont mes meilleures hypothèses ; à corriger
- * après vérification sur un compte C+ qui a tout coché.
+ * URLs et labels alignés sur le rendu natif Compte+ (extraction faite à
+ * partir d'une boîte C+ avec toutes les cases cochées). Quelques URLs ont
+ * des bizarreries dans le HTML natif (`invitation.php.php`, suffixes `.php`
+ * après `?`) qu'on conserve à l'identique pour rester compatibles avec le
+ * routeur Fourmizzz qui les accepte.
  **********************************************************************/
 
 const MENU_RAPIDE = [
-  // Fourmilière (URLs sûres : utilisées dans le menuFourmiliere natif).
+  // Fourmilière.
   { section: "Fourmilière", name: "menuRapideReine", label: "Reine", url: "Reine.php" },
   {
     section: "Fourmilière",
@@ -38,7 +41,7 @@ const MENU_RAPIDE = [
   { section: "Fourmilière", name: "menuRapideEnnemies", label: "Ennemies", url: "ennemie.php" },
   { section: "Fourmilière", name: "menuRapideColonies", label: "Colonies", url: "colonies.php" },
   { section: "Fourmilière", name: "menuRapideCarte", label: "Carte", url: "carte2.php" },
-  { section: "Fourmilière", name: "menuRapideCommerce", label: "Convois", url: "commerce.php" },
+  { section: "Fourmilière", name: "menuRapideCommerce", label: "Commerce", url: "commerce.php" },
   {
     section: "Fourmilière",
     name: "menuRapideMessagerie",
@@ -48,26 +51,22 @@ const MENU_RAPIDE = [
   {
     section: "Fourmilière",
     name: "menuRapideMaFourmiliere",
-    label: "Ma Fourmilière",
-    url: "Fourmiliere.php" /* TODO */,
+    label: "Vue",
+    url: "fourmiliere.php",
   },
   // Alliance.
-  {
-    section: "Alliance",
-    name: "menuRapideChatAlliance",
-    label: "Chat (alliance)",
-    url: "alliance.php",
-  },
+  { section: "Alliance", name: "menuRapideChatAlliance", label: "CA", url: "alliance.php" },
   {
     section: "Alliance",
     name: "menuRapideForumExterne",
     label: "Forum Externe",
-    url: "forum_externe.php" /* TODO */,
+    url: "http://fourmizzz.cforum.info/index.php",
+    target: "_blank",
   },
   {
     section: "Alliance",
     name: "menuRapideForumAlliance",
-    label: "Forum",
+    label: "Forum Alliance",
     url: "alliance.php?forum_menu",
   },
   { section: "Alliance", name: "menuRapideMembres", label: "Membres", url: "alliance.php?Membres" },
@@ -75,19 +74,19 @@ const MENU_RAPIDE = [
     section: "Alliance",
     name: "menuRapideCandidatures",
     label: "Candidatures",
-    url: "alliance.php?Candidatures" /* TODO */,
+    url: "alliance.php?voirCandidature",
   },
   {
     section: "Alliance",
     name: "menuRapideMessageCollectif",
     label: "Message Collectif",
-    url: "alliance.php?Messages" /* TODO */,
+    url: "alliance.php?messCollectif.php",
   },
   {
     section: "Alliance",
     name: "menuRapideDiplomatie",
     label: "Diplomatie",
-    url: "alliance.php?Diplomatie" /* TODO */,
+    url: "alliance.php?Diplomatie.php",
   },
   {
     section: "Alliance",
@@ -99,63 +98,50 @@ const MENU_RAPIDE = [
     section: "Alliance",
     name: "menuRapideOptions",
     label: "Options",
-    url: "alliance.php?Options" /* TODO */,
+    url: "alliance.php?Options",
   },
   // Communauté.
   { section: "Communauté", name: "menuRapideChat", label: "Chat", url: "chat.php" },
-  {
-    section: "Communauté",
-    name: "menuRapideEchange",
-    label: "Échange",
-    url: "echange.php" /* TODO */,
-  },
+  { section: "Communauté", name: "menuRapideEchange", label: "Echange", url: "echange.php" },
   {
     section: "Communauté",
     name: "menuRapidePropositions",
     label: "Propositions",
-    url: "propositions.php" /* TODO */,
+    url: "propositions.php",
   },
   {
     section: "Communauté",
     name: "menuRapideClassementJoueurs",
     label: "Classement Joueurs",
-    url: "classementJoueur.php" /* TODO */,
+    url: "classement2.php",
   },
   {
     section: "Communauté",
     name: "menuRapideClassementAlliances",
     label: "Classement Alliances",
-    url: "classementAlliance.php",
+    url: "classement2.php?type_classement=alliance_total",
   },
-  {
-    section: "Communauté",
-    name: "menuRapideMonProfil",
-    label: "Mon Profil",
-    url: "monprofil.php" /* TODO */,
-  },
-  {
-    section: "Communauté",
-    name: "menuRapideMonCompte",
-    label: "Mon Compte",
-    url: "compte.php",
-  },
+  { section: "Communauté", name: "menuRapideMonProfil", label: "Mon Profil", url: "Membre.php" },
+  { section: "Communauté", name: "menuRapideMonCompte", label: "Mon Compte", url: "compte.php" },
   {
     section: "Communauté",
     name: "menuRapideParrainage",
     label: "Parrainage",
-    url: "parrainage.php" /* TODO */,
+    url: "FourmilieresFilles.php",
   },
   {
     section: "Communauté",
     name: "menuRapideInviterAmis",
     label: "Inviter mes Amis",
-    url: "invitation.php" /* TODO */,
+    // typo dans le natif, conservée à l'identique pour matcher.
+    url: "invitation.php.php",
   },
   {
     section: "Communauté",
     name: "menuRapideForum",
-    label: "Forum (communauté)",
-    url: "forum.php" /* TODO */,
+    label: "Forum",
+    url: "http://fourmizzz.cforum.info/index.php",
+    target: "_blank",
   },
 ];
 

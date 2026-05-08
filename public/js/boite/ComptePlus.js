@@ -325,7 +325,12 @@ class BoiteComptePlus {
     }
     let actifs = MENU_RAPIDE.filter((item) => prefs[item.name]);
     if (!actifs.length) return "";
-    let liens = actifs.map((item) => `<a href='${item.url}'>${item.label}</a>`).join("");
+    let liens = actifs
+      .map((item) => {
+        let target = item.target ? ` target='${item.target}' rel='noopener'` : "";
+        return `<a href='${item.url}'${target}>${item.label}</a>`;
+      })
+      .join("");
     return `<div class='lien_rapide'>${liens}</div>`;
   }
   /**
