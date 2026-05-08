@@ -308,6 +308,10 @@ class BoiteComptePlus {
    * partir des préférences stockées par `PageCompte`. Renvoie une chaîne
    * vide si aucune préférence n'est cochée — pas de bloc fantôme.
    *
+   * Réutilise la classe native `lien_rapide` que Fourmizzz utilise dans
+   * la BoiteComptePlus côté Compte+ → on hérite gratuitement de son
+   * styling au lieu de bricoler.
+   *
    * @private
    * @method _htmlRaccourcisMenuRapide
    * @returns {string}
@@ -321,13 +325,25 @@ class BoiteComptePlus {
     }
     let actifs = MENU_RAPIDE.filter((item) => prefs[item.name]);
     if (!actifs.length) return "";
-    let liens = actifs
-      .map(
-        (item) =>
-          `<a href='${item.url}' class='reduce' style='display:inline-block;margin:2px 6px;white-space:nowrap;'>${item.label}</a>`,
-      )
-      .join("");
-    return `<div class='o_menuRapide centre' style='padding:6px 4px;border-top:1px solid rgba(255,255,255,0.15);margin-top:4px;'>${liens}</div>`;
+    let liens = actifs.map((item) => `<a href='${item.url}'>${item.label}</a>`).join("");
+    return `<div class='lien_rapide'>${liens}</div>`;
+  }
+  /**
+   * Re-rend le bloc raccourcis depuis localStorage. Appelé par PageCompte
+   * après que l'utilisateur valide ses préférences sur compte.php — évite
+   * le reload de page qui serait disproportionné pour un changement de
+   * pure préférence visuelle.
+   *
+   * @method majRaccourcisMenuRapide
+   */
+  majRaccourcisMenuRapide() {
+    if (Utils.comptePlus) return this; // natif gère pour les C+
+    let $box = $("#boiteComptePlus .contenu_boite_compte_plus");
+    if (!$box.length) return this;
+    $box.find(".lien_rapide").remove();
+    let html = this._htmlRaccourcisMenuRapide();
+    if (html) $box.append(html);
+    return this;
   }
   /**
    * Affiche la boite.
@@ -361,8 +377,9 @@ class BoiteComptePlus {
           "<tr class='lien' title='Aller sur Convoi'><td><a href='commerce.php'><div style='position:relative;height:27px;padding-left:5px;'><div class='mini_icone_convoi'/><div id='o_resteConvoi' class='o_labelBoite'></div><div id='o_tempsConvoi' class='o_labelTempsBoite'></div><div id='o_progressConvoi'/></div></a></td></tr>" +
           // Formulaire de recherche
           "</table>" +
+          "<form method='post' action='classementAlliance.php' style='text-align:center;margin-top:5px;'><input type='text' name='requete' id='recherche' placeholder='Joueur ou Alliance'/></form>" +
           this._htmlRaccourcisMenuRapide() +
-          "<form method='post' action='classementAlliance.php' style='text-align:center;margin-top:5px;'><input type='text' name='requete' id='recherche' placeholder='Joueur ou Alliance'/></form></div></div>",
+          "</div></div>",
       );
       // Remplissage des champs
       this.verifierDonnees()

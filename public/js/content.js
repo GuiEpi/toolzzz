@@ -617,7 +617,7 @@ const DATEPICKER_OPTION = {
           page.executer();
           break;
         case uri == "/compte.php":
-          page = new PageCompte();
+          page = new PageCompte(boiteComptePlus);
           page.executer();
           break;
         case uri == "/messagerie.php":

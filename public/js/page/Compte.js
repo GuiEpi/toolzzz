@@ -17,7 +17,9 @@
  * @constructor
  */
 class PageCompte {
-  constructor() {}
+  constructor(boiteComptePlus) {
+    this._boiteComptePlus = boiteComptePlus;
+  }
   /**
    * @method executer
    */
@@ -85,6 +87,7 @@ class PageCompte {
     else $("body").append(html);
     $("#o_menuRapideValider").click(() => {
       this._sauverPrefs();
+      if (this._boiteComptePlus) this._boiteComptePlus.majRaccourcisMenuRapide();
       $("#o_menuRapideStatus").text("Préférences sauvegardées.");
       setTimeout(() => $("#o_menuRapideStatus").text(""), 2500);
     });
