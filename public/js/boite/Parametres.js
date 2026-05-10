@@ -180,6 +180,7 @@ class BoiteParametre extends Boite {
       <p class='left reduce gras'>Toolzzz v${VERSION}</p>
       <p class='left reduce'>Extension open source pour Fourmizzz.fr.</p>
       <ul class='left reduce'>
+        <li><a href='${repo}/wiki' target='_blank' rel='noopener'>Wiki</a></li>
         <li><a href='${repo}' target='_blank' rel='noopener'>Code source (GitHub)</a></li>
         <li><a href='${repo}/issues/new?template=bug_report.yml' target='_blank' rel='noopener'>Signaler un bug</a></li>
         <li><a href='${repo}/issues/new?template=feature_request.yml' target='_blank' rel='noopener'>Proposer une fonctionnalité</a></li>
