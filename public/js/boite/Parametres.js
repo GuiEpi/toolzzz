@@ -140,8 +140,7 @@ class BoiteParametre extends Boite {
     // pendant le drag (la boîte n'a pas de max-width et son layout est recalculé en
     // continu, ce qui déclenche un effet "s'agrandit sans cesse").
     $("#o_tabsParametre2").append(`
-      <p class='left reduce gras'>Saisissez les identifiants des sujets de votre utilitaire</p>
-      <a id='o_paramUtilitaireInfoToggle' class='cursor souligne reduce'>▼ À quoi ça sert ? ▼</a>
+      <p class='left reduce gras' style='margin-left:10px;'>Saisissez les identifiants des sujets de votre utilitaire<span class="cliquable2" style="font-size:0.8em; font-weight:normal;" onclick="spoilerId('o_paramUtilitaireInfo');"> En savoir plus ?</span></p>
       <div id='o_paramUtilitaireInfo' class='o_marginT15 left reduce' style='display:none; max-width:500px; word-wrap:break-word; margin-left:auto; margin-right:auto;'>
         <p>Ces deux champs pointent vers les sections cachées du forum d'alliance (<b>Toolzzz_Commande</b> et <b>Toolzzz_Membre</b>, ou les anciens noms <b>Outiiil_Commande</b>/<b>Outiiil_Membre</b> si l'alliance a préparé son forum à l'époque d'Outiiil) qui servent de stockage partagé pour les fonctionnalités d'utilitaire d'alliance : assignations d'attaques, ordres collectifs, et coordonnées des membres (colonnes Tdt / Retour dans la liste des membres).</p>
         <p>Tu n'as <b>pas besoin de les remplir à la main</b> dans la majorité des cas. L'extension les auto-détecte quand tu visites le forum de ton alliance, à condition que les sections existent. C'est le chef d'alliance qui les crée via le bouton <em>Préparer le forum pour un SDC</em> dans le forum.</p>
@@ -149,12 +148,6 @@ class BoiteParametre extends Boite {
       </div>
       <form>${content}</form>
     `);
-    $("#o_paramUtilitaireInfoToggle").click(() => {
-      const $div = $("#o_paramUtilitaireInfo");
-      $div.toggle();
-      const arrow = $div.is(":visible") ? "▲" : "▼";
-      $("#o_paramUtilitaireInfoToggle").text(`${arrow} À quoi ça sert ? ${arrow}`);
-    });
     return this;
   }
   /**

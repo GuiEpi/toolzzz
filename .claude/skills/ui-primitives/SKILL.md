@@ -156,6 +156,30 @@ Toujours fournir des `language` traduits FR (cf. exemple existant). DataTables e
 - `<button class="o_button f_success">` — bouton vert (action principale ; ex. Lancer/Envoyer)
 - `<button … disabled>` — automatiquement grisé (cf. CSS `button[disabled]`)
 
+## Spoiler « En savoir plus ? » (natif Fourmizzz)
+
+Pour un bloc d'explication optionnel (masqué par défaut, révélé au clic), réutiliser le pattern natif du jeu plutôt qu'un toggle jQuery custom :
+
+```html
+<p class="left reduce gras">
+  Texte principal de la consigne<span
+    class="cliquable2"
+    style="font-size:0.8em; font-weight:normal;"
+    onclick="spoilerId('o_<feature>Info');"
+  >
+    En savoir plus ?</span
+  >
+</p>
+<div id="o_<feature>Info" style="display:none;">… contenu de l'explication …</div>
+```
+
+- **`cliquable2`** = classe native (curseur + couleur lien) ; `font-size:0.8em` rend le lien discret à côté du libellé principal.
+- **`spoilerId('id')`** = fonction globale Fourmizzz qui toggle le `display` du `<div>` cible. Vit dans le **page world**, donc accessible uniquement via `onclick` inline injecté dans le DOM — un binding jQuery côté content script n'y aurait pas accès.
+- **`font-weight:normal` inline sur le span** — nécessaire quand le parent porte `gras`, sinon l'héritage CSS rend le lien gras lui aussi (bien que `cliquable2` ne le force pas).
+- **`display:none` initial** sur le div cible — `spoilerId` se contente de basculer la visibilité.
+
+Cf. `BoiteParametres.parametreUtilitaire()` (`public/js/boite/Parametres.js`) pour un exemple en place.
+
 ## Inputs et widgets jQuery UI
 
 Disponibles partout via `jquery-ui_1.12.1.js` (tout le bundle est chargé).
