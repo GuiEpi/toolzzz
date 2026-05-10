@@ -8,7 +8,7 @@ Le **Radar** te permet de surveiller une liste de joueurs et d'alliances qui t'i
 
 Le Radar n'a pas d'icône dédiée dans la toolbar : il vit **à l'intérieur du panneau de droite Toolzzz** (l'[Overlay Compte+](Overlay-Compte-Plus)), côté à côté des barres ponte / construction / recherche / chasse / attaque / convoi.
 
-Pour basculer entre la vue Compte+ et la vue Radar, **clique sur le titre du panneau** (les flèches ◀ / ▶ de part et d'autre du titre indiquent que le panneau est toggleable). Le choix est mémorisé entre les sessions.
+Pour basculer entre la vue Compte+ et la vue Radar, **clique sur le titre du panneau** (▼ Toolzzz X.x.x ▼). Le choix est mémorisé entre les sessions.
 
 Tant que tu n'as ajouté aucun joueur ou alliance au Radar, le panneau reste sur la vue Compte+ par défaut.
 

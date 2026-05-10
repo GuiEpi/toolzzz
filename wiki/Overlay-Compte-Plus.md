@@ -6,11 +6,19 @@ Si tu joues **sans Compte+**, Fourmizzz n'affiche pas le panneau de gauche qui m
 
 > ![Panneau Compte+ Toolzzz](assets/wiki/overlay-compte-plus.png)
 
+## Bandeau de navigation
+
+En haut du panneau, le **bandeau titre** (`▼ Toolzzz X.x.x ▼`) sert aussi de bouton de bascule vers la vue [Radar](Boite-Radar). Clique dessus pour passer de la vue Compte+ à la vue Radar et inversement — le choix est mémorisé entre les sessions.
+
+> ![Bandeau de navigation du panneau](assets/wiki/overlay-compte-plus-navigation-titre.png)
+
 ## Les 6 barres
 
 Le panneau affiche en permanence l'état de tes 6 activités principales. Chaque barre se met à jour en temps réel (la progress bar tourne, le temps restant décrémente).
 
 ### Ponte
+
+> ![Barre Ponte](assets/wiki/overlay-compte-plus-ponte.png)
 
 - Unité actuellement en ponte
 - Nombre d'unités restantes
@@ -20,12 +28,16 @@ Le panneau affiche en permanence l'état de tes 6 activités principales. Chaque
 
 ### Construction
 
+> ![Barre Construction](assets/wiki/overlay-compte-plus-construction.png)
+
 - Bâtiment en cours de construction
 - Progress bar
 - Temps restant
 - Tooltip avec détails (niveau cible, ressources investies)
 
 ### Recherche
+
+> ![Barre Recherche](assets/wiki/overlay-compte-plus-recherche.png)
 
 - Technologie en cours de recherche
 - Progress bar
@@ -34,11 +46,15 @@ Le panneau affiche en permanence l'état de tes 6 activités principales. Chaque
 
 ### Chasse
 
+> ![Barre Chasse](assets/wiki/overlay-compte-plus-chasse.png)
+
 - Terrain de chasse conquis (si chasse en cours)
 - Retour dynamique : le timer du retour démarre dès que la chasse est terminée
 - **Tooltip multi-chasses** : liste de toutes les chasses en cours / en retour, par terrain.
 
 ### Attaque
+
+> ![Barre Attaque](assets/wiki/overlay-compte-plus-attaque.png)
 
 - Cible en cours
 - Nombre total d'attaques envoyées (si flood)
@@ -46,6 +62,8 @@ Le panneau affiche en permanence l'état de tes 6 activités principales. Chaque
 - **Tooltip détaillé** : liste des unités envoyées, ETA arrivée, ETA retour.
 
 ### Convoi
+
+> ![Barre Convoi](assets/wiki/overlay-compte-plus-convoi.png)
 
 - **Sens** : envoi ou réception
 - Cible (joueur source ou destinataire)
@@ -56,6 +74,8 @@ Le panneau affiche en permanence l'état de tes 6 activités principales. Chaque
 Toutes ces données viennent du `localStorage` que Toolzzz alimente quand tu interagis avec les pages concernées (Reine, Construction, Laboratoire, Ressources, Attaquer, Commerce). Le panneau lui-même se contente de les afficher de manière lisible.
 
 ## Recherche joueur / alliance
+
+> ![Champ de recherche joueur / alliance](assets/wiki/overlay-compte-plus-joueur-alliance.png)
 
 Sous les barres, un **champ de recherche avec autocomplete** te permet de chercher un joueur ou une alliance par pseudo / tag et d'aller directement sur sa page. C'est une convenience qui évite de passer par le menu Communauté → Membres.
 
