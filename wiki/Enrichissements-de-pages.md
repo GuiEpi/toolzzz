@@ -23,12 +23,13 @@ Sur la page de la Reine (où tu lances tes pontes) :
 Page `Ressources.php`, l'onglet où tu lances tes chasses :
 
 - **Lanceur de chasse intégré** : formulaire avec sélection de terrain et type de chasse, à côté du natif.
+
+  > ![Lanceur de chasse intégré](assets/wiki/lanceur-de-chasse.png)
+
 - **Bouton "Annuler toutes les chasses"** ajouté dans le bloc des chasses en cours, pour rappeler tout le monde en un clic.
 - **Affectation automatique des ouvrières** sur les terrains de chasse.
 
-> ![Lanceur de chasse intégré](assets/wiki/lanceur-de-chasse.png)
-
-> ![Affectation auto des ouvrières sur les terrains de chasse](assets/wiki/affectation-auto.png)
+  > ![Affectation auto des ouvrières sur les terrains de chasse](assets/wiki/affectation-auto.png)
 
 ## Armée
 
