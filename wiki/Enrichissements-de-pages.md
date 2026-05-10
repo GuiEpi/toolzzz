@@ -32,9 +32,7 @@ Page `Ressources.php`, l'onglet où tu lances tes chasses :
 
 ## Armée
 
-- Les **stats de l'armée totale** sont affichées avec bonus de recherche (HP total, dégâts attaque, dégâts défense).
-- Une fonction **Sauvegarde par lieu** : tu peux sauvegarder la composition de ton armée par terrain de chasse, dôme ou loge, et la recharger plus tard. Utile quand tu jongles entre plusieurs configs (chasse / défense / attaque).
-- Boutons **Copier / Coller armée** pour dupliquer rapidement une composition d'un endroit à un autre.
+- Les **stats de l'armée totale** sont affichées avec bonus de recherche (HP total, dégâts attaque, dégâts défense), pour terrain de chasse, dôme et loge.
 
 ## Ennemie (page Attaquer)
 
@@ -42,12 +40,8 @@ C'est l'une des pages les plus enrichies par Toolzzz.
 
 - **Formulaire de flood avancé** à côté du formulaire natif d'attaque : nombre d'attaques, délai entre chaque, méthode (Standard / Optimisée / Uniforme / Dégressive).
 - **Stats armée live** : à mesure que tu modifies les unités envoyées, les stats totales (HP, attaque, défense) sont mises à jour en temps réel.
-- **Sonde-killer** : si la cible est une sonde adverse, Toolzzz suggère automatiquement la composition d'armée anti-sonde que tu as configurée dans _Paramètres → Général_.
+- Boutons **Sonder** / **Sonder direct** pour pré-remplir le formulaire avec une sonde (la première sonde disponible dans ton armée, en quantité configurée dans _Paramètres → Général_). _Sonder_ attend la minute pleine pour synchroniser, _Sonder direct_ envoie immédiatement.
 - **Tooltip temps de trajet** vers cette cible.
-
-## Ennemie (listes ennemies)
-
-Sur la liste des ennemis (les fourmilières que tu as scannées), une colonne **Temps** est ajoutée affichant le temps d'attaque estimé vers chaque ennemi. Pratique pour identifier rapidement les cibles "à portée" sans avoir à cliquer dans chaque profil.
 
 ## Membre (profil joueur)
 

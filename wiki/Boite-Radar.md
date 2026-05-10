@@ -1,12 +1,12 @@
 ## Boîte Radar
 
-Le **Radar** te permet de surveiller une liste de joueurs et d'alliances qui t'intéressent : un ennemi historique, un voisin de coordonnées, une alliance rivale… Toolzzz garde leur trace localement et met en avant leurs interactions avec toi dans plusieurs endroits du jeu.
+Le **Radar** te permet de garder une liste de joueurs et d'alliances qui t'intéressent : un ennemi historique, un voisin de coordonnées, une alliance rivale… Toolzzz garde leurs coordonnées localement et te donne un tooltip de trajet au survol depuis le panneau.
 
 > ![Radar](assets/wiki/boite-radar.png)
 
 ## Ouvrir le Radar
 
-Le Radar n'a pas d'icône dédiée dans la toolbar : il vit **à l'intérieur du panneau de droite Toolzzz** (l'[Overlay Compte+](Overlay-Compte-Plus)), côté à côté des barres ponte / construction / recherche / chasse / attaque / convoi.
+Le Radar n'a pas d'icône dédiée dans la toolbar : il vit **à l'intérieur du panneau de gauche Toolzzz** (l'[Overlay Compte+](Overlay-Compte-Plus)), côté à côté des barres ponte / construction / recherche / chasse / attaque / convoi.
 
 Pour basculer entre la vue Compte+ et la vue Radar, **clique sur le titre du panneau** (▼ Toolzzz X.x.x ▼). Le choix est mémorisé entre les sessions.
 
@@ -32,14 +32,11 @@ Ajouter une alliance ne suit pas individuellement chacun de ses membres — elle
 
 Les joueurs et alliances ajoutés peuvent être réordonnés par glisser-déposer dans la liste du panneau Radar. Cela te permet de prioriser visuellement certains ennemis ou alliés à surveiller de près.
 
-## Effet sur le reste du jeu
+## Au survol d'un joueur
 
-Une fois un joueur ajouté au radar :
+Au survol d'un joueur dans la liste du Radar, un tooltip affiche le **temps de trajet** depuis ta fourmilière vers sa position et la **date de retour** d'un éventuel aller-retour. Pratique pour estimer rapidement si une cible est à portée sans avoir à ouvrir son profil.
 
-- Sur la **Messagerie**, ses messages sont **colorés** différemment, ce qui te permet de repérer rapidement un retour d'attaque ou un échange tendu dans une boîte de réception chargée.
-- Le profil de ce joueur reste un clic plus accessible via la liste de la boîte Radar.
-
-Les couleurs de mise en valeur reprennent la palette définie dans tes paramètres d'apparence.
+> ![Tooltip de trajet au survol](assets/wiki/boite-radar-tooltip-distance.png)
 
 ## Persistance
 

@@ -51,6 +51,6 @@ Pour chaque tier sélectionné (construction ou recherche), Toolzzz trace :
 
 Les axes sont libellés en français et utilisent le format de nombres FR (espaces comme séparateur de milliers).
 
-## Rentabilité du Dôme
+## Rentabilité de l'Étable à pucerons
 
-Spécificité Toolzzz : sur la page Construction (en mode natif, pas dans le widget Coûts), une **info de rentabilité** est ajoutée dans la description du Dôme. Elle te dit combien de temps-ouvrière le Dôme te ferait gagner pour la place qu'il occupe — utile pour décider si tu en montes un nouveau ou pas.
+Spécificité Toolzzz : sur la page Construction (en mode natif, pas dans le widget Coûts), une **info de rentabilité** est ajoutée dans la description de l'Étable à pucerons. Le tooltip détaille les ouvrières disponibles, la capacité de livraison actuelle et au niveau suivant, la perte d'ouvrières induite par la construction, et le seuil de rentabilité ouvrière. Utile pour décider si tu en montes une nouvelle ou si tu attends.

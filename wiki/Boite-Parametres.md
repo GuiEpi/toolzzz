@@ -8,10 +8,10 @@ La **Boîte Paramètres** s'ouvre depuis la quatrième icône de la toolbar (eng
 
 Les options qui touchent au comportement de l'extension :
 
+- **Affectation des ressources** — sur la page Ressources, auto-affecte les ouvrières disponibles vers Matériaux, Nourriture, ou rien (la valeur _Non_ désactive l'auto-affectation). Disponible chez les non-C+ uniquement — en C+, le jeu propose sa propre auto-affectation côté serveur.
 - **Méthode de flood par défaut** — choix de l'algorithme utilisé par défaut dans la [boîte Multi-flood](Outils-d-attaque#onglet-multi-flood) et le formulaire flood injecté sur la page Attaquer. Quatre méthodes : Standard, Optimisée, Uniforme, Dégressive.
-- **Affectation des ressources** — comportement par défaut au clic sur les boutons "arrondir" en commerce.
-- **Unités anti-sonde (terrain / dôme)** — la composition d'armée que Toolzzz suggère automatiquement quand on attaque depuis un terrain de chasse, contre une sonde adverse. Configurable séparément pour terrain et pour dôme parce que les contraintes de placement diffèrent.
-- **Unité de sonde** — quelle unité tu envoies par défaut quand tu sondes (typiquement la Sonde, mais certains joueurs préfèrent les Sondes élites).
+- **Antisonde max en terrain / en dôme** — nombre maximum d'antisondes que le formulaire flood pré-remplit. La quantité réellement envoyée est tirée aléatoirement entre 90 % et ce max, pour rester non prédictible. Configurable séparément pour terrain et pour dôme parce que les contraintes de placement diffèrent.
+- **Sonde vers l'ennemi** — nombre d'unités envoyées au clic sur les boutons _Sonder_ / _Sonder direct_ de la page Attaquer. L'espèce envoyée est automatiquement la première sonde disponible dans ton armée (Sonde, puis Sonde élite si débloquée).
 
 ## Onglet _Utilitaire_
 

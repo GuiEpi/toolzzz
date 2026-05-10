@@ -57,9 +57,10 @@ Le panneau affiche en permanence l'état de tes 6 activités principales. Chaque
 > ![Barre Attaque](assets/wiki/overlay-compte-plus-attaque.png)
 
 - Cible en cours
-- Nombre total d'attaques envoyées (si flood)
 - Retour
-- **Tooltip détaillé** : liste des unités envoyées, ETA arrivée, ETA retour.
+- **Tooltip multi-attaques** au survol : si tu as plusieurs attaques en cours (flood), le tooltip liste chaque attaque avec sa cible et sa date de retour.
+
+> ![Tooltip multi-attaques](assets/wiki/overlay-compte-plus-attaque-tooltip.png)
 
 ### Convoi
 
@@ -83,14 +84,8 @@ Sous les barres, un **champ de recherche avec autocomplete** te permet de cherch
 
 > ![Menu rapide dans le panneau](assets/wiki/menu-rapide-overlay-compte-plus.png)
 
-Tout en bas du panneau, le **menu rapide** est une grille de raccourcis vers les pages principales du jeu, organisés en trois sections :
-
-- **Fourmilière** — Reine, Ressources, Construction, Laboratoire, Armée, Ennemies, Colonies, Carte (la carte du jeu, pas la carte d'alliance), Commerce.
-- **Alliance** — Chat alliance, Forum alliance, Forum externe, Membres, Candidatures, Message collectif, Diplomatie.
-- **Communauté** — Description, Messagerie, Ma fourmilière.
+Tout en bas du panneau, le **menu rapide** est une grille de raccourcis vers les pages courantes du jeu, regroupés en trois sections : **Fourmilière**, **Alliance**, **Communauté**.
 
 Les raccourcis affichés sont **personnalisables** : pour activer / désactiver chaque lien, va sur la page **Mon compte** du jeu (`compte.php`). Toolzzz y injecte un formulaire _Menu rapide_ avec une case à cocher par raccourci, organisée selon les mêmes trois sections. Ta sélection est sauvegardée en `localStorage` et le panneau Compte+ se met à jour automatiquement.
 
 > ![Formulaire de personnalisation du menu rapide](assets/wiki/menu-rapide.png)
-
-> Cette personnalisation a été ajoutée dans Toolzzz 3.4 / 3.5 pour aligner le rendu non-C+ sur ce que les Comptes+ peuvent configurer nativement.

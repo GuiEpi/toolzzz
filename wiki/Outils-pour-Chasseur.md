@@ -26,7 +26,7 @@ Le Bestiaire est une **table de référence** des 17 espèces de faune du jeu. P
 - **Vie**
 - **Difficulté** (utile pour estimer si une chasse va donner beaucoup d'XP ou non)
 
-Le tableau est triable par colonne (clic sur l'en-tête) et zébré pour la lisibilité. Pratique quand tu veux comparer rapidement ce que vaut un Termite face à une Araignée géante avant d'envoyer une chasse de masse.
+Le tableau est zébré pour la lisibilité. Pratique quand tu veux comparer rapidement ce que vaut un Termite face à une Araignée géante avant d'envoyer une chasse de masse.
 
 > Stats issues du [Bestiaire](http://alliancead2.free.fr/Bestiaire.html) de Calystène (2017). Les valeurs n'ont pas changé depuis et sont restées la référence de la communauté Fourmizzz.
 
