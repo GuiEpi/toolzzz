@@ -614,6 +614,20 @@ hr.o_calcSepar {
   .o_content[id^="o_boiteRapport"] {
     max-width: none;
   }
+  /* Multi-flood : la matrice 5×5 du form (attaquant + label + 3 cibles) et
+   * les tables de résultat (4 colonnes par cible) sont trop larges pour un
+   * écran mobile. On laisse la table garder sa largeur naturelle (`max-content`)
+   * et on rend le wrapper scrollable horizontalement. `min-width: 100%` évite
+   * que la table soit plus étroite que le wrapper si le contenu est court. */
+  #o_mfFormWrap,
+  #o_mfResultats {
+    overflow-x: auto;
+  }
+  #o_mfForm,
+  #o_mfResultats > .o_mfResultatCible {
+    width: max-content;
+    min-width: 100%;
+  }
 }
 
 /***********************************************************************
