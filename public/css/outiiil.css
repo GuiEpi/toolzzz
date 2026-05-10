@@ -594,6 +594,28 @@ hr.o_calcSepar {
   overflow-y: auto;
 }
 
+/* Mobile : sur écran étroit on étire les boîtes flottantes pleine largeur
+ * (avec une marge de 10px de chaque côté) pour tirer parti de l'espace.
+ * `left/right: 10px !important` neutralise le `left` aléatoire posé inline
+ * par Boite.afficher() — la boîte reste centrée horizontalement, seul le
+ * drag vertical reste possible (acceptable vu qu'elle prend ~toute la largeur). */
+@media (max-width: 768px) {
+  .o_content {
+    min-width: 0;
+    max-width: none;
+    left: 10px !important;
+    right: 10px !important;
+  }
+  #o_boiteGuerre,
+  .o_content[id^="o_boiteRang"],
+  .o_content[id^="o_boiteCommande"] {
+    min-width: 0;
+  }
+  .o_content[id^="o_boiteRapport"] {
+    max-width: none;
+  }
+}
+
 /***********************************************************************
  *                                                                     *
  *     CSS pour les elements dans les pages de fourmizzz               *

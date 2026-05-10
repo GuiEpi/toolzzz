@@ -49,15 +49,17 @@ class Dock {
       hide: { effect: "fade", duration: 10 },
     });
     Dock.appliquerPosition();
+    // En mobile (écran étroit), le côté droit n'a pas la place — on bascule la
+    // toolbar en bas même si la pref enregistrée est "à droite". On suit la
+    // mediaQuery pour réagir aussi quand on traverse le breakpoint à chaud.
+    Dock._mql.addEventListener("change", () => Dock.appliquerPosition());
     // selon la pref on cache l'element
     if (monProfil.parametre["dockVisible"].valeur == "0") {
       $(document).mousemove((e) => {
-        if (monProfil.parametre["dockPosition"].valeur == "1") {
-          // boite en bas
+        if (Dock.estEnBas()) {
           if ($(window).height() - e.pageY < 60) $("#o_toolbarOutiiil").slideDown(500);
           else $("#o_toolbarOutiiil").slideUp(500);
         } else {
-          // boite à droite
           if ($(window).width() - e.pageX < 60)
             $("#o_toolbarOutiiil").show("slide", { direction: "right" }, 500);
           else $("#o_toolbarOutiiil").hide("slide", { direction: "right" }, 500);
@@ -94,7 +96,7 @@ class Dock {
    * @method appliquerPosition
    */
   static appliquerPosition() {
-    let isBas = monProfil.parametre["dockPosition"].valeur == "1";
+    let isBas = Dock.estEnBas();
     let position = isBas
       ? { my: "center top", at: "center bottom+10" }
       : { my: "left+10 center", at: "right center" };
@@ -106,4 +108,16 @@ class Dock {
         if ($(el).tooltip("instance")) $(el).tooltip("option", "position", position);
       });
   }
+  /**
+   * Position effective du dock = pref de l'utilisateur, sauf en mobile
+   * où on force "bas" car la rangée verticale à droite n'est pas viable
+   * sur écran étroit. Ne modifie pas la pref enregistrée.
+   *
+   * @static
+   * @method estEnBas
+   */
+  static estEnBas() {
+    return Dock._mql.matches || monProfil.parametre["dockPosition"].valeur == "1";
+  }
 }
+Dock._mql = window.matchMedia("(max-width: 768px)");
