@@ -23,6 +23,10 @@ Inventaire des classes CSS et patterns réutilisables pour rester cohérent visu
 - `.reduce` — 0.9em (légèrement réduit, idéal pour notes/footnotes)
 - `.souligne:hover` — soulignement au survol
 
+### Typographie
+
+Préférer les caractères UTF-8 aux substituts ASCII dans le texte affiché : `→` (U+2192) plutôt que `->`, idem `←` `≤` `≥` `…` `—`. Le rendu est nettement plus propre que la version ASCII qui fait « code source ». Les constantes `IMG_FLECHE` / `IMG_GAUCHE` / `IMG_DROITE` (cf. `content.js`) restent pertinentes quand on veut une vraie image (sprite Fourmizzz), mais pour du texte inline les caractères UTF-8 suffisent.
+
 ### Layout
 
 - `.o_maxWidth` — `width: 100%` (utile sur tables et inputs pour étirer)
