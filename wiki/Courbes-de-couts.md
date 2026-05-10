@@ -8,6 +8,8 @@ Toolzzz injecte un widget de **visualisation graphique** des coûts et temps de 
 
 Va sur **construction.php** (ta colonie active) puis clique sur l'onglet **Coûts** que Toolzzz ajoute dans la barre de navigation des onglets natifs. L'URL passe sur le hash `#cout`, et la simulation native est masquée pour laisser place au widget.
 
+> ![Onglet Coûts dans la navigation](assets/wiki/courbes-de-couts-menu.png)
+
 Pour revenir à la simulation native de Fourmizzz, clique sur un autre onglet (par exemple Construction).
 
 ## Sélectionner une construction et une recherche

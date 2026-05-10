@@ -27,20 +27,6 @@ La carte est interactive (basée sur Highcharts) :
 - **Clic** sur un point — zoom 4× centré sur ce point. Très utile dans les clusters denses où plusieurs membres sont voisins.
 - **Bouton Reset zoom** (apparaît après le premier zoom) — revient à la vue d'ensemble.
 
-## Terrain de chasse collectif
-
-La carte affiche aussi le **terrain de chasse collectif** de l'alliance, coloré pour distinguer les zones contrôlées par les membres. Pratique pour visualiser l'emprise territoriale et identifier les zones non couvertes.
-
-## Totaux d'alliance
-
-À côté de la carte, Toolzzz affiche les **totaux cumulés** de l'alliance :
-
-- Total terrain de chasse
-- Total fourmilière
-- Total ressources / technologie
-
-Ces chiffres permettent de situer ton alliance par rapport à d'autres alliances comparables (à croiser avec le classement officiel pour le contexte).
-
 ## Exporter pour le forum
 
 Le bouton **Exporter pour le forum** génère un PNG de la carte zoomée comme tu la vois actuellement, prêt à être partagé sur le forum d'alliance ou un Discord. C'est une capture simple, sans interactivité — pour discuter de stratégie collective sans demander à chaque membre de venir voir la carte sur son écran.

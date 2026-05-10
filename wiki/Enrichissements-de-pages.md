@@ -10,6 +10,8 @@ Sur la page de la Reine (où tu lances tes pontes) :
 - Au clic sur l'icône d'une unité, ses **stats avec bonus de recherche** s'affichent (vie ajustée Bouclier, dégâts attaque/défense ajustés Armes).
 - Les inputs et le slider du formulaire de ponte sont **corrigés** pour les comptes non-C+ (chez qui le natif est buggé).
 
+> ![Slider de ponte corrigé pour non-C+](assets/wiki/reine-slider-compte-plus-like.png)
+
 ## Laboratoire
 
 - **Tooltip Bouclier** : au survol d'une recherche Bouclier, comparaison de la vie de l'AB actuelle vs celle au niveau supérieur — pour décider si la prochaine recherche en vaut le coup.
@@ -22,6 +24,8 @@ Page `Ressources.php`, l'onglet où tu lances tes chasses :
 
 - **Lanceur de chasse intégré** : formulaire avec sélection de terrain et type de chasse, à côté du natif.
 - **Bouton "Annuler toutes les chasses"** ajouté dans le bloc des chasses en cours, pour rappeler tout le monde en un clic.
+
+> ![Lanceur de chasse intégré](assets/wiki/lanceur-de-chasse.png)
 
 ## Armée
 
@@ -59,6 +63,8 @@ Sur la liste des ennemis (les fourmilières que tu as scannées), une colonne **
 - Boutons **Arrondir** sur les champs Nourriture et Matériaux : arrondit la quantité au multiple exact de la capacité d'ouvrière, pour éviter de gaspiller la place du convoi.
 - **Recalcul automatique** du nombre d'ouvrières quand tu modifies les ressources.
 
+> ![Affectation auto sur le formulaire de convoi](assets/wiki/affectation-auto.png)
+
 ## Chat
 
 - Format **"Pseudo (datetime) :"** au lieu du natif inversé "datetime Pseudo :" — plus naturel à lire en survolant.
@@ -93,5 +99,8 @@ Sur la liste des ennemis (les fourmilières que tu as scannées), une colonne **
 - L'onglet **Carte** dans le menu d'alliance.
 - L'onglet **Coûts** dans le menu colonie.
 - **Tooltip enrichi** sur le bandeau de ressources Nourriture / Matériaux : capacité maximale et place libre au survol.
+
+> ![Tooltip enrichi sur le bandeau de ressources](assets/wiki/custom-tooltip-boite-infos.png)
+
 - **Toast "Toolzzz mis à jour"** au premier chargement après une mise à jour de version.
 - **Initialisation locale française** : moment.js, numeral.js, Highcharts, datepicker, sorts DataTables — tous les outils intégrés affichent les nombres et dates au format FR.

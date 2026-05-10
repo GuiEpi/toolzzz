@@ -30,5 +30,3 @@ Modifier cette valeur recalcule toutes les lignes du tableau, mais ne change év
 ## Lancer une ponte
 
 Quand tu cliques sur l'icône fourmi à droite d'une ligne, Toolzzz envoie la requête de ponte au serveur Fourmizzz exactement comme la page Reine native le ferait. Tu peux enchaîner plusieurs pontes depuis la même boîte sans rouvrir Reine.
-
-> Astuce : pour une session de ponte longue (typiquement remplir un cocon de combat avant un raid), tu peux saisir un temps total cible dans la ligne de l'unité voulue, puis lancer plusieurs fois la ponte par tranches. La boîte garde la dernière valeur saisie tant qu'elle est ouverte.

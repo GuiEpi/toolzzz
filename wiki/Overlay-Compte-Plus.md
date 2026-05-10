@@ -1,6 +1,6 @@
 ## Overlay Compte+
 
-Si tu joues **sans Compte+**, Fourmizzz n'affiche pas le panneau de droite qui montre l'état de tes pontes, constructions, recherches, attaques et convois en cours. Toolzzz comble ce manque avec un **panneau de remplacement** qui reproduit ce que les Comptes+ voient nativement, et y ajoute quelques tooltips utiles.
+Si tu joues **sans Compte+**, Fourmizzz n'affiche pas le panneau de gauche qui montre l'état de tes pontes, constructions, recherches, attaques et convois en cours. Toolzzz comble ce manque avec un **panneau de remplacement** qui reproduit ce que les Comptes+ voient nativement, et y ajoute quelques tooltips utiles.
 
 > Si tu as déjà un Compte+, ce panneau n'est **pas affiché** : Toolzzz détecte la présence du panneau natif et ne le double pas. Le reste de l'extension fonctionne identiquement quel que soit ton statut C+.
 
@@ -61,6 +61,8 @@ Sous les barres, un **champ de recherche avec autocomplete** te permet de cherch
 
 ## Menu rapide
 
+> ![Menu rapide dans le panneau](assets/wiki/menu-rapide-overlay-compte-plus.png)
+
 Tout en bas du panneau, le **menu rapide** est une grille de raccourcis vers les pages principales du jeu, organisés en trois sections :
 
 - **Fourmilière** — Reine, Ressources, Construction, Laboratoire, Armée, Ennemies, Colonies, Carte (la carte du jeu, pas la carte d'alliance), Commerce.
@@ -68,5 +70,7 @@ Tout en bas du panneau, le **menu rapide** est une grille de raccourcis vers les
 - **Communauté** — Description, Messagerie, Ma fourmilière.
 
 Les raccourcis affichés sont **personnalisables** : pour activer / désactiver chaque lien, va sur la page **Mon compte** du jeu (`compte.php`). Toolzzz y injecte un formulaire _Menu rapide_ avec une case à cocher par raccourci, organisée selon les mêmes trois sections. Ta sélection est sauvegardée en `localStorage` et le panneau Compte+ se met à jour automatiquement.
+
+> ![Formulaire de personnalisation du menu rapide](assets/wiki/menu-rapide.png)
 
 > Cette personnalisation a été ajoutée dans Toolzzz 3.4 / 3.5 pour aligner le rendu non-C+ sur ce que les Comptes+ peuvent configurer nativement.

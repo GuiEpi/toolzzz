@@ -2,9 +2,9 @@
 
 La **Boîte Paramètres** s'ouvre depuis la quatrième icône de la toolbar (engrenage). Elle regroupe en un seul endroit tous les réglages personnalisables de Toolzzz, organisés en quatre onglets.
 
-> 📸 **À capturer :** vue de la boîte Paramètres ouverte sur l'onglet Apparence, avec les sélecteurs de couleur visibles.
-
 ## Onglet _Général_
+
+> ![Onglet Général](assets/wiki/parametres-general.png)
 
 Les options qui touchent au comportement de l'extension :
 
@@ -14,6 +14,8 @@ Les options qui touchent au comportement de l'extension :
 - **Unité de sonde** — quelle unité tu envoies par défaut quand tu sondes (typiquement la Sonde, mais certains joueurs préfèrent les Sondes élites).
 
 ## Onglet _Utilitaire_
+
+> ![Onglet Utilitaire](assets/wiki/parametre-utilitaire.png)
 
 Cet onglet expose deux champs : les **identifiants des sections cachées du forum d'alliance** que Toolzzz utilise comme stockage partagé pour les fonctionnalités d'utilitaire d'alliance (commandes, infos membres, rangs, coordonnées).
 
@@ -27,6 +29,8 @@ Modifie ici uniquement si :
 L'extension supporte les noms `Toolzzz_Commande` / `Toolzzz_Membre` ainsi que les anciens noms `Outiiil_Commande` / `Outiiil_Membre` pour les alliances qui ont préparé leur forum à l'époque d'Outiiil.
 
 ## Onglet _Apparence_
+
+> ![Onglet Apparence](assets/wiki/parametres-apparence.png)
 
 C'est l'onglet le plus visuel — il personnalise les couleurs et la position de l'interface.
 
