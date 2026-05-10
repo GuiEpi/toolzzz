@@ -2,7 +2,7 @@
 
 Toolzzz injecte un widget de **visualisation graphique** des coûts et temps de toutes les constructions et recherches du jeu, accessible depuis la page Construction. C'est l'outil typique pour décider quoi monter en priorité, ou pour évaluer l'effort d'un objectif long terme (passer la Fourmilière niveau 30, par exemple).
 
-> 📸 **À capturer :** vue de la page Construction avec l'onglet Coûts actif, une construction et une recherche sélectionnées, le slider de plage de niveaux ajusté, et les deux courbes Highcharts visibles en dessous.
+> ![Courbes de coûts](assets/wiki/courbes-de-couts.png)
 
 ## Comment l'ouvrir
 

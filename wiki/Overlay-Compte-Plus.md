@@ -4,7 +4,7 @@ Si tu joues **sans Compte+**, Fourmizzz n'affiche pas le panneau de droite qui m
 
 > Si tu as déjà un Compte+, ce panneau n'est **pas affiché** : Toolzzz détecte la présence du panneau natif et ne le double pas. Le reste de l'extension fonctionne identiquement quel que soit ton statut C+.
 
-> 📸 **À capturer :** le panneau de droite Toolzzz chez un compte non-C+, avec plusieurs barres actives (au moins une ponte en cours, une recherche, et un convoi).
+> ![Panneau Compte+ Toolzzz](assets/wiki/overlay-compte-plus.png)
 
 ## Les 6 barres
 

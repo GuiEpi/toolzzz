@@ -1,12 +1,14 @@
 ## Carte d'alliance
 
-Toolzzz injecte une **carte interactive** dans le menu d'alliance pour visualiser les positions de tous tes membres en un seul écran. Très utile pour identifier les flancs faibles de l'alliance, repérer les voisins isolés, ou planifier un déménagement collectif.
+Toolzzz injecte une **carte interactive** dans le menu d'alliance pour visualiser les positions de tous tes membres en un seul écran.
 
-> 📸 **À capturer :** la carte d'alliance ouverte avec une dizaine de points membres bien étalés, idéalement après un zoom sur une zone dense pour montrer le rendu interactif.
+> ![Carte d'alliance](assets/wiki/carte-d-alliance.png)
 
 ## Comment l'ouvrir
 
 Quand tu as une alliance, Toolzzz ajoute un onglet **Carte** dans le menu d'alliance (à côté de Forum, Membres, Diplomatie, etc.). Clique dessus pour ouvrir la carte.
+
+> ![Onglet Carte dans le menu d'alliance](assets/wiki/carte-d-alliance-menu.png)
 
 Tu peux aussi y accéder via le hash `#carte` dans l'URL de la page Membres : Toolzzz détecte le hash au chargement et déplie automatiquement le widget Carte. Pratique pour partager un lien direct dans le chat d'alliance.
 

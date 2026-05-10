@@ -13,7 +13,7 @@ Sur **desktop**, la toolbar Toolzzz est une petite barre verticale collée au bo
 
 Sur **mobile** (ou écran étroit), la toolbar bascule automatiquement en bas de l'écran pour rester accessible au pouce. Plus de détails dans [La toolbar](La-toolbar).
 
-> 📸 **À capturer :** la toolbar verticale sur desktop, à droite d'une page Fourmizzz (par exemple Reine.php), avec les 4 icônes visibles.
+> ![Toolbar verticale sur desktop](assets/wiki/la-toolbar-vertical.png)
 
 ## Premiers réglages utiles
 

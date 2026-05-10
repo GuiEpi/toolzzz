@@ -4,6 +4,8 @@ La boîte **Outils d'Attaque** s'ouvre depuis la troisième icône de la toolbar
 
 ## Onglet _Analyser_
 
+> ![Onglet Analyser](assets/wiki/outils-d-attaque-analyser.png)
+
 Colle un **rapport de combat** ou un **rapport de sonde** dans le champ texte. Toolzzz extrait :
 
 - Le résultat (victoire / défaite / égalité)
@@ -22,9 +24,11 @@ Le panneau te propose un formulaire interactif où tu saisis ton armée d'attaqu
 
 > Calculs basés sur le tableur [XP v1.04](http://alliancead2.free.fr/Outils/Repository/XP%20v1.04.xls) de Calystène (zone B26-K54 de la feuille _Auto sur sonde_). C'est la référence de la communauté pour les calculs anti-sonde — Toolzzz reprend exactement la même logique.
 
-> 📸 **À capturer :** vue de l'onglet Analyser après collage d'un rapport de sonde, avec le panneau "Analyse de la sonde" déplié et au moins une ligne d'attaque saisie dans le formulaire.
+> ![Calcul d'attaque à lancer sur sonde](assets/wiki/outils-d-attaque-sonde.png)
 
 ## Onglet _Simuler_
+
+> ![Onglet Simuler](assets/wiki/outils-d-attaque-simuler.png)
 
 Calcule les **dégâts théoriques** d'un combat sans avoir à l'envoyer. Tu saisis :
 
@@ -36,6 +40,8 @@ Toolzzz applique les formules du jeu (mêmes que celles utilisées par le serveu
 
 ## Onglet _Multi-flood_
 
+> ![Onglet Multi-flood](assets/wiki/outils-d-attaque-multi-flood.png)
+
 Le générateur d'**attaques groupées sur plusieurs cibles**. Tu saisis une liste de pseudos cibles et le nombre d'attaques que tu veux envoyer sur chacun, et Toolzzz prépare le plan complet : ordre d'envoi, délais, choix de méthode.
 
 Quatre **méthodes de flood** sont disponibles (configurable par défaut dans _Paramètres → Général_) :
@@ -45,9 +51,9 @@ Quatre **méthodes de flood** sont disponibles (configurable par défaut dans _P
 - **Uniforme** — étale uniformément sur la fenêtre de temps
 - **Dégressive** — démarre serré puis espace progressivement
 
-> 📸 **À capturer :** onglet Multi-flood avec deux ou trois cibles saisies, méthode sélectionnée, et le tableau de plan d'attaque généré.
-
 ## Onglet _Temps de trajet_
+
+> ![Onglet Temps de trajet](assets/wiki/outils-d-attaque-temps-de-trajet.png)
 
 Calculatrice toute simple : tu donnes les **coordonnées** de la cible (ou son pseudo, et Toolzzz récupère la position depuis son profil), et tu obtiens le temps de trajet exact pour chaque type d'unité, en tenant compte de tes recherches (Vitesse, Cartographie).
 

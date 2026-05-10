@@ -2,7 +2,7 @@
 
 Le **Radar** te permet de surveiller une liste de joueurs et d'alliances qui t'intéressent : un ennemi historique, un voisin de coordonnées, une alliance rivale… Toolzzz garde leur trace localement et met en avant leurs interactions avec toi dans plusieurs endroits du jeu.
 
-> 📸 **À capturer :** vue du panneau Compte+ basculé en mode Radar, avec quelques joueurs et au moins une alliance dans la liste.
+> ![Radar](assets/wiki/boite-radar.png)
 
 ## Ouvrir le Radar
 
@@ -17,9 +17,13 @@ Tant que tu n'as ajouté aucun joueur ou alliance au Radar, le panneau reste sur
 Deux manières d'ajouter une cible :
 
 - **Depuis le profil d'un joueur** (page Membre) : un bouton **Surveiller ce joueur** apparaît à côté de son pseudo. Clique pour ajouter / retirer du radar (toggle).
-- **Depuis la fiche d'une alliance** (`classementAlliance.php`) : pareillement, un bouton de surveillance est injecté pour suivre l'alliance entière.
+- **Depuis la fiche d'une alliance** (`classementAlliance.php`) : pareillement, un bouton **Surveiller** est injecté pour suivre l'alliance entière.
 
 Ajouter une alliance ne suit pas individuellement chacun de ses membres — elle marque l'alliance comme entité, et toute interaction (attaque entrante, message…) provenant d'un joueur de cette alliance est mise en valeur.
+
+## Organisation
+
+Les joueurs et alliances ajoutés peuvent être réordonnés par glisser-déposer dans la liste du panneau Radar. Cela te permet de prioriser visuellement certains ennemis ou alliés à surveiller de près.
 
 ## Effet sur le reste du jeu
 
@@ -38,7 +42,10 @@ Si tu changes de navigateur ou nettoies tes données de site, la liste sera réi
 
 ## Retirer quelqu'un
 
-Trois options :
+Joueur :
 
-- Re-cliquer sur le bouton **Surveiller ce joueur** depuis le profil (toggle off)
-- Retirer l'entité directement depuis la liste Radar du panneau
+- Cliquer sur le bouton **Supprimer la surveillance** depuis le profil (toggle off)
+
+Alliance :
+
+- Cliquer sur le bouton **Ignorer** depuis la fiche de l'alliance (toggle off)

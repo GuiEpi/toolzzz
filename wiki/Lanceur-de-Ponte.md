@@ -2,7 +2,7 @@
 
 Le **Lanceur de Ponte** s'ouvre depuis la première icône de la toolbar. C'est une boîte flottante qui te donne un tableau de saisie pour toutes les unités du jeu, de l'Ouvrière à la Tueuse d'élite, en passant par les Soldates, Sondes, Maîtresses et leurs versions élite.
 
-> 📸 **À capturer :** la boîte Lanceur de Ponte ouverte, avec le tableau complet des unités, le slider TDP en bas, et au moins une ligne avec un nombre saisi qui a auto-rempli les colonnes Jour / Heure / Minute / Seconde.
+> ![Lanceur de Ponte](assets/wiki/lanceur-de-ponte.png)
 
 ## Ce que la boîte permet
 

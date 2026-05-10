@@ -2,7 +2,7 @@
 
 La toolbar (parfois appelée _dock_) est le point d'entrée principal de Toolzzz. C'est une petite barre flottante qui te donne accès à tous les outils de l'extension, peu importe la page Fourmizzz sur laquelle tu te trouves.
 
-> 📸 **À capturer :** vue d'ensemble de la toolbar avec ses 4 icônes (ponte, chasse, combat, paramètres) et son tooltip au survol d'une icône.
+> ![Toolbar Toolzzz](assets/wiki/la-toolbar-horizontal.png)
 
 ## Les 4 icônes
 
