@@ -424,17 +424,23 @@ class BoiteComptePlus {
       visible == null || visible == "C"
         ? ""
         : $("#boiteComptePlus .contenu_boite_compte_plus table:eq(0)").css("display", "none");
-    // effet highlight si du terrain est decouvert
-    let tooltipConso = Utils.parseHtml(
-      $("#tableau_boite_info").next().text().split("content:")[1].split("})")[0],
-    );
-    if (
-      Utils.terrain * 48 !=
-        numeral(tooltipConso.find("td:eq(7)").text()).value() +
-          numeral(tooltipConso.find("td:eq(8)").text()).value() &&
-      Utils.ouvrieres > Utils.terrain
-    )
-      $("#boite_info_tdc .jauge").addClass("highlight_error");
+    // Effet highlight si du terrain est découvert : on parse un tooltip
+    // injecté en script-tag à côté de #tableau_boite_info (forme `content: ... })`).
+    // Sur mobile, ce bandeau natif peut être absent ou rendu différemment ;
+    // sans guard, le `.split("content:")[1]` renvoie undefined et le
+    // `.split("})")` qui suit throw, ce qui cassait toute la chaîne d'init
+    // (BoiteRadar, routage Reine.php / compte.php, etc.).
+    let tooltipRaw = $("#tableau_boite_info").next().text();
+    if (tooltipRaw.includes("content:")) {
+      let tooltipConso = Utils.parseHtml(tooltipRaw.split("content:")[1].split("})")[0]);
+      if (
+        Utils.terrain * 48 !=
+          numeral(tooltipConso.find("td:eq(7)").text()).value() +
+            numeral(tooltipConso.find("td:eq(8)").text()).value() &&
+        Utils.ouvrieres > Utils.terrain
+      )
+        $("#boite_info_tdc .jauge").addClass("highlight_error");
+    }
   }
   /**
    * Met à jour les pontes si elles ne correspondent pas.
