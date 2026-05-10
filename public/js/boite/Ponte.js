@@ -31,6 +31,7 @@ class BoitePonte extends Boite {
                 <tr><td>${NOM_RAC_UNITE[11]}</td><td>${BoitePonte.arrondiTemps(TEMPS_UNITE[11] * Math.pow(0.9, tdp))}</td><td><input value='0' size='15' name='o_nombre11'/></td><td><input name='o_jour11' value='0' size='3'/></td><td><input name='o_heure11' value='0' size='2'/></td><td><input name='o_minute11' value='0' size='2'/></td><td><input name='o_seconde11' value='0' size='2'/></td><td class='cursor'>${monProfil.niveauConstruction[8] >= 23 && monProfil.niveauRecherche[7] >= 15 ? "<img id='o_lancer11' height='20' src='images/icone/fourmi.png' alt='Lancer'>" : ""}</td></tr>
                 <tr><td>${NOM_RAC_UNITE[13]}</td><td>${BoitePonte.arrondiTemps(TEMPS_UNITE[13] * Math.pow(0.9, tdp))}</td><td><input value='0' size='15' name='o_nombre13'/></td><td><input name='o_jour13' value='0' size='3'/></td><td><input name='o_heure13' value='0' size='2'/></td><td><input name='o_minute13' value='0' size='2'/></td><td><input name='o_seconde13' value='0' size='2'/></td><td class='cursor'>${monProfil.niveauConstruction[7] >= 25 && monProfil.niveauRecherche[9] >= 4 ? "<img id='o_lancer13' height='20' src='images/icone/fourmi.png' alt='Lancer'>" : ""}</td></tr>
                 <tr><td>${NOM_RAC_UNITE[14]}</td><td>${BoitePonte.arrondiTemps(TEMPS_UNITE[14] * Math.pow(0.9, tdp))}</td><td><input value='0' size='15' name='o_nombre14'/></td><td><input name='o_jour14' value='0' size='3'/></td><td><input name='o_heure14' value='0' size='2'/></td><td><input name='o_minute14' value='0' size='2'/></td><td><input name='o_seconde14' value='0' size='2'/></td><td class='cursor'>${monProfil.niveauConstruction[8] >= 28 && monProfil.niveauRecherche[9] >= 7 ? "<img id='o_lancer14' height='20' src='images/icone/fourmi.png' alt='Lancer'>" : ""}</td></tr>
+                <tr><td colspan='8' class='centre'>Destination : <label><input type='radio' name='o_destination' value='1'/> Terrain</label> <label><input type='radio' name='o_destination' value='2' checked/> Fourmilière</label> <label><input type='radio' name='o_destination' value='3'/> Loge</label></td></tr>
                 <tr><td colspan='8'>Temps de ponte : <input id='o_niveauTDP' value='${tdp}' size='3'/></td></tr>
             </table></div>`,
     );
@@ -163,7 +164,7 @@ class BoitePonte extends Boite {
           securite = parsed.find("#t").attr("name") + "=" + parsed.find("#t").attr("value");
           // on prepare et on lance la ponte
           let donnees = {};
-          donnees["destination"] = 3;
+          donnees["destination"] = $("input[name='o_destination']:checked").val();
           donnees["unePonte"] = "oui";
           donnees["typeUnite"] = unite ? "unite" + correspondanceFzzz[unite] : "ouvriere";
           donnees["input_cout_nombre" + (unite ? correspondanceFzzz[unite] : "")] = nombre;
