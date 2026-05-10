@@ -34,5 +34,5 @@ Ce wiki est destiné aux joueurs qui veulent comprendre ce que l'extension appor
 ## Liens utiles
 
 - Code source : https://github.com/GuiEpi/toolzzz
-- Chrome Web Store : <!-- LIEN STORE À AJOUTER -->
-- Firefox Add-ons : <!-- LIEN STORE À AJOUTER -->
+- Chrome Web Store : https://chromewebstore.google.com/detail/toolzzz/ehdkpodbbmnmojgijhoogcjakbkokfpe
+- Firefox Add-ons : https://addons.mozilla.org/fr/firefox/addon/toolzzz/

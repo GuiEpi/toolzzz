@@ -21,6 +21,10 @@ Deux façons de remplir une ligne :
 
 La synchronisation est bidirectionnelle : tu peux ajuster en allers-retours sans réinitialiser. Si tu saisis un nombre supérieur à la limite que ta fourmilière peut produire en une fois (limite serveur Fourmizzz), Toolzzz le borne automatiquement.
 
+## Destination
+
+Au-dessus du slider TDP, trois radios choisissent où la ponte est livrée : **Terrain**, **Fourmilière** (par défaut) ou **Loge**. Le choix est lu au moment du lancement et reproduit le sélecteur natif de la page Reine.
+
 ## Le slider TDP
 
 Le champ **Temps de ponte** en bas de la boîte est pré-rempli avec ton niveau actuel de TDP. Tu peux le modifier pour **simuler** une autre situation : par exemple, voir combien de temps prendrait la même ponte si tu montais de 5 niveaux de TDP, ou inversement combien d'unités en plus tu pourrais pondre dans le même créneau.

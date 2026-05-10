@@ -45,4 +45,4 @@ Les changements sont appliqués en temps réel : tu peux ouvrir une autre boîte
 
 ## Onglet _À propos_
 
-Affiche la version courante de Toolzzz, un lien vers le code source GitHub, deux liens pour signaler un bug ou proposer une fonctionnalité, et la mention du projet original Outiiil (Hraesvelg / Freddy) sous licence GPL-3.0. Pas de réglages dans cet onglet — c'est un récap pratique pour retrouver les bons liens.
+Affiche la version courante de Toolzzz et quatre liens utiles : le **Wiki** (cette page), le **code source** sur GitHub, et deux raccourcis pour **signaler un bug** ou **proposer une fonctionnalité**. Pied de page : la mention du projet original Outiiil (Hraesvelg / Freddy) sous licence GPL-3.0. Pas de réglages dans cet onglet — c'est un récap pratique pour retrouver les bons liens.
