@@ -10,6 +10,8 @@ Le Radar n'a pas d'icône dédiée dans la toolbar : il vit **à l'intérieur du
 
 Pour basculer entre la vue Compte+ et la vue Radar, **clique sur le titre du panneau** (▼ Toolzzz X.x.x ▼). Le choix est mémorisé entre les sessions.
 
+> ![Bandeau-titre du panneau](assets/wiki/overlay-compte-plus-navigation-titre.png)
+
 Tant que tu n'as ajouté aucun joueur ou alliance au Radar, le panneau reste sur la vue Compte+ par défaut.
 
 ## Ajouter quelqu'un au radar
@@ -17,7 +19,12 @@ Tant que tu n'as ajouté aucun joueur ou alliance au Radar, le panneau reste sur
 Deux manières d'ajouter une cible :
 
 - **Depuis le profil d'un joueur** (page Membre) : un bouton **Surveiller ce joueur** apparaît à côté de son pseudo. Clique pour ajouter / retirer du radar (toggle).
+
+  > ![Bouton Surveiller ce joueur](assets/wiki/boite-radar-surveiller-joueur.png)
+
 - **Depuis la fiche d'une alliance** (`classementAlliance.php`) : pareillement, un bouton **Surveiller** est injecté pour suivre l'alliance entière.
+
+  > ![Bouton Surveiller sur la fiche d'alliance](assets/wiki/boite-radar-surveiller-alliance.png)
 
 Ajouter une alliance ne suit pas individuellement chacun de ses membres — elle marque l'alliance comme entité, et toute interaction (attaque entrante, message…) provenant d'un joueur de cette alliance est mise en valeur.
 
@@ -46,6 +53,10 @@ Joueur :
 
 - Cliquer sur le bouton **Supprimer la surveillance** depuis le profil (toggle off)
 
+  > ![Bouton Supprimer la surveillance](assets/wiki/boite-radar-supprimer-surveillance.png)
+
 Alliance :
 
 - Cliquer sur le bouton **Ignorer** depuis la fiche de l'alliance (toggle off)
+
+  > ![Bouton Ignorer sur la fiche d'alliance](assets/wiki/boite-radar-ignorer.png)
