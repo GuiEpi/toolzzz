@@ -24,13 +24,16 @@ class PageAlliance {
    *
    */
   executer() {
-    // si les membres sont deja chargé on peux executé la fonction sinon on observe
+    // Si le tableau des membres est déjà rendu, on enrichit directement.
+    // Sinon, on observe `#alliance` pour réagir dès que le tableau apparaît
+    // (rendu async sur certaines variantes de la page). Si aucun des deux
+    // n'existe — page sans UI alliance, mobile, ou DOM atypique —, on skip
+    // proprement plutôt que de crasher sur `observe(undefined)`.
     if ($("#tabMembresAlliance").length) {
       this.traitementMembre();
       this.carte();
       this.ongletCarte();
-    } else {
-      // Ajout des infos sur le tableau des membres
+    } else if ($("#alliance").length) {
       let observer = new MutationObserver((mutationsList) => {
         this.traitementMembre();
         this.carte();
