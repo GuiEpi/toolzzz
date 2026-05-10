@@ -1,7 +1,4 @@
-<h1>
-  <img src="public/images/icons/full.svg" alt="toolzzz" height="48" align="left">
-  Toolzzz
-</h1>
+![Toolzzz](assets/banner.png)
 
 ![Version](https://img.shields.io/github/v/tag/GuiEpi/toolzzz?sort=semver&label=Version)
 ![Release](https://github.com/GuiEpi/toolzzz/actions/workflows/release.yml/badge.svg)
