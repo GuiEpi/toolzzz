@@ -222,6 +222,7 @@ class BoiteCombat extends Boite {
                   <td class='right gras' id='o_calcJsnNec'>0</td>
                   <td class='right' id='o_calcStatusJsn'>—</td>
                 </tr>
+                <tr><td colspan='4' class='reduce' style='padding-top:15px;'><em>Calculs basés sur le tableur <a href='http://alliancead2.free.fr/Outils/Repository/XP%20v1.04.xls' target='_blank' rel='noopener'>XP v1.04</a> de Calystène.</em></td></tr>
               </tfoot>
             </table>`;
     $("#o_calcSonde").html(html).data("sonde", sonde).show();
