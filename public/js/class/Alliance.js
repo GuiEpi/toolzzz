@@ -175,7 +175,7 @@ class Alliance {
    */
   getLigneRadar(radar, id, indice) {
     $(id).append(
-      `<tr id="o_item_${indice}" class="lien"><td><a id="o_maj_${this._tag}" class='o_actualiser' href=""><img src="${IMG_ACTUALISER}" alt="rang" height="20"/></a></td><td class="left"><a class="gras" href="classementAlliance.php?alliance=${this._tag}">${this._tag}<sup style="font-size:0.65em;margin-left:3px;opacity:0.7;">ALI</sup></a></td><td id="o_terrain_${this._tag}" class="right reduce" title="">${numeral(this._terrain).format()}</td></tr>`,
+      `<tr id="o_item_${indice}" class="lien"><td><a id="o_maj_${this._tag}" class='o_actualiser' href=""><img src="${IMG_ACTUALISER}" alt="rang" height="20"/></a></td><td class="left"><a class="gras" href="classementAlliance.php?alliance=${this._tag}">${this._tag}</a><sup style="font-size:0.65em;margin-left:3px;opacity:0.7;">ALI</sup></td><td id="o_terrain_${this._tag}" class="right reduce" title="">${numeral(this._terrain).format()}</td></tr>`,
     );
     // event
     $("#o_maj_" + this._tag).click((e) => {
