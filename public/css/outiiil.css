@@ -331,10 +331,14 @@ select:required {
 }
 
 /* Boite Radar */
-#o_radar td:nth-child(1) {
+/* `:not([colspan])` exclut les rows séparateur et le tfoot toolbar (qui
+ * utilisent un seul td en colspan=3) — sinon `width: 28px` clipperait
+ * leur contenu sur la 1re colonne et `max-width: 80px` tronquerait le
+ * texte des séparateurs. */
+#o_radar td:nth-child(1):not([colspan]) {
   width: 28px;
 }
-#o_radar td:nth-child(2) {
+#o_radar td:nth-child(2):not([colspan]) {
   max-width: 80px;
   text-overflow: ellipsis;
   overflow: hidden;
@@ -356,6 +360,156 @@ select:required {
 }
 .o_radarPlaceholder {
   background-color: #676b51;
+}
+
+/* Séparateur de section : effet `── text ──`. Wrapper interne `.o_radarSepInner`
+ * en flex (pas le `<td>` directement — `display: flex` sur un td casse le
+ * rendu table et la cellule shrink à la largeur de son contenu au lieu de
+ * remplir le colspan). Le wrapper est block-level donc prend 100% du td. */
+/* `padding-left/right: 2px` pour aligner le `≡` du séparateur avec le `≡`
+ * des rows joueur/alliance (qui héritent du padding td natif ~1-2px).
+ * Top/bottom restent à 4px pour aérer les lignes ::before/::after. */
+.o_radarSep td {
+  padding: 4px 2px;
+}
+.o_radarSepInner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.o_radarSepInner::before,
+.o_radarSepInner::after {
+  content: "";
+  flex: 1 1 0;
+  height: 1px;
+  background-color: currentColor;
+  opacity: 0.5;
+}
+.o_radarSepInner::before {
+  order: 0;
+}
+.o_radarSepInner::after {
+  order: 2;
+}
+.o_radarSepText {
+  flex: 0 0 auto;
+  order: 1;
+  font-style: italic;
+  font-size: 0.85em;
+  opacity: 0.85;
+  white-space: nowrap;
+}
+.o_radarSepText[contenteditable="true"] {
+  outline: 1px dashed currentColor;
+  padding: 0 4px;
+  font-style: normal;
+  cursor: text;
+}
+.o_radarSep .o_radarDelete {
+  order: 3;
+  font-style: normal;
+}
+
+/* Drag handle `≡` injecté à gauche de chaque ligne en mode édition (cf.
+ * BoiteRadar._appliquerEdition). Sert de cue visuelle "cette ligne est
+ * draggable" — le sortable lui-même n'est actif qu'en mode édition. */
+.o_radarDragHandle {
+  cursor: move;
+  user-select: none;
+  opacity: 0.5;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+.o_radarSepInner .o_radarDragHandle {
+  order: -1;
+  margin-right: 0;
+}
+/* Wrapper interne `.o_radarFirstCell` autour du contenu de la 1re td des
+ * rows joueur/alliance (cf. BoiteRadar.actualiser). Permet d'aligner le `≡`
+ * du mode édition avec le bouton refresh via un flex propre, sans risquer
+ * que les règles natives Fourmizzz sur les `<a>` du panneau Compte+ cassent
+ * la mise en page. Présent en permanence, qu'on soit en mode édition ou pas. */
+.o_radarFirstCell {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.o_radarEditMode #o_radar td:nth-child(1):not([colspan]) {
+  width: auto;
+}
+/* Edit mode mange ~24px de la largeur disponible (handle + ×) — sans
+ * `nowrap` sur la cellule terrain, un grand nombre passe à la ligne. */
+.o_radarEditMode #o_radar td:nth-child(3):not([colspan]) {
+  white-space: nowrap;
+}
+.o_radarEditMode #o_radar td:nth-child(2):not([colspan]) {
+  max-width: 60px;
+}
+/* Wrapper du nombre de terrain — toujours présent en DOM, mais l'ellipsis
+ * ne s'active qu'en mode édition (où l'espace est plus contraint à cause
+ * du `×`). Hors edit mode le span est juste inline-block transparent. */
+.o_radarTerrainNum {
+  display: inline-block;
+  vertical-align: middle;
+  max-width: 100%;
+}
+.o_radarEditMode .o_radarTerrainNum {
+  max-width: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Toolbar (tfoot) avec + et ⚙. Border dashed cohérent avec les séparateurs,
+ * mais déplacée dans un ::before positionné absolument pour laisser un peu
+ * d'espace au-dessus (sinon le trait colle au dernier joueur/alliance). */
+#o_radarToolbar td {
+  text-align: right;
+  padding: 10px 6px 3px;
+  position: relative;
+}
+#o_radarToolbar td::before {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  right: 6px;
+  border-top: 1px dashed currentColor;
+  opacity: 0.4;
+}
+#o_radarToolbar span {
+  display: inline-block;
+  margin-left: 8px;
+  cursor: pointer;
+  font-size: 1.1em;
+  line-height: 1;
+  user-select: none;
+  opacity: 0.5;
+  transition: opacity 0.15s ease-in-out;
+}
+#o_radarToolbar span:hover {
+  opacity: 1;
+}
+.o_radarEditMode #o_radarToggleEdit {
+  font-weight: bold;
+  opacity: 1;
+}
+/* Le `✎` Unicode pointe en bas-droite ; on le flip horizontalement pour
+ * qu'il pointe en bas-gauche (plus naturel pour "édition" à mon goût). */
+#o_radarToggleEdit {
+  display: inline-block;
+  transform: scaleX(-1);
+}
+
+/* × de suppression injecté sur chaque row en mode édition */
+.o_radarDelete {
+  margin-left: 6px;
+  font-size: 1.1em;
+  line-height: 1;
+  user-select: none;
+}
+.o_radarDelete:hover {
+  text-shadow: 0 0 2px currentColor;
 }
 
 /* toolbar avec les outils */
