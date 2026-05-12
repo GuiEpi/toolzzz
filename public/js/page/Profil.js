@@ -27,7 +27,11 @@ class PageProfil {
    *
    */
   executer() {
-    this._profil = new Joueur({ pseudo: $("h2").text() });
+    // Sélecteur scopé `center > h2` : la toast "Toolzzz mis à jour" utilise
+    // aussi un <h2> (cf. jquery-toast `.jq-toast-heading`) qu'un `$("h2")` global
+    // concaténerait avec le pseudo de la page et corromprait la clé de
+    // surveillance dans `_joueurs`.
+    this._profil = new Joueur({ pseudo: $("center > h2").text() });
     let regexp = new RegExp("x=(\\d*) et y=(\\d*)"),
       ligne = $(".boite_membre").find("a[href^='carte2.php?']").text();
     this._profil.x = ~~ligne.replace(regexp, "$1");
