@@ -178,15 +178,18 @@ class BoiteRadar {
       html = `<table id='o_radar' ${!affiche || affiche == "C" ? `style="display:none"` : ""}><tbody></tbody></table>`;
     // on remplace le contenu ou l'ajoute
     if ($("#o_radar").length) $("#o_radar").replaceWith(html);
-    else {
-      $("#boiteComptePlus .contenu_boite_compte_plus table").after(html);
-      $("#o_radar tbody").sortable({
-        placeholder: "o_radarPlaceholder",
-        update: (e, ui) => {
-          this.calculeOrdre($("#o_radar tbody").sortable("serialize"));
-        },
-      });
-    }
+    else $("#boiteComptePlus .contenu_boite_compte_plus table").after(html);
+    // Le `sortable` doit être (ré)initialisé à chaque rebuild de la table :
+    // un `replaceWith` remplace le tbody par un nouveau noeud DOM qui n'a pas
+    // l'instance jQuery UI sortable. Sans cette ligne, ajouter un joueur via
+    // "Surveiller" cassait silencieusement le drag-and-drop jusqu'au prochain
+    // reload de la page.
+    $("#o_radar tbody").sortable({
+      placeholder: "o_radarPlaceholder",
+      update: (e, ui) => {
+        this.calculeOrdre($("#o_radar tbody").sortable("serialize"));
+      },
+    });
     // Event pour mettre à jour les données d'un joueur ou une alliance
     $("#o_radar").off();
     // affichage des elements
