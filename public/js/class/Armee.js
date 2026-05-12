@@ -1032,7 +1032,7 @@ class Armee {
             );
             setTimeout(() => {
               this.envoyerFlood(idCible, ++indice, securite);
-            }, 2000);
+            }, 1000);
           },
         );
       } else // on passe à l'attaque suivante

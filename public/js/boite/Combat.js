@@ -1454,7 +1454,7 @@ class BoiteCombat extends Boite {
         this._mfMarquerAttaque(cible.pseudo, i, ok);
         setTimeout(
           () => this._mfEnvoyerAttaqueSuivante(cible, securite, indices, k + 1, onComplete),
-          2000,
+          1000,
         );
       },
     );
