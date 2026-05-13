@@ -58,9 +58,14 @@ class PageDescription {
         `<thead><tr class='alt'><th></th><th>Rang</th><th>Pseudo</th><th></th><th>Terrain</th><th></th><th><span style='padding-right:10px'>Technologie</span></th><th><span style='padding-right:10px'>Fourmiliere</span></th></tr></thead>`,
       )
       .after(
-        `<div id='o_bouton_alliance' class='o_group_bouton'><span id='o_surveiller' class='option_gestion'><img src="${IMG_RADAR}" alt="surveiller"/>${this._boiteRadar.alliances.hasOwnProperty(this._alliance.tag) ? " Ignorer" : " Surveiller"}</span></div><div id='o_separation_graph' class='clear'></div>`,
+        `<div id='o_bouton_alliance' class='o_group_bouton'><span id='o_surveiller' class='option_gestion'><img src="${IMG_RADAR}" alt="surveiller"/>${this._boiteRadar.alliances.hasOwnProperty(this._alliance.tag) ? " Ignorer" : " Surveiller"}</span><span id='o_antleaks' class='option_gestion cursor' title='Voir sur AntLeaks'><img src="${IMG_HISTORIQUE}" alt="AntLeaks"/> Voir sur AntLeaks</span></div><div id='o_separation_graph' class='clear'></div>`,
       );
     this.tableau();
+
+    $("#o_antleaks").click(() => {
+      let url = `https://www.antleaks.top/index.php?page=traceur&date_from=&date_to=&pseudo=&tag=${encodeURIComponent(this._alliance.tag)}`;
+      window.open(url, "_blank", "noopener");
+    });
 
     $("#o_surveiller").click((e) => {
       if (!this._boiteRadar.alliances.hasOwnProperty(this._alliance.tag)) {

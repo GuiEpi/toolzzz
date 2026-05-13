@@ -330,6 +330,25 @@ select:required {
   vertical-align: middle;
 }
 
+/* Bouton groupé (Surveiller + Voir sur AntLeaks) sur la page d'une alliance.
+ * Le `.o_group_bouton` natif est juste `inline-block` sans padding sur les
+ * spans (cf. `.o_group_bouton_chat span` qui ajoute `padding: 4px 10px` pour
+ * les boutons chat). On reproduit ce padding et on force le layout en table
+ * pour que les deux cellules aient la même hauteur (séparateur full-height,
+ * hover qui couvre tout). Scopé à `#o_bouton_alliance` pour ne pas affecter
+ * les autres usages de `.o_group_bouton`. */
+#o_bouton_alliance {
+  display: inline-table;
+}
+#o_bouton_alliance > .option_gestion {
+  display: table-cell;
+  vertical-align: middle;
+  padding: 4px 10px;
+}
+#o_bouton_alliance img {
+  vertical-align: middle;
+}
+
 /* Tableau récap des évolutions en cours (Utils.tableauEvolution), affiché en
  * haut de construction.php et laboratoire.php. Espace en bas pour ne pas
  * coller au tableau natif des items qui suit. Caption visiblement marquée

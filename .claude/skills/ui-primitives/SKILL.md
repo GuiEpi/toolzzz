@@ -160,6 +160,45 @@ Toujours fournir des `language` traduits FR (cf. exemple existant). DataTables e
 - `<button class="o_button f_success">` — bouton vert (action principale ; ex. Lancer/Envoyer)
 - `<button … disabled>` — automatiquement grisé (cf. CSS `button[disabled]`)
 
+## Bouton groupé (`.o_group_bouton`)
+
+Pattern natif Fourmizzz pour des actions liées rendues côte à côte dans un même cadre avec séparateur (ex. `Surveiller | Voir sur AntLeaks` sur la page d'une alliance, ou `B I U` dans le chat) :
+
+```html
+<div id="o_<feature>" class="o_group_bouton">
+  <span id="o_action1" class="option_gestion"> <img src="${IMG_X}" alt="" /> Label 1 </span>
+  <span id="o_action2" class="option_gestion cursor"> <img src="${IMG_Y}" alt="" /> Label 2 </span>
+</div>
+```
+
+- **`.o_group_bouton`** = wrapper natif `inline-block` avec border ocre.
+- **`.option_gestion`** = native button-cell ; `:hover` change le background.
+- **`.o_group_bouton > span:not(:last-child)`** dessine automatiquement un `border-right` entre les boutons (notre CSS, `outiiil.css`).
+
+⚠️ Pièges connus, à neutraliser dès qu'on a **plus d'un span** dans le wrapper :
+
+1. **`.o_group_bouton` ne pose AUCUN padding sur ses spans** — `.option_gestion` seule n'a que du `:hover`. Pour un look propre il faut ajouter `padding: 4px 10px` soi-même (cf. `.o_group_bouton_chat span` dans `outiiil.css`).
+2. **Hauteurs inégales en inline** — deux spans côte à côte avec `<img>` + texte se retrouvent à des baselines légèrement différentes selon le rendu inline ; le séparateur paraît tronqué et le hover ne couvre pas toute la hauteur. **Fix bulletproof :** passer le wrapper en `display: inline-table` et les spans en `display: table-cell` (cellules de table = hauteurs garanties identiques).
+3. **`<img>` inline** — toujours ajouter `vertical-align: middle` sur les images dans les spans, sinon la baseline tire le rendu vers le bas.
+
+```css
+#o_<feature > {
+  display: inline-table;
+}
+#o_<feature > .option_gestion {
+  display: table-cell;
+  vertical-align: middle;
+  padding: 4px 10px;
+}
+#o_<feature > img {
+  vertical-align: middle;
+}
+```
+
+**Préférer un `<span class='option_gestion cursor'>` + click jQuery à un `<a class='option_gestion'>` direct** pour les actions qui ouvrent une URL externe. L'`<a>` direct se comporte différemment du `<span>` au niveau layout (display inline vs option_gestion attendant un span), ce qui casse l'alignement et le hover. Le span avec `window.open(url, "_blank")` rend identique au reste du groupe.
+
+Exemple en place : `PageDescription` (`public/js/page/Description.js`) pour le bouton Alliance « Surveiller + Voir sur AntLeaks ».
+
 ## Spoiler « En savoir plus ? » (natif Fourmizzz)
 
 Pour un bloc d'explication optionnel (masqué par défaut, révélé au clic), réutiliser le pattern natif du jeu plutôt qu'un toggle jQuery custom :
@@ -293,6 +332,8 @@ Pour une feature qui remplace temporairement le contenu natif d'une page (ex. ca
 → Côté JS principal, ne **plus** faire `.hide()/.show()` sur les éléments natifs : laisser le CSS gérer. Sinon les inline styles deviennent prioritaires sur la classe `toolzzz-mode-X` quand on bascule.
 
 → `:has()` est dispo en Chrome 105+ et Firefox 121+, on est largement au-dessus du `strict_min_version: 142.0`.
+
+→ **Variantes pathname-based** : même pattern pour une page sans hash, on toggle la classe sur `location.pathname` au lieu de `location.hash` (cf. `toolzzz-mode-evolution` dans `bootstrap.js`, active sur `construction.php` et `laboratoire.php`). Utile quand on remplace en JS (via `document_idle`) un bloc natif et qu'on veut éviter le flash de la version initiale — on hide en CSS dès le parse, notre JS remplace, le hide disparaît parce que les éléments ne matchent plus le sélecteur (déplacés ou retirés).
 
 ## Règle d'or
 
