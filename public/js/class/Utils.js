@@ -262,7 +262,7 @@ class Utils {
       }, 1000);
     });
     let $first = $strongs.first();
-    if (sectionH2) $first.before(`<h2 class='o_marginT15'>${sectionH2}</h2>`);
+    if (sectionH2) $first.before(`<h2 class='o_marginT15 o_evolutionH2'>${sectionH2}</h2>`);
     $first.before($table);
     // Cleanup : retire les <strong>, <small> et <br> entre la table et le
     // séparateur natif `.Bas` (qui marque la fin de la zone évolutions).

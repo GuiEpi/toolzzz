@@ -24,6 +24,11 @@
     .toolzzz-mode-couts #centre > br,
     .toolzzz-mode-couts #centre > small,
     .toolzzz-mode-couts #centre > span.small,
+    /* En mode #cout on n'affiche que le widget Coûts ; le récap des évolutions
+     * en cours (tableauEvolution) est planqué pour ne pas polluer la vue. */
+    .toolzzz-mode-couts #o_evolutionEnCours,
+    .toolzzz-mode-couts .o_evolutionH2,
+    .toolzzz-mode-couts .o_annulationGroup,
     .toolzzz-mode-evolution #centre > strong,
     .toolzzz-mode-evolution #centre > br,
     .toolzzz-mode-evolution #centre > small,
