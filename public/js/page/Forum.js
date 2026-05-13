@@ -159,6 +159,8 @@ class PageForum {
    *
    */
   executer() {
+    let $alliance = $("#alliance");
+    if (!$alliance.length) return this;
     // si le forum est deja chargé lance le traitement
     if ($("#cat_forum").length) this.traitementSection("#alliance");
     // Récupération des données du forum pour communiquer.
@@ -167,7 +169,7 @@ class PageForum {
         this.traitementSection(mutation.target);
       });
     });
-    observer.observe($("#alliance")[0], { childList: true });
+    observer.observe($alliance[0], { childList: true });
     return this;
   }
   /**
