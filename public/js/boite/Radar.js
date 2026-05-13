@@ -233,10 +233,33 @@ class BoiteRadar {
    */
   actualiser() {
     let affiche = localStorage.getItem("outiiil_boiteActive"),
-      html = `<table id='o_radar' ${!affiche || affiche == "C" ? `style="display:none"` : ""}><tbody></tbody><tfoot><tr id='o_radarToolbar'><td colspan='3' class='right'><span id='o_radarAddSep' class='cursor' title='Ajouter une section'>+</span><span id='o_radarToggleEdit' class='cursor' title='Mode édition'>✎</span></td></tr></tfoot></table>`;
+      // En Compte+, le champ #requete natif vit dans une <tr><td> du table:eq(0)
+      // qui est masqué en mode radar — donc inaccessible. On insère ici une row
+      // jumelle dans le tfoot d'#o_radar (id `o_requete` pour éviter le duplicate
+      // ID avec le natif resté en place côté table caché). Wiré sur l'autocomplete
+      // Toolzzz (`Joueur.rechercher`) comme #recherche en non-C+.
+      searchRow = Utils.comptePlus
+        ? `<tr id='o_radarSearchRow'><td colspan='3'><form method='post' action='classementAlliance.php' style='text-align:center;'><input type='text' name='requete' id='o_requete' placeholder='Rechercher Joueur ou Alliance' autocomplete='off' style='text-align:center;width:95%;'/></form></td></tr>`
+        : "",
+      html = `<table id='o_radar' ${!affiche || affiche == "C" ? `style="display:none"` : ""}><tbody></tbody><tfoot><tr id='o_radarToolbar'><td colspan='3' class='right'><span id='o_radarAddSep' class='cursor' title='Ajouter une section'>+</span><span id='o_radarToggleEdit' class='cursor' title='Mode édition'>✎</span></td></tr>${searchRow}</tfoot></table>`;
     // on remplace le contenu ou l'ajoute
     if ($("#o_radar").length) $("#o_radar").replaceWith(html);
     else $("#boiteComptePlus .contenu_boite_compte_plus table").after(html);
+    // Autocomplete sur le champ de recherche injecté en C+, branché sur le même
+    // backend que `#recherche` non-C+ (Joueur.rechercher → Utils.extraitRecherche).
+    // Réinit nécessaire à chaque rebuild car le DOM précédent est remplacé.
+    if (Utils.comptePlus)
+      $("#o_requete").autocomplete({
+        source: (request, response) => {
+          Joueur.rechercher(request.term).then((data) => response(Utils.extraitRecherche(data)));
+        },
+        position: { my: "left top-5", at: "left bottom" },
+        delay: 0,
+        minLength: 3,
+        select: (event, ui) => {
+          window.location.replace(ui.item.url);
+        },
+      });
     // Le `sortable` doit être (ré)initialisé à chaque rebuild de la table :
     // un `replaceWith` remplace le tbody par un nouveau noeud DOM qui n'a pas
     // l'instance jQuery UI sortable. Sans cette ligne, ajouter un joueur via
