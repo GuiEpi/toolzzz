@@ -170,6 +170,145 @@ class Utils {
     return moment().add(temps, "s").add(1, "minute").startOf("minute");
   }
   /**
+   * Sur construction.php / laboratoire.php, remplace les blocs natifs
+   * `<strong>…</strong><br><small>…</small>` qui annoncent les évolutions
+   * en cours par un petit tableau récap (Nom / Temps restant / Terminé le
+   * / Annuler).
+   *
+   * Le span de countdown natif est *déplacé* dans la nouvelle cellule, pas
+   * recréé, pour que le `setTimeout` natif de Fourmizzz (cf. fonction `reste()`
+   * du jeu) continue à mettre l'élément à jour en temps réel — il accède le
+   * span par son ID, qui reste valide tant qu'il est dans le DOM.
+   *
+   * @static
+   * @method tableauEvolution
+   * @param {String} typeLabel Texte de l'entête de la 1re colonne (ex. "Recherche").
+   * @param {String} [sectionH2] Texte du h2 affiché au-dessus du tableau
+   *                             (ex. "Construction" / "Laboratoire"). Omis = pas de h2.
+   */
+  static tableauEvolution(typeLabel, sectionH2) {
+    let $strongs = $("#centre > strong");
+    if (!$strongs.length) return;
+    // `tableau_leger` = classe native Fourmizzz utilisée par le tableau des
+    // pontes sur Reine.php — donne le même look visuel que le récap ponte.
+    let $table = $(
+      `<table id='o_evolutionEnCours' class='tableau_leger o_maxWidth' cellspacing='0'>
+        <caption class='gras left'>${typeLabel}(s) en cours:</caption>
+        <thead><tr>
+          <th class='left'>${typeLabel}</th>
+          <th>Temps restant</th>
+          <th>Terminé le</th>
+          <th></th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>`,
+    );
+    // Container caché pour les spans natifs : la chaîne setTimeout du jeu
+    // les met à jour via getElementById, on les déplace ici pour qu'elle
+    // continue à tourner sans erreur (au lieu de les supprimer avec le strong
+    // → null.innerHTML → throw). Le contenu de ces spans n'est plus affiché.
+    let $hidden = $("#o_resteHidden");
+    if (!$hidden.length)
+      $hidden = $("<div id='o_resteHidden' style='display:none'></div>").appendTo("body");
+    $strongs.each((_, elt) => {
+      let $strong = $(elt),
+        $nativeSpan = $strong.children("span").first(),
+        $link = $strong.children("a").last(),
+        // `.clone()` puis `.children().remove()` pour récupérer le préfixe
+        // "- Name level (terminé|se termine) dans:" sans contaminer avec le
+        // contenu du <script> inline (sinon `.text()` récursif renvoie le
+        // body du script, ex. `reste(22, "batiment_…");`)
+        $cloneText = $strong.clone(),
+        scriptText = $strong.children("script").text(),
+        secMatch = scriptText.match(/reste\((\d+),/),
+        seconds = secMatch ? parseInt(secMatch[1]) : 0,
+        endDate = Utils.roundMinute(seconds).format("D MMM YYYY à HH[h]mm");
+      $cloneText.children().remove();
+      // Construction = "...se termine dans :" ; Recherche = "...terminé dans:".
+      let name = $cloneText
+        .text()
+        .replace(/^\s*-\s*/, "")
+        .replace(/\s+(?:terminé|se\s+termine).*$/i, "")
+        .trim();
+      // On déplace le span natif dans le container caché (préserve l'ID) et
+      // on monte notre propre span avec un format compact via Utils.intToTime.
+      $nativeSpan.appendTo($hidden);
+      let toolzzzId = "o_evoTime_" + ($nativeSpan.attr("id") || Date.now());
+      let $row = $(
+        `<tr>
+          <td class='left'>${name}</td>
+          <td><span id='${toolzzzId}'>${Utils.intToTime(seconds)}</span></td>
+          <td class='reduce'>${endDate}</td>
+          <td></td>
+        </tr>`,
+      );
+      if ($link.length) $row.find("td:last").append($link);
+      $table.find("tbody").append($row);
+      // Countdown isolated-world, basé sur `Date.now()` pour ne pas dériver.
+      let start = Date.now();
+      let intervalId = setInterval(() => {
+        let $el = $("#" + toolzzzId);
+        if (!$el.length) {
+          clearInterval(intervalId);
+          return;
+        }
+        let remaining = seconds - Math.floor((Date.now() - start) / 1000);
+        if (remaining <= 0) {
+          $el.text("0s");
+          clearInterval(intervalId);
+          return;
+        }
+        $el.text(Utils.intToTime(remaining));
+      }, 1000);
+    });
+    let $first = $strongs.first();
+    if (sectionH2) $first.before(`<h2 class='o_marginT15'>${sectionH2}</h2>`);
+    $first.before($table);
+    // Cleanup : retire les <strong>, <small> et <br> entre la table et le
+    // séparateur natif `.Bas` (qui marque la fin de la zone évolutions).
+    $first.nextUntil(".Bas").addBack().filter("strong, small, br").remove();
+    // Sur la page de confirmation d'annulation, Fourmizzz ajoute :
+    //  - non-C+ : un `<p>` contenant strong+Je confirme (tout dans le même p).
+    //  - C+ : un `<p>` contenant juste strong, et `<a>Je confirme</a>` en
+    //    sibling direct de #centre. Notre `<a>Retour</a>` (cf. confirmationAnnuler)
+    //    est ajouté juste après "Je confirme", donc aussi sibling en C+.
+    // On déplace le tout sous le tableau. DocumentFragment pour préserver
+    // l'ordre DOM (jQuery `.after()` avec une collection insère en reverse).
+    let $warning = $("#centre > p").has("strong");
+    if ($warning.length) {
+      let $confAnnuler = $("#centre > a[href*='confAnnuler']"),
+        $retour = $confAnnuler.next("a"),
+        $wrapper = $("<div class='o_annulationGroup'></div>");
+      // En C+, "Je confirme" + "Retour" sont siblings du `<p>` (qui ne contient
+      // que le `<strong>` + un `<br>`). On les déplace DANS le `<p>` pour
+      // qu'ils restent collés au texte — sinon le `margin-bottom` natif du
+      // `<p>` crée un gap entre le warning et les liens. En non-C+, les liens
+      // sont déjà dans le `<p>`, donc $confAnnuler.length = 0 → no-op.
+      if ($confAnnuler.length) $warning.append(" ", $confAnnuler[0], " ", $retour[0]);
+      $wrapper[0].appendChild($warning[0]);
+      $table.after($wrapper);
+    }
+  }
+  /**
+   * Sur la page de confirmation d'annulation d'une recherche ou construction
+   * (`?confAnnuler=ID&t=TOKEN`), ajoute un lien "Retour" à côté du "Je confirme"
+   * natif (sinon l'utilisateur n'a aucun moyen évident de revenir en arrière)
+   * et nettoie l'URL via `history.replaceState` pour qu'un Ctrl+R ramène sur
+   * la page normale au lieu de re-afficher la confirmation.
+   *
+   * @static
+   * @method confirmationAnnuler
+   * @param {String} retourUrl URL de retour (ex. "construction.php").
+   */
+  static confirmationAnnuler(retourUrl) {
+    let $confirmer = $("a:contains('Je confirme')");
+    if (!$confirmer.length) return;
+    $confirmer.after(
+      ` <a href='${retourUrl}' class='o_retourAnnuler' style='margin-left:12px;'>Retour</a>`,
+    );
+    if (location.search.includes("confAnnuler")) history.replaceState({}, "", retourUrl);
+  }
+  /**
    * Decremente un chrono dynamique toutes les secondes.
    *
    * @static

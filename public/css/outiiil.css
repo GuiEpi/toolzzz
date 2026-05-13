@@ -330,6 +330,23 @@ select:required {
   vertical-align: middle;
 }
 
+/* Tableau récap des évolutions en cours (Utils.tableauEvolution), affiché en
+ * haut de construction.php et laboratoire.php. Espace en bas pour ne pas
+ * coller au tableau natif des items qui suit. Caption visiblement marquée
+ * comme titre du tableau. */
+#o_evolutionEnCours {
+  margin-bottom: 20px;
+}
+#o_evolutionEnCours caption {
+  margin-bottom: 6px;
+  font-size: 1em;
+}
+/* Groupe warning + Je confirme + Retour repositionné sous le tableau récap
+ * sur la page de confirmation d'annulation (cf. Utils.tableauEvolution). */
+.o_annulationGroup {
+  margin-bottom: 20px;
+}
+
 /* Boite Radar */
 /* `:not([colspan])` exclut les rows séparateur et le tfoot toolbar (qui
  * utilisent un seul td en colspan=3) — sinon `width: 28px` clipperait

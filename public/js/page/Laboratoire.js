@@ -39,8 +39,14 @@ class PageLaboratoire {
       // Affichage de la rentabilité du bouclier et de la rentabilité de l'armes
       this.titleBouclier().titleArmes();
     });
-    // Sauvegarde recherche
+    // Sauvegarde recherche AVANT le remplacement (saveRecherche lit $("#centre strong"))
     if (!Utils.comptePlus) this.plus();
+    // ⚠️ Ordre : confirmationAnnuler AVANT tableauEvolution — la 1re ajoute le
+    // <a>Retour</a> juste après "Je confirme", et la 2nde le déplace en même
+    // temps que le warning sous le tableau récap. Sinon en C+ le Retour
+    // resterait orphelin à sa position d'injection.
+    Utils.confirmationAnnuler("laboratoire.php");
+    Utils.tableauEvolution("Recherche", "Laboratoire");
     return this;
   }
   /**
@@ -131,11 +137,9 @@ class PageLaboratoire {
    * @method plus
    */
   plus() {
-    // Affichage de la fin de la recherche
-    if ($("#centre > strong").length)
-      $("#centre > strong").after(
-        `<span class='small'> Terminé le ${Utils.roundMinute($("#centre > strong").text().split(",")[0].split("(")[1]).format("D MMM YYYY à HH[h]mm")}</span>`,
-      );
+    // La mention "Terminé le X" est désormais affichée par
+    // `Utils.tableauEvolution()` pour tous (C+ comme non-C+), plus besoin de
+    // la dupliquer ici.
     // Sauvegarde de la recherche en cours
     this.saveRecherche();
     // Suppresion de la recherche en cours si on annule

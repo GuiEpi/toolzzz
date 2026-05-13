@@ -32,8 +32,14 @@ class PageConstruction {
     // Affichage de la rentabilité
     if (!$(".desciption_amelioration:eq(11) table").find(".verificationOK").length)
       this.titleEtable();
-    // Sauvegarde construction
+    // Sauvegarde construction AVANT le remplacement (saveConstruction lit le strong)
     if (!Utils.comptePlus) this.plus();
+    // ⚠️ Ordre : confirmationAnnuler AVANT tableauEvolution — la 1re ajoute le
+    // <a>Retour</a> juste après "Je confirme", et la 2nde le déplace en même
+    // temps que le warning sous le tableau récap. Sinon en C+ le Retour
+    // resterait orphelin à sa position d'injection.
+    Utils.confirmationAnnuler("construction.php");
+    Utils.tableauEvolution("Construction", "Construction");
     // Visualisation des coûts/temps par niveau
     this.couts();
     return this;
@@ -279,11 +285,9 @@ class PageConstruction {
    * @method plus
    */
   plus() {
-    // Affichage de la fin de la construction
-    if ($("#centre > strong").length)
-      $("#centre > strong").after(
-        `<span class='small'> Terminé le ${Utils.roundMinute($("#centre > strong").text().split(",")[0].split("(")[1]).format("D MMM YYYY à HH[h]mm")}</span>`,
-      );
+    // La mention "Terminé le X" est désormais affichée par
+    // `Utils.tableauEvolution()` pour tous (C+ comme non-C+), plus besoin de
+    // la dupliquer ici.
     // Sauvegarde de la construction en cours
     this.saveConstruction();
     // Suppresion de la construction en cours si on annule

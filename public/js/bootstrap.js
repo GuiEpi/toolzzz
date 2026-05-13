@@ -23,7 +23,18 @@
     .toolzzz-mode-couts #centre > strong,
     .toolzzz-mode-couts #centre > br,
     .toolzzz-mode-couts #centre > small,
-    .toolzzz-mode-couts #centre > span.small {
+    .toolzzz-mode-couts #centre > span.small,
+    .toolzzz-mode-evolution #centre > strong,
+    .toolzzz-mode-evolution #centre > br,
+    .toolzzz-mode-evolution #centre > small,
+    /* Page de confirmation d'annulation : hide aussi le <p> warning + le
+     * <a>Je confirme</a> natif (C+ uniquement, où il est sibling direct)
+     * + notre <a class='o_retourAnnuler'>Retour</a> (idem). Sinon ils
+     * clignotent à leur position d'origine avant que tableauEvolution
+     * les déplace sous le tableau récap. */
+    .toolzzz-mode-evolution #centre > p:has(strong),
+    .toolzzz-mode-evolution #centre > a[href*='confAnnuler'],
+    .toolzzz-mode-evolution #centre > a.o_retourAnnuler {
       display: none !important;
     }
   `;
@@ -31,6 +42,12 @@
 
   let appliquer = () => {
     document.documentElement.classList.toggle("toolzzz-mode-couts", location.hash === "#cout");
+    // construction.php / laboratoire.php : on cache les `<strong>` (évolutions
+    // en cours) avant le parse du body, pour éviter le flash entre le rendu
+    // natif et notre tableau récap (cf. Utils.tableauEvolution).
+    let evolutionPage =
+      location.pathname === "/construction.php" || location.pathname === "/laboratoire.php";
+    document.documentElement.classList.toggle("toolzzz-mode-evolution", evolutionPage);
   };
   appliquer();
   window.addEventListener("hashchange", appliquer);
