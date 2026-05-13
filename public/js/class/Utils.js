@@ -242,8 +242,12 @@ class Utils {
           <td></td>
         </tr>`,
       );
-      if ($link.length) $row.find("td:last").append($link);
-      $table.find("tbody").append($row);
+      // Native `appendChild` (au lieu de jQuery `.append()`) pour bypass
+      // `domManip` qui collecte les `<script>` descendants et les passe à
+      // `DOMEval` → bloqué par la CSP MV3 de l'extension. Le `<a>Annuler</a>`
+      // natif est juste déplacé, son flag HTML "already-started" est préservé.
+      if ($link.length) $row.find("td:last")[0].appendChild($link[0]);
+      $table.find("tbody")[0].appendChild($row[0]);
       // Countdown isolated-world, basé sur `Date.now()` pour ne pas dériver.
       let start = Date.now();
       let intervalId = setInterval(() => {
@@ -263,7 +267,9 @@ class Utils {
     });
     let $first = $strongs.first();
     if (sectionH2) $first.before(`<h2 class='o_marginT15 o_evolutionH2'>${sectionH2}</h2>`);
-    $first.before($table);
+    // Native `insertBefore` : $table contient le `<a>Annuler</a>` natif déplacé
+    // ; un append jQuery scanne ses descendants pour `DOMEval` → bloqué par CSP.
+    $first[0].parentNode.insertBefore($table[0], $first[0]);
     // Cleanup : retire les <strong>, <small> et <br> entre la table et le
     // séparateur natif `.Bas` (qui marque la fin de la zone évolutions).
     $first.nextUntil(".Bas").addBack().filter("strong, small, br").remove();
@@ -284,9 +290,17 @@ class Utils {
       // qu'ils restent collés au texte — sinon le `margin-bottom` natif du
       // `<p>` crée un gap entre le warning et les liens. En non-C+, les liens
       // sont déjà dans le `<p>`, donc $confAnnuler.length = 0 → no-op.
-      if ($confAnnuler.length) $warning.append(" ", $confAnnuler[0], " ", $retour[0]);
+      if ($confAnnuler.length) {
+        $warning[0].appendChild(document.createTextNode(" "));
+        $warning[0].appendChild($confAnnuler[0]);
+        $warning[0].appendChild(document.createTextNode(" "));
+        $warning[0].appendChild($retour[0]);
+      }
       $wrapper[0].appendChild($warning[0]);
-      $table.after($wrapper);
+      // Native insertion : $wrapper porte le `<strong>` natif qui contient un
+      // `<script>reste(…)>` inline → un append jQuery déclencherait `DOMEval`,
+      // bloqué par CSP MV3.
+      $table[0].parentNode.insertBefore($wrapper[0], $table[0].nextSibling);
     }
   }
   /**
