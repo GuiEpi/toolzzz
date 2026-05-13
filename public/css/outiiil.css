@@ -380,6 +380,51 @@ select:required {
   overflow: hidden;
   white-space: nowrap;
 }
+/* Sous Chrome, l'algo `table-layout: auto` ne réduit pas la col nom sous son
+ * `max-width: 80px` quand la col terrain demande plus — du coup les chiffres
+ * trillion-level (alliance) passent à la ligne. Firefox redistribue mieux et
+ * n'a pas le souci. Pour aligner Chrome sur le comportement Firefox sans
+ * toucher Firefox, on bascule en `table-layout: fixed` uniquement sous Chrome
+ * (classe `o_chrome` posée par content.js sur <html>), et on fige les widths
+ * via `<colgroup>` injecté dans Radar.js.
+ *
+ * Budget pour 220px de boîte (table à 212px avec 4px de marge de chaque
+ * côté pour que le hover bg `.lien:hover` ne dépasse pas la zone visible) :
+ *   22 (icône) + 64 (nom) + 126 (terrain) = 212px.
+ *
+ * Le `padding-right: 8px` sur la col terrain réserve du slack visuel pour
+ * éviter que le chiffre touche le bord droit de la boîte (sinon avec
+ * `width: 100%` strict et un right-align, le chiffre se colle sur la
+ * bordure — comportement absent sous Firefox où la table est content-sized
+ * et donc plus étroite que la boîte). Content area utile = 132 - 8 = 124px,
+ * largement suffisant pour un trillion-level (~119px) avec ~5px de marge.
+ *
+ * Régression mineure Chrome-only : les pseudos > 6 chars tronquent à 60px
+ * (avant 80px en auto-layout). Cohérent avec le comportement Firefox sur
+ * SHAN row (qu'on a mesuré naturellement à 65.8px). En edit-mode on
+ * revient à auto-layout pour laisser le `≡` élargir la col 1. */
+.o_chrome #o_radar {
+  table-layout: fixed;
+  width: calc(100% - 8px);
+  margin-left: 4px;
+  margin-right: 4px;
+}
+.o_chrome #o_radar > colgroup > col:nth-child(1) {
+  width: 22px;
+}
+.o_chrome #o_radar > colgroup > col:nth-child(2) {
+  width: 64px;
+}
+.o_chrome #o_radar td:nth-child(3):not([colspan]) {
+  padding: 0 4px;
+}
+.o_chrome .o_radarEditMode #o_radar {
+  table-layout: auto;
+  width: auto;
+}
+.o_chrome .o_radarEditMode #o_radar td:nth-child(3):not([colspan]) {
+  padding: 0;
+}
 .o_actualiser {
   -webkit-filter: contrast(0%);
   filter: contrast(0%);

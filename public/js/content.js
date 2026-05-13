@@ -7,6 +7,10 @@
  * CONSTANTE
  */
 const VERSION = chrome.runtime.getManifest().version;
+// Classe `o_chrome` posée sur <html> pour scoper les règles CSS qui doivent
+// uniquement s'appliquer sous Chromium (cf. radar du Compte+ — Firefox et
+// Chrome divergent sur la distribution de largeur en `table-layout: auto`).
+if (!navigator.userAgent.includes("Firefox")) document.documentElement.classList.add("o_chrome");
 const CONSTRUCTION = [
   "Champignonnière",
   "Entrepôt de Nourriture",
