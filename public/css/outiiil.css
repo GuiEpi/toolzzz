@@ -368,11 +368,11 @@ select:required {
 
 /* Boite Radar */
 /* `:not([colspan])` exclut les rows séparateur et le tfoot toolbar (qui
- * utilisent un seul td en colspan=3) — sinon `width: 28px` clipperait
+ * utilisent un seul td en colspan=3) — sinon `width: 22px` clipperait
  * leur contenu sur la 1re colonne et `max-width: 80px` tronquerait le
  * texte des séparateurs. */
 #o_radar td:nth-child(1):not([colspan]) {
-  width: 28px;
+  width: 22px;
 }
 #o_radar td:nth-child(2):not([colspan]) {
   max-width: 80px;
