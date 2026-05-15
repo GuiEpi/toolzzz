@@ -314,11 +314,14 @@ class PageRessource {
   calculerTdcDate() {
     let raw = $("#o_chasseDateArrivee").val(),
       reset = (msg) => {
-        $("#o_chasseDateArrivee").removeData("tdc");
+        $("#o_chasseDateArrivee").removeData("tdc").removeData("tdcRaw");
         $("#o_chasseDateArriveeTdc").text(msg || "—");
         $("#o_chasseDateArriveeApply").prop("disabled", true);
       };
     if (!raw) return reset();
+    // datetimepicker redéclenche `change` au blur avec la même valeur — sans ce
+    // garde-fou le tdc dérive d'~1 unité à chaque firing (diff vs moment() avance)
+    if ($("#o_chasseDateArrivee").data("tdcRaw") === raw) return;
     let target = moment(raw, "DD-MM-YYYY HH:mm");
     if (!target.isValid()) return reset();
     let secondsLeft = target.diff(moment(), "seconds");
@@ -326,7 +329,7 @@ class PageRessource {
     let niveau = monProfil.niveauRecherche[5],
       tdc = Math.round(secondsLeft / Math.pow(0.9, niveau) - Utils.terrain);
     if (tdc <= 0) return reset("trop court");
-    $("#o_chasseDateArrivee").data("tdc", tdc);
+    $("#o_chasseDateArrivee").data("tdc", tdc).data("tdcRaw", raw);
     $("#o_chasseDateArriveeTdc").text(numeral(tdc).format() + " cm²");
     $("#o_chasseDateArriveeApply").prop("disabled", false);
   }
