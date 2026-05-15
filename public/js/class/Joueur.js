@@ -489,16 +489,22 @@ class Joueur {
   chargerProfil(html) {
     if (html.includes("Aucun joueurs avec le pseudo")) return false;
     else {
-      let regexp = new RegExp("x=(\\d*) et y=(\\d*)"),
-        ligne = $(html).find(".boite_membre a[href^='carte2.php?']").text();
-      this._id = $(html).find("a[href^='commerce.php?ID=']").attr("href").match(/\d+/g)[0];
+      // Strip `<img>` avant le parseHTML de jQuery — sinon `$(html)` crée un
+      // fragment où le navigateur tente de charger toutes les images du profil
+      // (avatars, signatures), dont des hôtes morts type skyrock.net qui
+      // spamment `ERR_NAME_NOT_RESOLVED` dans la console. On lit que du texte
+      // et de la structure ici, jamais les images.
+      let stripped = html.replace(/<img\b[^>]*>/gi, ""),
+        regexp = new RegExp("x=(\\d*) et y=(\\d*)"),
+        ligne = $(stripped).find(".boite_membre a[href^='carte2.php?']").text();
+      this._id = $(stripped).find("a[href^='commerce.php?ID=']").attr("href").match(/\d+/g)[0];
       this._x = ~~ligne.replace(regexp, "$1");
       this._y = ~~ligne.replace(regexp, "$2");
-      this._mv = $(html)
+      this._mv = $(stripped)
         .find("table:eq(0) tr:eq(0) td:eq(0)")
         .text()
         .includes("Joueur en vacances");
-      this._terrain = numeral($(html).find(".tableau_score tr:eq(1) td:eq(1)").text()).value();
+      this._terrain = numeral($(stripped).find(".tableau_score tr:eq(1) td:eq(1)").text()).value();
       if (monProfil.pseudo == this._pseudo) this.sauvegarder();
     }
     return true;
@@ -612,52 +618,12 @@ class Joueur {
     );
     // event
     $("#o_maj_" + this._id).click((e) => {
-      let oldTerrain = numeral($("#o_terrain_" + this._id).text()).value(),
-        oldMV = this._mv,
-        bSave = false;
-      $({ deg: 0 }).animate(
-        { deg: 360 },
-        {
-          duration: 600,
-          step: (now) => {
-            $(e.currentTarget)
-              .find("img")
-              .css({ transform: "rotate(" + now + "deg)" });
-          },
-        },
-      );
-      this.getProfil().then((data) => {
-        if (this.chargerProfil(data)) {
-          // si il y une différence de terrain
-          let diff = this._terrain - oldTerrain;
-          let cellTerrain = this.estAttaquable()
-            ? `<a class="gras ${this._mv ? "blue_light" : ""} href="/ennemie.php?Attaquer=${this._id}&lieu=1">${numeral(this._terrain).format()}</a>`
-            : `<span ${this._mv ? `class="blue_light" title="En vacances"` : ""}>${numeral(this._terrain).format()}</span>`;
-          // si le joueur est sortie de MV ou si il a mis le MV
-          if (oldMV != this._mv) {
-            $("#o_terrain_" + this._id).html(cellTerrain);
-            if (this._mv) $("#o_nom_" + this._id + " a").addClass("blue_light");
-            else $("#o_nom_" + this._id + " a").removeClass("blue_light");
-            bSave = true;
-          }
-          if (diff) {
-            $("#o_terrain_" + this._id)
-              .html(cellTerrain)
-              .effect("highlight", { color: diff > 0 ? "#458D58" : "#8D4545" }, 1000)
-              .attr("title", numeral(diff).format())
-              .tooltip({
-                position: { my: "left+10 center", at: "right center" },
-                content: `<span class='${diff > 0 ? "green_light" : "red_xlight"}'>${diff > 0 ? "+ " + $("#o_terrain_" + this._id).attr("title") : $("#o_terrain_" + this._id).attr("title")} cm²</span>`,
-                hide: { effect: "fade", duration: 10 },
-                tooltipClass: "warning-tooltip ui-tooltip-right",
-              })
-              .tooltip("open");
-            bSave = true;
-          }
-          bSave && radar.sauvegarder();
-        } else {
+      this.refreshDansRadar(radar).then((res) => {
+        if (res.removed) {
           $.toast({ ...TOAST_WARNING, text: `Le joueur ${this._pseudo} n'existe plus.` });
           radar.supprimeJoueur(this).sauvegarder().actualiser();
+        } else if (res.changed) {
+          radar.sauvegarder();
         }
       });
       return false;
@@ -683,6 +649,58 @@ class Joueur {
       },
       hide: { effect: "fade", duration: 10 },
       tooltipClass: "warning-tooltip ui-tooltip-right",
+    });
+  }
+  /**
+   * Rafraîchit le joueur dans le contexte de la boite radar : spin de l'icône,
+   * fetch du profil, mise à jour du terrain et de l'état MV, highlight du diff.
+   * Ne sauvegarde pas et ne touche pas la collection du radar — c'est au caller
+   * (click single, ou batch "Tout actualiser") de décider quoi faire selon le
+   * résultat ({ removed, changed }).
+   *
+   * @method refreshDansRadar
+   * @param {BoiteRadar} radar
+   * @return {Promise<{ removed: boolean, changed: boolean }>}
+   */
+  refreshDansRadar(radar) {
+    let oldTerrain = numeral($("#o_terrain_" + this._id).text()).value(),
+      oldMV = this._mv,
+      $icon = $("#o_maj_" + this._id);
+    $({ deg: 0 }).animate(
+      { deg: 360 },
+      {
+        duration: 600,
+        step: (now) => $icon.find("img").css({ transform: "rotate(" + now + "deg)" }),
+      },
+    );
+    return this.getProfil().then((data) => {
+      if (!this.chargerProfil(data)) return { removed: true, changed: false };
+      let diff = this._terrain - oldTerrain,
+        changed = false,
+        cellTerrain = this.estAttaquable()
+          ? `<a class="gras ${this._mv ? "blue_light" : ""} href="/ennemie.php?Attaquer=${this._id}&lieu=1">${numeral(this._terrain).format()}</a>`
+          : `<span ${this._mv ? `class="blue_light" title="En vacances"` : ""}>${numeral(this._terrain).format()}</span>`;
+      if (oldMV != this._mv) {
+        $("#o_terrain_" + this._id).html(cellTerrain);
+        if (this._mv) $("#o_nom_" + this._id + " a").addClass("blue_light");
+        else $("#o_nom_" + this._id + " a").removeClass("blue_light");
+        changed = true;
+      }
+      if (diff) {
+        $("#o_terrain_" + this._id)
+          .html(cellTerrain)
+          .effect("highlight", { color: diff > 0 ? "#458D58" : "#8D4545" }, 1000)
+          .attr("title", numeral(diff).format())
+          .tooltip({
+            position: { my: "left+10 center", at: "right center" },
+            content: `<span class='${diff > 0 ? "green_light" : "red_xlight"}'>${diff > 0 ? "+ " + $("#o_terrain_" + this._id).attr("title") : $("#o_terrain_" + this._id).attr("title")} cm²</span>`,
+            hide: { effect: "fade", duration: 10 },
+            tooltipClass: "warning-tooltip ui-tooltip-right",
+          })
+          .tooltip("open");
+        changed = true;
+      }
+      return { removed: false, changed };
     });
   }
   /**

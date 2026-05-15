@@ -179,44 +179,55 @@ class Alliance {
     );
     // event
     $("#o_maj_" + this._tag).click((e) => {
-      let oldTerrain = numeral($("#o_terrain_" + this._tag).text()).value();
-      $({ deg: 0 }).animate(
-        { deg: 360 },
-        {
-          duration: 600,
-          step: (now) => {
-            $(e.currentTarget)
-              .find("img")
-              .css({ transform: "rotate(" + now + "deg)" });
-          },
-        },
-      );
-      this.getDescription().then((data) => {
-        this._terrain = 0;
-        $(data)
-          .find("#tabMembresAlliance tr:gt(0)")
-          .each((i, elt) => {
-            this._terrain += numeral($(elt).find("td:eq(4)").text()).value();
-          });
-        let diff = this._terrain - oldTerrain;
-        if (diff) {
-          $("#o_terrain_" + this._tag)
-            .text(numeral(this._terrain).format())
-            .effect("highlight", { color: diff > 0 ? "#458D58" : "#8D4545" }, 1000)
-            .attr("title", numeral(diff).format())
-            .tooltip({
-              position: { my: "left+10 center", at: "right center" },
-              content: `<span class='${diff > 0 ? "green_light" : "red_xlight"}'>${diff > 0 ? "+ " + $("#o_terrain_" + this._tag).attr("title") : $("#o_terrain_" + this._tag).attr("title")} cm²</span>`,
-              hide: { effect: "fade", duration: 10 },
-              tooltipClass: "warning-tooltip ui-tooltip-right",
-            })
-            .tooltip("open");
-          radar.sauvegarder();
-        }
+      this.refreshDansRadar(radar).then((res) => {
+        if (res.changed) radar.sauvegarder();
       });
       return false;
     });
     return this;
+  }
+  /**
+   * Rafraîchit l'alliance dans le contexte de la boite radar : spin de l'icône,
+   * fetch de la description, somme du terrain des membres, highlight du diff.
+   * Ne sauvegarde pas — c'est au caller (click single, ou batch "Tout actualiser")
+   * de décider quoi faire selon le résultat ({ removed, changed }).
+   *
+   * @method refreshDansRadar
+   * @param {BoiteRadar} radar
+   * @return {Promise<{ removed: boolean, changed: boolean }>}
+   */
+  refreshDansRadar(radar) {
+    let oldTerrain = numeral($("#o_terrain_" + this._tag).text()).value(),
+      $icon = $("#o_maj_" + this._tag);
+    $({ deg: 0 }).animate(
+      { deg: 360 },
+      {
+        duration: 600,
+        step: (now) => $icon.find("img").css({ transform: "rotate(" + now + "deg)" }),
+      },
+    );
+    return this.getDescription().then((data) => {
+      this._terrain = 0;
+      $(data)
+        .find("#tabMembresAlliance tr:gt(0)")
+        .each((i, elt) => {
+          this._terrain += numeral($(elt).find("td:eq(4)").text()).value();
+        });
+      let diff = this._terrain - oldTerrain;
+      if (!diff) return { removed: false, changed: false };
+      $("#o_terrain_" + this._tag)
+        .text(numeral(this._terrain).format())
+        .effect("highlight", { color: diff > 0 ? "#458D58" : "#8D4545" }, 1000)
+        .attr("title", numeral(diff).format())
+        .tooltip({
+          position: { my: "left+10 center", at: "right center" },
+          content: `<span class='${diff > 0 ? "green_light" : "red_xlight"}'>${diff > 0 ? "+ " + $("#o_terrain_" + this._tag).attr("title") : $("#o_terrain_" + this._tag).attr("title")} cm²</span>`,
+          hide: { effect: "fade", duration: 10 },
+          tooltipClass: "warning-tooltip ui-tooltip-right",
+        })
+        .tooltip("open");
+      return { removed: false, changed: true };
+    });
   }
   /**
    *

@@ -241,7 +241,7 @@ class BoiteRadar {
       searchRow = Utils.comptePlus
         ? `<tr id='o_radarSearchRow'><td colspan='3'><form method='post' action='classementAlliance.php' style='text-align:center;'><input type='text' name='requete' id='o_requete' placeholder='Rechercher Joueur ou Alliance' autocomplete='off' style='text-align:center;width:95%;'/></form></td></tr>`
         : "",
-      html = `<table id='o_radar' ${!affiche || affiche == "C" ? `style="display:none"` : ""}><colgroup><col><col><col></colgroup><tbody></tbody><tfoot><tr id='o_radarToolbar'><td colspan='3' class='right'><span id='o_radarAddSep' class='cursor' title='Ajouter une section'>+</span><span id='o_radarToggleEdit' class='cursor' title='Mode édition'>✎</span></td></tr>${searchRow}</tfoot></table>`;
+      html = `<table id='o_radar' ${!affiche || affiche == "C" ? `style="display:none"` : ""}><colgroup><col><col><col></colgroup><tbody></tbody><tfoot><tr id='o_radarToolbar'><td colspan='3' class='right'><a id='o_radarRefreshAll' class='o_actualiser' href='' title='Tout actualiser'><img src="${IMG_ACTUALISER}" alt="Tout actualiser" height="20"/></a><span id='o_radarAddSep' class='cursor' title='Ajouter une section'>+</span><span id='o_radarToggleEdit' class='cursor' title='Mode édition'>✎</span></td></tr>${searchRow}</tfoot></table>`;
     // on remplace le contenu ou l'ajoute
     if ($("#o_radar").length) $("#o_radar").replaceWith(html);
     else $("#boiteComptePlus .contenu_boite_compte_plus table").after(html);
@@ -322,6 +322,10 @@ class BoiteRadar {
       }
     });
     // Toolbar
+    $("#o_radarRefreshAll").click((e) => {
+      this._actualiserTout();
+      return false;
+    });
     $("#o_radarAddSep").click((e) => {
       e.stopPropagation();
       this.ajouteSeparateur().sauvegarder().actualiser();
@@ -370,6 +374,50 @@ class BoiteRadar {
       /[&<>"']/g,
       (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
     );
+  }
+  /**
+   * Refresh batch de toutes les entrées surveillées (joueurs + alliances) en
+   * parallèle via Promise.all. Le navigateur cap naturellement à ~6 connexions
+   * simultanées sur l'origine, donc 30 entrées finissent en quelques vagues
+   * sans pool explicite. Les suppressions (joueurs disparus du jeu) sont
+   * appliquées en différé pour éviter un rebuild DOM en plein batch — qui
+   * casserait les highlights et les refresh en cours.
+   *
+   * @private
+   * @method _actualiserTout
+   */
+  _actualiserTout() {
+    let entries = [...Object.values(this._joueurs), ...Object.values(this._alliances)];
+    if (!entries.length) return;
+    let $btn = $("#o_radarRefreshAll");
+    // Spin du bouton — même 600ms qu'une icône per-ligne. Pas de compteur ni de
+    // disable : le batch va trop vite (~1-2s en pratique) pour que ça serve.
+    $({ deg: 0 }).animate(
+      { deg: 360 },
+      {
+        duration: 600,
+        step: (now) => $btn.find("img").css({ transform: "rotate(" + now + "deg)" }),
+      },
+    );
+    let refreshOne = (entry) =>
+      entry
+        .refreshDansRadar(this)
+        .then((r) => ({ entry, ...r }))
+        .catch(() => ({ entry, failed: true }));
+    Promise.all(entries.map(refreshOne)).then((results) => {
+      let removed = results.filter((r) => r.removed),
+        changed = results.filter((r) => r.changed).length,
+        failed = results.filter((r) => r.failed).length;
+      removed.forEach((r) => {
+        $.toast({ ...TOAST_WARNING, text: `Le joueur ${r.entry._pseudo} n'existe plus.` });
+        this.supprimeJoueur(r.entry);
+      });
+      if (removed.length || changed) this.sauvegarder();
+      if (failed) {
+        $.toast({ ...TOAST_WARNING, text: `${failed} actualisation(s) échouée(s).` });
+      }
+      if (removed.length) this.actualiser();
+    });
   }
   /**
    * Toggle du mode édition.
