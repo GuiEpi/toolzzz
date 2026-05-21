@@ -549,6 +549,11 @@ select:required {
   padding: 10px 6px 3px;
   position: relative;
 }
+#o_radarToolbarInner {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
 #o_radarToolbar td::before {
   content: "";
   position: absolute;
@@ -581,15 +586,13 @@ select:required {
   display: inline-block;
   transform: scaleX(-1);
 }
-/* Bouton "Tout actualiser" : positionné absolument au coin gauche de la toolbar
- * pour séparer visuellement le geste batch (à gauche) des outils d'édition de
- * la liste (+ et ✎ à droite). Le markup `<a class="o_actualiser">` est
- * volontairement identique aux icônes per-ligne (sans le wrapper `<span>` de
- * la toolbar) pour que le rendu visuel base/hover soit strictement le même. */
+/* Bouton "Tout actualiser" : poussé à gauche par `margin-right: auto` dans le
+ * wrapper flex `#o_radarToolbarInner`, pour séparer visuellement le geste batch
+ * (à gauche) des outils d'édition de la liste (+ et ✎ à droite). Icône plus
+ * petite que les actualiser per-ligne pour s'aligner avec + / ✎. */
 #o_radarRefreshAll {
-  position: absolute;
-  left: 1px;
-  top: 10px;
+  margin-right: auto;
+  line-height: 0;
 }
 
 /* × de suppression injecté sur chaque row en mode édition */

@@ -241,7 +241,7 @@ class BoiteRadar {
       searchRow = Utils.comptePlus
         ? `<tr id='o_radarSearchRow'><td colspan='3'><form method='post' action='classementAlliance.php' style='text-align:center;'><input type='text' name='requete' id='o_requete' placeholder='Rechercher Joueur ou Alliance' autocomplete='off' style='text-align:center;width:95%;'/></form></td></tr>`
         : "",
-      html = `<table id='o_radar' ${!affiche || affiche == "C" ? `style="display:none"` : ""}><colgroup><col><col><col></colgroup><tbody></tbody><tfoot><tr id='o_radarToolbar'><td colspan='3' class='right'><a id='o_radarRefreshAll' class='o_actualiser' href='' title='Tout actualiser'><img src="${IMG_ACTUALISER}" alt="Tout actualiser" height="20"/></a><span id='o_radarAddSep' class='cursor' title='Ajouter une section'>+</span><span id='o_radarToggleEdit' class='cursor' title='Mode édition'>✎</span></td></tr>${searchRow}</tfoot></table>`;
+      html = `<table id='o_radar' ${!affiche || affiche == "C" ? `style="display:none"` : ""}><colgroup><col><col><col></colgroup><tbody></tbody><tfoot><tr id='o_radarToolbar'><td colspan='3' class='right'><div id='o_radarToolbarInner'><a id='o_radarRefreshAll' class='o_actualiser' href='' title='Tout actualiser'><img src="${IMG_ACTUALISER}" alt="Tout actualiser" height="14"/></a><span id='o_radarAddSep' class='cursor' title='Ajouter une section'>+</span><span id='o_radarToggleEdit' class='cursor' title='Mode édition'>✎</span></div></td></tr>${searchRow}</tfoot></table>`;
     // on remplace le contenu ou l'ajoute
     if ($("#o_radar").length) $("#o_radar").replaceWith(html);
     else $("#boiteComptePlus .contenu_boite_compte_plus table").after(html);
