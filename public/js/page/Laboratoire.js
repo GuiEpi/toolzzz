@@ -24,6 +24,9 @@ class PageLaboratoire {
    *
    */
   executer() {
+    // Préservation du scroll à travers les redirects "Rechercher prereq invalide"
+    // — la restauration se fait à la fin d'executer() (après les manipulations DOM).
+    let scrollY = Utils.preserveScroll("o_laboratoireScroll");
     // verification des niveaux
     let niveau = new Array(10);
     $(".ligneAmelioration").each((i, elt) => {
@@ -47,6 +50,9 @@ class PageLaboratoire {
     // resterait orphelin à sa position d'injection.
     Utils.confirmationAnnuler("laboratoire.php");
     Utils.tableauEvolution("Recherche", "Laboratoire");
+    // Restauration du scroll APRÈS toutes les manipulations DOM (sinon le
+    // tableau évolutions décale la mise en page après).
+    if (scrollY !== null) requestAnimationFrame(() => window.scrollTo(0, scrollY));
     return this;
   }
   /**

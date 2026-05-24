@@ -210,6 +210,8 @@ class Utils {
     let $hidden = $("#o_resteHidden");
     if (!$hidden.length)
       $hidden = $("<div id='o_resteHidden' style='display:none'></div>").appendTo("body");
+    let toastErrors = [],
+      validRows = 0;
     $strongs.each((_, elt) => {
       let $strong = $(elt),
         $nativeSpan = $strong.children("span").first(),
@@ -220,10 +222,23 @@ class Utils {
         // body du script, ex. `reste(22, "batiment_…");`)
         $cloneText = $strong.clone(),
         scriptText = $strong.children("script").text(),
-        secMatch = scriptText.match(/reste\((\d+),/),
-        seconds = secMatch ? parseInt(secMatch[1]) : 0,
-        endDate = Utils.roundMinute(seconds).format("D MMM YYYY à HH[h]mm");
+        secMatch = scriptText.match(/reste\((\d+),/);
       $cloneText.children().remove();
+      // Pas de chrono `reste(N, …)` = ce n'est pas une évolution réelle mais
+      // un message d'erreur du jeu (ex. "Prerequis non valide." quand la file
+      // d'attente C+ tente de lancer une construction dont les prérequis ne
+      // sont pas remplis). On évite la ligne 0s/maintenant dans le tableau,
+      // on relaye le texte en toast à la fin.
+      if (!secMatch) {
+        let errText = $cloneText
+          .text()
+          .replace(/^\s*-\s*/, "")
+          .trim();
+        if (errText) toastErrors.push(errText);
+        return;
+      }
+      let seconds = parseInt(secMatch[1]),
+        endDate = Utils.roundMinute(seconds).format("D MMM YYYY à HH[h]mm");
       // Construction = "...se termine dans :" ; Recherche = "...terminé dans:".
       let name = $cloneText
         .text()
@@ -248,6 +263,7 @@ class Utils {
       // natif est juste déplacé, son flag HTML "already-started" est préservé.
       if ($link.length) $row.find("td:last")[0].appendChild($link[0]);
       $table.find("tbody")[0].appendChild($row[0]);
+      validRows++;
       // Countdown isolated-world, basé sur `Date.now()` pour ne pas dériver.
       let start = Date.now();
       let intervalId = setInterval(() => {
@@ -266,13 +282,32 @@ class Utils {
       }, 1000);
     });
     let $first = $strongs.first();
-    if (sectionH2) $first.before(`<h2 class='o_marginT15 o_evolutionH2'>${sectionH2}</h2>`);
-    // Native `insertBefore` : $table contient le `<a>Annuler</a>` natif déplacé
-    // ; un append jQuery scanne ses descendants pour `DOMEval` → bloqué par CSP.
-    $first[0].parentNode.insertBefore($table[0], $first[0]);
+    // Cas "que des erreurs" (typique : file d'attente C+ qui échoue alors qu'il
+    // n'y a rien en construction) → pas de h2 ni de tableau vide, juste le toast.
+    if (validRows) {
+      if (sectionH2) $first.before(`<h2 class='o_marginT15 o_evolutionH2'>${sectionH2}</h2>`);
+      // Native `insertBefore` : $table contient le `<a>Annuler</a>` natif déplacé
+      // ; un append jQuery scanne ses descendants pour `DOMEval` → bloqué par CSP.
+      $first[0].parentNode.insertBefore($table[0], $first[0]);
+    }
     // Cleanup : retire les <strong>, <small> et <br> entre la table et le
     // séparateur natif `.Bas` (qui marque la fin de la zone évolutions).
     $first.nextUntil(".Bas").addBack().filter("strong, small, br").remove();
+    // Dedup du toast : le serveur garde le message d'erreur ~2 min sur la page.
+    // Sur un simple reload (F5) on évite de re-spam le toast tant que le même
+    // message est encore là. En revanche pour toute autre navigation (clic
+    // "Construire", clic dans le menu…), on considère que l'utilisateur a
+    // agi et qu'il faut le notifier à nouveau si l'erreur persiste.
+    let toastKey = "o_evoErrSeen_" + location.pathname;
+    if (toastErrors.length) {
+      let signature = toastErrors.join("|"),
+        navType = performance.getEntriesByType("navigation")[0]?.type,
+        skip = navType === "reload" && sessionStorage.getItem(toastKey) === signature;
+      sessionStorage.setItem(toastKey, signature);
+      if (!skip) $.toast({ ...TOAST_WARNING, text: toastErrors.join("<br>") });
+    } else {
+      sessionStorage.removeItem(toastKey);
+    }
     // Sur la page de confirmation d'annulation, Fourmizzz ajoute :
     //  - non-C+ : un `<p>` contenant strong+Je confirme (tout dans le même p).
     //  - C+ : un `<p>` contenant juste strong, et `<a>Je confirme</a>` en
@@ -302,6 +337,34 @@ class Utils {
       // bloqué par CSP MV3.
       $table[0].parentNode.insertBefore($wrapper[0], $table[0].nextSibling);
     }
+  }
+  /**
+   * Préserve le scrollY à travers une navigation aller-retour sur la même page
+   * (ex: clic "Construire" prereq invalide → POST → 302 → on revient en haut).
+   * Pose un listener `pagehide` pour sauver la position, et retourne la
+   * position à restaurer si elle est récente (< 5s).
+   *
+   * Le caller doit appeler `window.scrollTo(0, y)` APRÈS ses manipulations DOM
+   * (tableauEvolution insère un tableau au début de #centre et décale le
+   * contenu) — d'où le pattern : on récupère la valeur tôt, on l'applique tard.
+   *
+   * @static
+   * @method preserveScroll
+   * @param {String} key Clé sessionStorage unique pour la page (ex. "o_constructionScroll").
+   * @returns {Number|null} ScrollY à restaurer, ou null si rien à restaurer.
+   */
+  static preserveScroll(key) {
+    let saved = sessionStorage.getItem(key);
+    sessionStorage.removeItem(key);
+    let y = null;
+    if (saved) {
+      let parsed = JSON.parse(saved);
+      if (Date.now() - parsed.t < 5000) y = parsed.y;
+    }
+    window.addEventListener("pagehide", () => {
+      sessionStorage.setItem(key, JSON.stringify({ y: window.scrollY, t: Date.now() }));
+    });
+    return y;
   }
   /**
    * Sur la page de confirmation d'annulation d'une recherche ou construction
