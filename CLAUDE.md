@@ -90,7 +90,12 @@ Note: oxfmt's `.ts` config loader breaks in CI due to a Node version-check bug (
 
 ## Release pipeline
 
-`.github/workflows/release.yml` builds both zips, submits them to the Chrome Web Store and AMO for review, and attaches the artefacts (Chrome zip, Firefox zip, sources zip) to a GitHub Release on tag push.
+Releasing is split into two independent workflows that both trigger on `v*.*.*` tag push (and `workflow_dispatch`):
+
+- `.github/workflows/release-chrome.yml` builds the Chrome zip, submits it to the Chrome Web Store, and attaches the Chrome zip to the GitHub Release.
+- `.github/workflows/release-firefox.yml` builds the Firefox zip, submits it (with the sources zip) to AMO, and attaches the Firefox zip + sources zip to the GitHub Release.
+
+Both run in parallel and upload to the **same** GitHub Release for the tag (`softprops/action-gh-release@v2` upserts), so a failure in one store doesn't block the other and each can be re-run independently.
 
 Submission uses **`wxt submit`** (a thin wrapper around the `publish-extension` package). Both extensions are published as **listed** store entries — users install from the official stores, not from GitHub Releases. The GitHub Release is kept as an archive of the exact artefacts uploaded to the stores (useful for audit and rollback context).
 
