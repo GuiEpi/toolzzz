@@ -135,15 +135,35 @@ class BoiteParametre extends Boite {
     syncReserveFlood();
     $("#reserveFloodAuto").on("change", syncReserveFlood);
     $("#uniteAntisondeTerrain, #uniteAntisondeDome").on("spinchange spinstop", syncReserveFlood);
+    // Reset complet des paramètres (À propos) — efface le localStorage et recharge la page,
+    // ce qui reconstruit monProfil avec les valeurs par défaut.
+    $("#o_resetParametres").click(() => {
+      if (confirm("Réinitialiser tous les paramètres aux valeurs par défaut ?")) {
+        localStorage.removeItem("outiiil_parametre");
+        location.reload();
+      }
+    });
     return this;
   }
   /**
    *
    */
   parametreStyle() {
-    let content = ``;
-    for (let param of this._paramStyle) content += monProfil.parametre[param].getForm();
-    $("#o_tabsParametre3").append(`<form>${content}</form>`);
+    let couleurs = ``;
+    for (let param of ["couleurTitre", "couleur1", "couleur2", "couleur3", "couleurTexte"])
+      couleurs += monProfil.parametre[param].getForm();
+    let dock = ``;
+    for (let param of ["dockPosition", "dockVisible"]) dock += monProfil.parametre[param].getForm();
+    let effets = ``;
+    for (let param of ["boiteShow", "boiteHide"]) effets += monProfil.parametre[param].getForm();
+    $("#o_tabsParametre3").append(`<form>
+            <p class='left reduce gras'>Couleurs des boîtes et du texte</p>
+            ${couleurs}
+            <p class='left reduce gras'>Position et visibilité de la barre d'outils</p>
+            ${dock}
+            <p class='left reduce gras'>Effets d'animation à l'ouverture et fermeture des boîtes</p>
+            ${effets}
+        </form>`);
     return this;
   }
   /**
@@ -207,6 +227,10 @@ class BoiteParametre extends Boite {
         <li><a href='${repo}/issues/new?template=feature_request.yml' target='_blank' rel='noopener'>Proposer une fonctionnalité</a></li>
       </ul>
       <p class='left reduce'>Fork de <a href='https://github.com/Hraesvelg/Outiiil' target='_blank' rel='noopener'>Outiiil</a> par Hraesvelg, sous licence <a href='${repo}/blob/master/LICENSE' target='_blank' rel='noopener'>GPL-3.0</a>.</p>
+      <hr class='o_marginT15' style='border:0; border-top:1px dashed currentColor; opacity:0.35;'/>
+      <p class='left reduce gras'>Réinitialiser les paramètres</p>
+      <p class='left small'><em>Remet toutes les options (couleurs, dock, flood, antisondes, replacer auto, etc.) aux valeurs par défaut. La page sera rechargée.</em></p>
+      <button id='o_resetParametres' class='o_button f_error'>Réinitialiser</button>
     `);
     return this;
   }
