@@ -47,6 +47,8 @@ class BoiteParametre extends Boite {
       "uniteAntisondeTerrain",
       "uniteAntisondeDome",
       "uniteSonde",
+      "reserveFlood",
+      "reserveFloodAuto",
       "replacerArmeeAuto",
     ];
   }
@@ -120,6 +122,19 @@ class BoiteParametre extends Boite {
     for (let param of this._paramUtilitaire) monProfil.parametre[param].ajouterEvent();
     for (let param of this._paramGeneral) monProfil.parametre[param].ajouterEvent();
     $("#dockPosition").on("change", () => Dock.appliquerPosition());
+    // Sync de la réserve avec les antisondes quand « Suivre antisondes » est coché.
+    // Quand actif : on désactive le spinner et on le force à la somme antisondeTerrain + antisondeDome.
+    let syncReserveFlood = () => {
+      if ($("#reserveFloodAuto").prop("checked")) {
+        let sum =
+          monProfil.parametre["uniteAntisondeTerrain"].valeur +
+          monProfil.parametre["uniteAntisondeDome"].valeur;
+        $("#reserveFlood").spinner("value", sum).spinner("disable");
+      } else $("#reserveFlood").spinner("enable");
+    };
+    syncReserveFlood();
+    $("#reserveFloodAuto").on("change", syncReserveFlood);
+    $("#uniteAntisondeTerrain, #uniteAntisondeDome").on("spinchange spinstop", syncReserveFlood);
     return this;
   }
   /**
@@ -169,8 +184,11 @@ class BoiteParametre extends Boite {
             <p class='left reduce gras'>Indiquez le nombre d'unité selon l'objectif</p>
             <p class='left small'><em>Le nombre est choisi aléatoirement entre 90% du max et le max.</em></p>
             ${monProfil.parametre[this._paramGeneral[2]].getForm() + monProfil.parametre[this._paramGeneral[3]].getForm() + monProfil.parametre[this._paramGeneral[4]].getForm()}
+            <p class='left reduce gras'>Nombre d'unités à conserver lors d'un flood (réserve)</p>
+            <p class='left small'><em>Coche « Suivre antisondes » pour synchroniser automatiquement la réserve avec la somme des antisondes (terrain + dôme).</em></p>
+            ${monProfil.parametre[this._paramGeneral[5]].getForm() + monProfil.parametre[this._paramGeneral[6]].getForm()}
             <p class='left reduce gras'>Replacer l'armée à l'arrivée sur la page Armée</p>
-            ${monProfil.parametre[this._paramGeneral[5]].getForm()}
+            ${monProfil.parametre[this._paramGeneral[7]].getForm()}
         </form>`);
     return this;
   }

@@ -954,13 +954,21 @@ class Armee {
    */
   simulerFlood(tdcAtt, tdcCible, methode, attaques, tdcUniforme, reste, indSupp) {
     this._floods = new Array();
+    // Réserve : on retire ces unités du pool dispo avant simulation.
+    // repartirUniteFlood() les laissera intactes dans this._unite.
+    // Si « Suivre antisondes » est coché, la réserve s'aligne dynamiquement sur les antisondes
+    // (terrain + dôme) — sinon on prend la valeur saisie par l'utilisateur.
+    let reserve = monProfil.parametre["reserveFloodAuto"].valeur
+      ? monProfil.parametre["uniteAntisondeTerrain"].valeur +
+        monProfil.parametre["uniteAntisondeDome"].valeur
+      : monProfil.parametre["reserveFlood"].valeur;
     // on a besoin d'un objet pour le passer au différentes fonctions
     let data = {
       attaques: attaques,
       tdcUniforme: tdcUniforme,
       tdcAtt: tdcAtt,
       tdcCible: tdcCible,
-      unite: this.getSommeUnite(),
+      unite: Math.max(0, this.getSommeUnite() - reserve),
       reste: reste,
     };
     // Placement de l'antisonde

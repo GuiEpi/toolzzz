@@ -146,6 +146,18 @@ class Joueur {
       0,
     );
     this._parametre["uniteSonde"] = new Parametre("uniteSonde", "Sonde vers l'ennemi", "number", 0);
+    this._parametre["reserveFlood"] = new Parametre(
+      "reserveFlood",
+      "Réserve d'unités au flood",
+      "number",
+      0,
+    );
+    this._parametre["reserveFloodAuto"] = new Parametre(
+      "reserveFloodAuto",
+      "Suivre antisondes",
+      "checkbox",
+      true,
+    );
     this._parametre["replacerArmeeAuto"] = new Parametre(
       "replacerArmeeAuto",
       "Replacer l'armée automatiquement",
