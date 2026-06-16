@@ -66,6 +66,25 @@ Détails :
 - Pour un **widget injecté dans une page** (= `public/js/page/*.js`), utiliser ce pattern.
 - Pour une **Boite flottante** (= `public/js/boite/*.js`, fenêtre draggable affichée via `BoiteX.afficher()`), c'est la classe `Boite` qui gère le wrapper — passer juste le contenu via le constructeur `super(id, titre, html)`.
 
+## Sections dans un onglet de Boite
+
+Quand un onglet (`#o_tabs<X>1`, `2`, …) regroupe **plusieurs paramètres ou champs** qui touchent à des aspects différents, séparer en sections avec un titre en gras au-dessus de chaque groupe :
+
+```html
+<form>
+  <p class="left reduce gras">Description courte de la section 1</p>
+  ${formGroup1}
+  <p class="left reduce gras">Description courte de la section 2</p>
+  ${formGroup2} ...
+</form>
+```
+
+- **`<p class='left reduce gras'>`** — c'est la convention pour un titre/intro de section dans un form de Boite (cf. `parametreGeneral` et `parametreStyle` dans `public/js/boite/Parametres.js`).
+- **Le texte décrit ce que les champs en dessous contrôlent** — il joue le rôle de label de groupe, donc soit informatif (« La méthode sera sélectionnée par défaut dans le lanceur de flood ») plutôt que générique (« Méthodes »).
+- **Pour les notes/aides discrètes en dessous d'un titre**, ajouter une ligne `<p class='left small'><em>…</em></p>` (cf. la note « Le nombre est choisi aléatoirement entre 90% du max et le max. » sous les antisondes).
+
+Cas particulier des paramètres `checkbox` : leur label est rendu **à côté de la case** par `Parametre.getForm()` dans une `.group { width: 250px }`. Un libellé long y wrapperait sur 2 lignes en poussant la case sous le texte (effet pas joli). Convention : garder le label de la checkbox **court** (≈ 30 caractères max, cf. `dockVisible` = « Outils toujours visible ? ») et mettre la description complète dans le `<p class='left reduce gras'>` au-dessus.
+
 ## Tableaux — pattern recommandé
 
 Suivre le style de `BoiteCombat.calculatrice()` (onglet « Temps de trajet ») :
