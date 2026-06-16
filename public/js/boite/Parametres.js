@@ -47,6 +47,7 @@ class BoiteParametre extends Boite {
       "uniteAntisondeTerrain",
       "uniteAntisondeDome",
       "uniteSonde",
+      "replacerArmeeAuto",
     ];
   }
   /**
@@ -168,6 +169,8 @@ class BoiteParametre extends Boite {
             <p class='left reduce gras'>Indiquez le nombre d'unité selon l'objectif</p>
             <p class='left small'><em>Le nombre est choisi aléatoirement entre 90% du max et le max.</em></p>
             ${monProfil.parametre[this._paramGeneral[2]].getForm() + monProfil.parametre[this._paramGeneral[3]].getForm() + monProfil.parametre[this._paramGeneral[4]].getForm()}
+            <p class='left reduce gras'>Replacer l'armée à l'arrivée sur la page Armée</p>
+            ${monProfil.parametre[this._paramGeneral[5]].getForm()}
         </form>`);
     return this;
   }

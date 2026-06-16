@@ -71,38 +71,7 @@ class PageArmee {
       `<tr><td colspan="10" class='right'><button id='o_replaceArmee' class='o_button f_success'>Replacer l'armée</button></td></tr>`,
     );
     $("#o_replaceArmee").click(() => {
-      if (
-        this._armeeLoge.getSommeUnite() +
-        this._armeeDome.getSommeUnite() +
-        this._armeeTdc.getSommeUnite()
-      ) {
-        let premiereUnite = this.indicePremiereUnite();
-        let nbUniteDispo =
-          this._armeeLoge.unite[premiereUnite] +
-          this._armeeDome.unite[premiereUnite] +
-          this._armeeTdc.unite[premiereUnite];
-        // si j'ai assez d'unité pour mettre les antisonde en param
-        if (
-          nbUniteDispo >=
-          monProfil.parametre["uniteAntisondeDome"].valeur +
-            monProfil.parametre["uniteAntisondeTerrain"].valeur
-        ) {
-          // si les unités en terrain et dome ne sont pas dans les bornes dasn antisonde on replace tout sinon on est bon
-          if (
-            !this.estPlacePourAntiSonde(
-              premiereUnite,
-              monProfil.parametre["uniteAntisondeTerrain"].valeur,
-              monProfil.parametre["uniteAntisondeDome"].valeur,
-            )
-          )
-            this.placerAntisondeSuffisant(premiereUnite, nbUniteDispo);
-          else $.toast({ ...TOAST_INFO, text: "Votre armée est déjà placée correctement." });
-        } else {
-          if (!this.estPlacePourAntiSonde(premiereUnite, 1, nbUniteDispo * 0.3))
-            this.placerAntisondeInsuffisant(premiereUnite, nbUniteDispo);
-          else $.toast({ ...TOAST_INFO, text: "Votre armée est déjà placée correctement." });
-        }
-      } else $.toast({ ...TOAST_ERROR, text: "Aucune unité n'est transférable." });
+      this.replacerArmee();
       return false;
     });
 
@@ -123,6 +92,10 @@ class PageArmee {
     );
     // Affichage des statistiques detaillés
     this.afficherStatistique();
+    // Auto-replacer : déclenché en sortie de flood (flag sessionStorage) ou par le param utilisateur.
+    let floodFlag = sessionStorage.getItem("outiiil_floodPuisReplacer") === "1";
+    if (floodFlag) sessionStorage.removeItem("outiiil_floodPuisReplacer");
+    if (floodFlag || monProfil.parametre["replacerArmeeAuto"].valeur) this.replacerArmee(true);
     return this;
   }
   /**
@@ -174,6 +147,48 @@ class PageArmee {
       if (unite && nbr) unites[unite] = nbr;
     });
     this._armeeLoge = new Armee({ unite: unites });
+  }
+  /**
+   * Replace l'armée en respectant les bornes d'antisonde des paramètres.
+   * Quand auto=true (déclenché par le param d'auto-replacer ou en sortie de flood),
+   * les toasts informatifs sont supprimés pour ne pas spammer à chaque visite.
+   */
+  replacerArmee(auto = false) {
+    if (
+      this._armeeLoge.getSommeUnite() +
+      this._armeeDome.getSommeUnite() +
+      this._armeeTdc.getSommeUnite()
+    ) {
+      let premiereUnite = this.indicePremiereUnite();
+      let nbUniteDispo =
+        this._armeeLoge.unite[premiereUnite] +
+        this._armeeDome.unite[premiereUnite] +
+        this._armeeTdc.unite[premiereUnite];
+      // si j'ai assez d'unité pour mettre les antisonde en param
+      if (
+        nbUniteDispo >=
+        monProfil.parametre["uniteAntisondeDome"].valeur +
+          monProfil.parametre["uniteAntisondeTerrain"].valeur
+      ) {
+        // si les unités en terrain et dome ne sont pas dans les bornes dasn antisonde on replace tout sinon on est bon
+        if (
+          !this.estPlacePourAntiSonde(
+            premiereUnite,
+            monProfil.parametre["uniteAntisondeTerrain"].valeur,
+            monProfil.parametre["uniteAntisondeDome"].valeur,
+          )
+        )
+          this.placerAntisondeSuffisant(premiereUnite, nbUniteDispo);
+        else if (!auto)
+          $.toast({ ...TOAST_INFO, text: "Votre armée est déjà placée correctement." });
+      } else {
+        if (!this.estPlacePourAntiSonde(premiereUnite, 1, nbUniteDispo * 0.3))
+          this.placerAntisondeInsuffisant(premiereUnite, nbUniteDispo);
+        else if (!auto)
+          $.toast({ ...TOAST_INFO, text: "Votre armée est déjà placée correctement." });
+      }
+    } else if (!auto) $.toast({ ...TOAST_ERROR, text: "Aucune unité n'est transférable." });
+    return this;
   }
   /**
    *

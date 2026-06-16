@@ -1037,7 +1037,12 @@ class Armee {
         );
       } else // on passe à l'attaque suivante
       this.envoyerFlood(idCible, ++indice, securite);
-    } else location.reload();
+    } else {
+      // Fin du flood : on enchaîne sur Armee.php pour replacer l'antisonde
+      // (PageArmee détecte ce flag et appelle replacerArmee() automatiquement).
+      sessionStorage.setItem("outiiil_floodPuisReplacer", "1");
+      location = "/Armee.php";
+    }
   }
 
   /* ------------------------------------------------------------------ */

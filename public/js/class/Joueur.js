@@ -146,6 +146,12 @@ class Joueur {
       0,
     );
     this._parametre["uniteSonde"] = new Parametre("uniteSonde", "Sonde vers l'ennemi", "number", 0);
+    this._parametre["replacerArmeeAuto"] = new Parametre(
+      "replacerArmeeAuto",
+      "Replacer l'armée automatiquement",
+      "checkbox",
+      false,
+    );
     // parametre divers
     this._parametre["couleurChat"] = new Parametre(
       "couleurChat",
