@@ -281,7 +281,7 @@ class PageAttaquer {
       }
       // mise à jour des attaques
       for (let i = 1; i < simulation.length; i++) {
-        if (!$("#o_attaque" + i).length) this.ajouterAttaque();
+        if (!$("#o_attaque" + i).length) this.ajouterAttaque(true);
         $("#o_attaque" + i).spinner("value", simulation[i]);
         // Calcule des terrains
         if (tdcCible >= tdcAtt * 0.5) {
@@ -303,15 +303,18 @@ class PageAttaquer {
   /**
    *
    */
-  ajouterAttaque() {
+  ajouterAttaque(silencieux = false) {
     let nbAttaque = $("input[id^='o_attaque']").length + 1;
     // si le nombre d'attaque depasse la VA
-    if (nbAttaque >= this._nbAttaque)
-      $.toast({
-        ...TOAST_WARNING,
-        text: "Votre vitesse d'attaque ne vous permet d'envoyer plus d'attaques",
-      });
-    else {
+    if (nbAttaque >= this._nbAttaque) {
+      // Toast seulement sur clic manuel : en pré-remplissage auto (preparerFlood),
+      // l'utilisateur n'a rien fait, l'avertissement est trompeur.
+      if (!silencieux)
+        $.toast({
+          ...TOAST_WARNING,
+          text: "Votre vitesse d'attaque ne vous permet d'envoyer plus d'attaques",
+        });
+    } else {
       $("#o_simulationFlood tr:last").before(
         `<tr class='ligne_paire'><td>Attaque ${nbAttaque} (<span id="o_pourcentAttaque${nbAttaque}">0</span>%)</td><td><input value='0' size='12' id='o_attaque${nbAttaque}'/></td><td><input type="checkbox" id="o_suppAttaque${nbAttaque}" name="o_suppAttaque"/></td><td>${numeral(Utils.terrain).format()}</td><td>${numeral(this._cible.terrain).format()}</td></tr>`,
       );
