@@ -232,12 +232,16 @@ class PageRessource {
           url: "http://" + Utils.serveur + ".fourmizzz.fr/AcquerirTerrain.php",
         }).then((data) => {
           let parsed = Utils.parseHtml(data);
+          // AcquerirTerrain.php a un id="t" sur la <table> principale ET sur l'<input> du token CSRF.
+          // find("#t:last") matche aussi la table (qui n'a ni name ni value), donc on cible
+          // explicitement l'input via [name='t'] pour récupérer le bon token.
+          let tokenInput = parsed.find("input[name='t']");
           this._armee.envoyerChasse(
             terrainChasse,
             nbChasse,
             0,
             intervalle,
-            parsed.find("#t:last").attr("name") + "=" + parsed.find("#t:last").attr("value"),
+            tokenInput.attr("name") + "=" + tokenInput.attr("value"),
           );
         });
       } else
