@@ -1512,7 +1512,17 @@ class BoiteCombat extends Boite {
             <tr><td></td><td><input type="text" id="o_pseudoTemps" placeholder="Pseudo"/></td><td>→</td><td><input type="text" id="o_cibleJoueurTemps" placeholder="Pseudo1, Pseudo2..."/></td></tr>
             <tr><td>Vitesse d'attaque</td><td><input type="text" id="o_vaTemps" value="0" size="5"/></td><td></td><td></td></tr>
             <tr><td>Dernier mouvement</td><td><input id="o_dernierMvt" placeholder="JJ-MM-AAAA HH:mm"/></td><td></td><td><button id="o_calculerTemps">Calculer</button></td></tr>
+            <tr><td>Délai capture (min)</td><td><input id="o_delaiCapture" value="1" size="5"/></td><td></td><td></td></tr>
             <tr class="reduce"><td colspan="4"><em>Le temps maximal d'un trajet est de <span id="o_indicationTemps">${this.calculerLimiteTemps(0)}</span>.</em></td></tr>
+            </table>
+            <hr class='o_calcSepar'/>
+            <table id="o_estimateurVa" class="centre">
+            <thead><tr><th colspan="4">Estimer la vitesse d'attaque (via 2 attaques consécutives)</th></tr></thead>
+            <tr><td>Ennemi</td><td><input type="text" id="o_estVaEnnemi" placeholder="Pseudo"/></td><td></td><td></td></tr>
+            <tr><td>1ère cible touchée</td><td><input type="text" id="o_estVaCible1" placeholder="Pseudo"/></td><td>à</td><td><input id="o_estVaHeure1" placeholder="JJ-MM-AAAA HH:mm"/></td></tr>
+            <tr><td>2ème cible touchée</td><td><input type="text" id="o_estVaCible2" placeholder="Pseudo"/></td><td>à</td><td><input id="o_estVaHeure2" placeholder="JJ-MM-AAAA HH:mm"/></td></tr>
+            <tr><td>Temps en loge (s)</td><td><input id="o_estVaLoge" value="0" size="5"/></td><td></td><td><button id="o_estVaEstimer">Estimer</button></td></tr>
+            <tr id="o_estVaResultatRow" class="reduce" style="display:none;"><td colspan="4" class="centre"><span id="o_estVaResultatText"></span> <button id="o_estVaUtiliser" style="display:none;">Utiliser cette va</button></td></tr>
             </table>`;
     $("#o_tabsCombat4").append(html);
     return this.eventCalculatrice();
@@ -1575,6 +1585,7 @@ class BoiteCombat extends Boite {
       let nombre = ui ? ui.value : $(e.currentTarget).spinner("value");
       $("#o_indicationTemps").text(this.calculerLimiteTemps(nombre));
     });
+    $("#o_delaiCapture").spinner({ min: 0, max: 60, numberFormat: "i" });
     $("#o_calculerTemps").click(() => {
       let ref = new Joueur({ pseudo: $("#o_pseudoTemps").val() });
       ref.niveauRecherche[6] = $("#o_vaTemps").val();
@@ -1598,8 +1609,60 @@ class BoiteCombat extends Boite {
         });
       } else {
         if (!$("#o_infosTemps").length) this.afficherTemps();
-        this.calculerTemps(ref, joueurs, $("#o_dernierMvt").val());
+        let delaiMin = parseInt($("#o_delaiCapture").val(), 10);
+        if (isNaN(delaiMin) || delaiMin < 0) delaiMin = 1;
+        this.calculerTemps(ref, joueurs, $("#o_dernierMvt").val(), delaiMin * 60);
       }
+      return false;
+    });
+    // Estimateur de vitesse d'attaque
+    for (let id of ["#o_estVaEnnemi", "#o_estVaCible1", "#o_estVaCible2"]) {
+      $(id).autocomplete({
+        source: (request, response) => {
+          Joueur.rechercher(request.term).then((data) => {
+            response(Utils.extraitRecherche(data, true, false));
+          });
+        },
+        position: { my: "left top-5", at: "left bottom" },
+        minLength: 3,
+      });
+    }
+    for (let id of ["#o_estVaHeure1", "#o_estVaHeure2"]) {
+      $(id).datetimepicker({
+        ...DATEPICKER_OPTION,
+        dateFormat: "dd-mm-yy",
+        timeFormat: "HH:mm",
+        timeText: "Horaire",
+        hourText: "Heure",
+        minuteText: "Minute",
+      });
+    }
+    $("#o_estVaLoge").spinner({ min: 0, max: 600, numberFormat: "i" });
+    $("#o_estVaEstimer").click(() => {
+      let pseudoEnn = $("#o_estVaEnnemi").val();
+      let pseudoC1 = $("#o_estVaCible1").val();
+      let pseudoC2 = $("#o_estVaCible2").val();
+      let t1 = $("#o_estVaHeure1").val();
+      let t2 = $("#o_estVaHeure2").val();
+      let tempsLoge = parseInt($("#o_estVaLoge").val(), 10);
+      if (isNaN(tempsLoge) || tempsLoge < 0) tempsLoge = 0;
+      if (!pseudoEnn || !pseudoC1 || !pseudoC2 || !t1 || !t2) {
+        $.toast({
+          ...TOAST_ERROR,
+          text: "Pseudo de l'ennemi, des 2 cibles et leurs heures de touche sont requis.",
+        });
+        return false;
+      }
+      this.estimerVitesseAttaque(pseudoEnn, pseudoC1, pseudoC2, t1, t2, tempsLoge);
+      return false;
+    });
+    $("#o_estVaUtiliser").click(() => {
+      let va = $("#o_estVaUtiliser").data("va");
+      let ennemi = $("#o_estVaUtiliser").data("ennemi");
+      if (va === undefined) return false;
+      $("#o_vaTemps").spinner("value", va);
+      $("#o_indicationTemps").text(this.calculerLimiteTemps(va));
+      if (ennemi && !$("#o_pseudoTemps").val()) $("#o_pseudoTemps").val(ennemi);
       return false;
     });
     return this;
@@ -1611,9 +1674,73 @@ class BoiteCombat extends Boite {
     return Utils.intToTime(Math.pow(0.9, va) * 637200);
   }
   /**
+   * Estime la vitesse d'attaque d'un joueur via 2 attaques successives.
+   * Hypothèse : entre l'arrivée sur cible 1 et l'arrivée sur cible 2, le joueur fait
+   * le retour cible1→loge puis loge→cible2, soit T2−T1 = t(va,d1) + tempsLoge + t(va,d2).
+   */
+  estimerVitesseAttaque(pseudoEnn, pseudoC1, pseudoC2, t1, t2, tempsLoge) {
+    let ennemi = new Joueur({ pseudo: pseudoEnn });
+    let c1 = new Joueur({ pseudo: pseudoC1 });
+    let c2 = new Joueur({ pseudo: pseudoC2 });
+    Promise.all([ennemi.getProfil(), c1.getProfil(), c2.getProfil()]).then((values) => {
+      ennemi.chargerProfil(values[0]);
+      c1.chargerProfil(values[1]);
+      c2.chargerProfil(values[2]);
+      let dt =
+        moment(t2, "DD-MM-YYYY HH:mm").diff(moment(t1, "DD-MM-YYYY HH:mm"), "seconds") - tempsLoge;
+      if (dt <= 0) {
+        this._afficherResultatVa(null, null, "L'écart entre les 2 attaques doit être positif.");
+        return;
+      }
+      let d1 = Math.sqrt(Math.pow(ennemi.x - c1.x, 2) + Math.pow(ennemi.y - c1.y, 2));
+      let d2 = Math.sqrt(Math.pow(ennemi.x - c2.x, 2) + Math.pow(ennemi.y - c2.y, 2));
+      let facteur = 1 - Math.exp(-d1 / 350) + (1 - Math.exp(-d2 / 350));
+      let k = dt / (637200 * facteur);
+      if (k <= 0 || k > 1) {
+        this._afficherResultatVa(
+          null,
+          null,
+          "Estimation impossible : données incohérentes (vérifiez les coordonnées et les heures).",
+        );
+        return;
+      }
+      let va = Math.log(k) / Math.log(0.9);
+      let arrondi = Math.round(va);
+      let hors = va < 0 || va > 50;
+      this._afficherResultatVa(
+        va,
+        hors ? null : arrondi,
+        hors ? `VA estimée hors plage [0..50] : ${va.toFixed(2)}` : null,
+        ennemi.pseudo,
+      );
+    });
+    return this;
+  }
+  /**
    *
    */
-  calculerTemps(ref, joueurs, dernierMvt = "") {
+  _afficherResultatVa(va, arrondi, erreur, pseudoEnn) {
+    let row = $("#o_estVaResultatRow");
+    let text = $("#o_estVaResultatText");
+    let btn = $("#o_estVaUtiliser");
+    if (erreur) {
+      text.html(`<span class="red">${erreur}</span>`);
+      btn.hide();
+    } else {
+      text.html(
+        `Vitesse d'attaque estimée : <strong>${va.toFixed(2)}</strong> (arrondi : <strong>${arrondi}</strong>) `,
+      );
+      btn
+        .data("va", arrondi)
+        .data("ennemi", pseudoEnn || "")
+        .show();
+    }
+    row.show();
+  }
+  /**
+   *
+   */
+  calculerTemps(ref, joueurs, dernierMvt = "", delaiCaptureSec = 60) {
     let promise = new Array();
     // promise qui recup le profil du ref
     if (!ref.estJoueurCourant()) promise.push(ref.getProfil());
@@ -1628,13 +1755,27 @@ class BoiteCombat extends Boite {
         ref.chargerProfil(values[ind]);
         ind++;
       }
+      // si on peut calculer une heure de lancement (ref = ennemi à chopper, pas moi)
+      const capturePossible = dernierMvt && !ref.estJoueurCourant();
+      const tempsMoiVersRef = capturePossible ? monProfil.getTempsParcours2(ref) : 0;
+      const maintenant = moment();
       // on calcule les temps de trajet vers les joueurs
       for (let i = 0; i < joueurs.length; i++) {
         joueurs[i].chargerProfil(values[i + ind]);
         let tempsP = ref.getTempsParcours2(joueurs[i]);
+        let retour = dernierMvt ? moment(dernierMvt, "DD-MM-YYYY HH:mm").add(tempsP, "s") : null;
+        let cellRetour = retour ? retour.format("D MMM à HH[h]mm[m]ss[s]") : "";
+        let cellLancer = "";
+        let rowClass = "";
+        if (capturePossible && retour) {
+          let lancerLe = retour.clone().add(delaiCaptureSec, "s").subtract(tempsMoiVersRef, "s");
+          let faisable = lancerLe.isAfter(maintenant);
+          cellLancer = lancerLe.format("D MMM à HH[h]mm[m]ss[s]");
+          rowClass = faisable ? "o_capFaisable" : "o_capTropTard";
+        }
         rows.push(
           $(
-            `<tr><td>${joueurs[i].pseudo}</td><td>${numeral(joueurs[i].terrain).format()}</td><td>${Utils.intToTime(tempsP)}</td><td>${dernierMvt ? moment(dernierMvt, "DD-MM-YYYY HH:mm").add(tempsP, "s").format("D MMM à HH[h]mm[m]ss[s]") : ""}</td></tr>`,
+            `<tr${rowClass ? ` class="${rowClass}"` : ""}><td>${joueurs[i].pseudo}</td><td>${numeral(joueurs[i].terrain).format()}</td><td>${Utils.intToTime(tempsP)}</td><td>${cellRetour}</td><td>${cellLancer}</td></tr>`,
           )[0],
         );
       }
@@ -1647,8 +1788,8 @@ class BoiteCombat extends Boite {
    *
    */
   afficherTemps() {
-    $("#o_tabsCombat4").append(
-      `<br/><table id='o_infosTemps'><thead style="background-color:${monProfil.parametre["couleur2"].valeur}"><tr><th>Pseudo</th><th>Terrain</th><th>Temps de trajet</th><th>Retour le</th></tr></thead></table>`,
+    $("#o_calculatriceCombat").after(
+      `<br/><table id='o_infosTemps'><thead style="background-color:${monProfil.parametre["couleur2"].valeur}"><tr><th>Pseudo</th><th>Terrain</th><th>Temps de trajet</th><th>Retour le</th><th>Lancer à</th></tr></thead></table>`,
     );
     $("#o_infosTemps").DataTable({
       bInfo: false,
@@ -1671,13 +1812,14 @@ class BoiteCombat extends Boite {
       columnDefs: [
         { type: "quantite-grade", targets: 1, visible: false },
         { type: "moment-D MMM YYYY", targets: 3 },
+        { type: "moment-D MMM YYYY", targets: 4 },
         { type: "time-unformat", targets: 2 },
       ],
       rowCallback: (row, data, index) => {
-        $(row).css(
-          "background-color",
-          index % 2 == 0 ? "inherit" : monProfil.parametre["couleur2"].valeur,
-        );
+        let bg = index % 2 == 0 ? "inherit" : monProfil.parametre["couleur2"].valeur;
+        if ($(row).hasClass("o_capFaisable")) bg = "#d6f5d6";
+        else if ($(row).hasClass("o_capTropTard")) bg = "#f5d6d6";
+        $(row).css("background-color", bg);
       },
       drawCallback: (settings) => {
         $(".o_content a, .o_content table, .o_content label").css(
