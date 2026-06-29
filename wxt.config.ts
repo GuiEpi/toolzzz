@@ -19,6 +19,12 @@ export default defineConfig({
           required: ["none"],
         },
       },
+      // Déclare la compatibilité Firefox for Android pour qu'AMO marque
+      // automatiquement chaque nouvelle version comme dispo sur Android,
+      // sans avoir à cocher la case à la main à chaque upload.
+      gecko_android: {
+        strict_min_version: "142.0",
+      },
     },
     icons: {
       48: "images/icons/48.png",
