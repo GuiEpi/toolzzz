@@ -594,6 +594,13 @@ select:required {
   margin-right: auto;
   line-height: 0;
 }
+/* En mode édition les boutons "actualiser" (global + per-ligne) n'ont pas de
+ * sens — on réorganise, on n'actualise pas. On les cache pour réduire le bruit
+ * visuel. La règle couvre #o_radarRefreshAll (qui a aussi cette classe) et les
+ * icônes per-ligne injectées par Joueur/Alliance.getLigneRadar. */
+.o_radarEditMode .o_actualiser {
+  display: none;
+}
 
 /* × de suppression injecté sur chaque row en mode édition */
 .o_radarDelete {
