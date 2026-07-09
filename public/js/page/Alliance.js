@@ -80,6 +80,10 @@ class PageAlliance {
         terrain: terrain,
         fourmiliere: ~~$(elt).find("td:eq(8)").text(),
         technologie: ~~$(elt).find("td:eq(7)").text(),
+        // grade natif du jeu — fallback affiché tant qu'aucun rang SDC n'est saisi,
+        // et backfillé dans les sujets créés par « Actualiser l'alliance ».
+        // Les "/" sont remplacés : le titre du sujet forum est parsé avec " / ".
+        rang: $(elt).find("td:eq(2)").text().trim().replace(/\//g, "-"),
       });
       if (!Utils.comptePlus && !tmpJoueurs[pseudo].estJoueurCourant()) {
         if (tmpJoueurs[pseudo].estAttaquable()) $(elt).find("td:eq(6)").html(IMG_ATT);
@@ -261,9 +265,12 @@ class PageAlliance {
         this._alliance.joueurs[pseudo].id = this._utilitaire.alliance.joueurs[pseudo].id;
         this._alliance.joueurs[pseudo].sujetForum =
           this._utilitaire.alliance.joueurs[pseudo].sujetForum;
-        this._alliance.joueurs[pseudo].rang = this._utilitaire.alliance.joueurs[pseudo].rang;
-        this._alliance.joueurs[pseudo].ordreRang =
-          this._utilitaire.alliance.joueurs[pseudo].ordreRang;
+        // on ne remplace le grade natif que si un rang SDC a réellement été saisi
+        if (this._utilitaire.alliance.joueurs[pseudo].rang) {
+          this._alliance.joueurs[pseudo].rang = this._utilitaire.alliance.joueurs[pseudo].rang;
+          this._alliance.joueurs[pseudo].ordreRang =
+            this._utilitaire.alliance.joueurs[pseudo].ordreRang;
+        }
       }
     }
     // On retraicie les colonnes des niveaux
@@ -372,9 +379,12 @@ class PageAlliance {
         this._alliance.joueurs[pseudo].x = this._utilitaire.alliance.joueurs[pseudo].x;
         this._alliance.joueurs[pseudo].y = this._utilitaire.alliance.joueurs[pseudo].y;
         this._alliance.joueurs[pseudo].id = this._utilitaire.alliance.joueurs[pseudo].id;
-        this._alliance.joueurs[pseudo].rang = this._utilitaire.alliance.joueurs[pseudo].rang;
-        this._alliance.joueurs[pseudo].ordreRang =
-          this._utilitaire.alliance.joueurs[pseudo].ordreRang;
+        // on ne remplace le grade natif que si un rang SDC a réellement été saisi
+        if (this._utilitaire.alliance.joueurs[pseudo].rang) {
+          this._alliance.joueurs[pseudo].rang = this._utilitaire.alliance.joueurs[pseudo].rang;
+          this._alliance.joueurs[pseudo].ordreRang =
+            this._utilitaire.alliance.joueurs[pseudo].ordreRang;
+        }
       }
     }
     $("#tabMembresAlliance tr:gt(0):lt(-1)").each((i, elt) => {
