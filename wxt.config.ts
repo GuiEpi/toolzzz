@@ -7,7 +7,8 @@ export default defineConfig({
   manifest: {
     name: "Toolzzz",
     description: "Extension pour www.fourmizzz.fr.",
-    version: "3.7.0",
+    // version : pas déclarée ici — WXT reprend celle de package.json (source unique,
+    // le bump de release ne doit toucher qu'un seul fichier).
     // @ts-expect-error AMO refuse la forme objet; Chrome accepte la string. On s'aligne sur Firefox.
     author: "Hraesvelg",
     homepage_url: "https://github.com/GuiEpi/toolzzz",
