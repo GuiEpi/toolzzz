@@ -63,7 +63,7 @@ class PageDescription {
     this.tableau();
 
     $("#o_antleaks").click(() => {
-      let url = `https://www.antleaks.top/index.php?page=traceur&date_from=&date_to=&pseudo=&tag=${encodeURIComponent(this._alliance.tag)}`;
+      let url = `https://antleaks.guics.st/alliance/${encodeURIComponent(this._alliance.tag)}`;
       window.open(url, "_blank", "noopener");
     });
 
