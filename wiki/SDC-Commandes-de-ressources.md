@@ -14,9 +14,7 @@ C'est le **chef d'alliance** qui initialise le SDC :
 2. Clique sur l'icône Toolzzz en haut des catégories, puis **Préparer le forum pour un SDC**.
 3. Les sections cachées `Toolzzz_Commande` et `Toolzzz_Membre` sont créées et protégées automatiquement.
 
-<!-- TODO screenshot : menu chef sur le forum (icône Toolzzz + « Préparer le forum pour un SDC »)
 > ![Préparer le forum pour un SDC](assets/wiki/sdc-preparer-forum.png)
--->
 
 Ensuite, **chaque membre** doit simplement **visiter le forum une fois** : Toolzzz détecte la section et se configure tout seul (voir [Boîte Paramètres → Utilitaire](Boite-Parametres#onglet-utilitaire) si l'auto-détection échoue). À partir de là, les outils SDC apparaissent sur la page **Commerce** (celle d'envoi des convois).
 
@@ -28,13 +26,9 @@ Sur la page Commerce, un tableau **Commandes** apparaît. Le bouton **Commander*
 - **Pour le** : la date à laquelle tu souhaites être livré.
 - **À partir du** (optionnel) : pour ne pas être livré avant une certaine date (par exemple si tu n'as pas encore la place).
 
-<!-- TODO screenshot : tableau Commandes avec le bouton « Commander »
 > ![Le bouton Commander sur la page Commerce](assets/wiki/sdc-bouton-commander.png)
--->
 
-<!-- TODO screenshot : formulaire de commande (boîte « Commander des ressources »)
 > ![Formulaire de commande](assets/wiki/sdc-boite-commande.png)
--->
 
 Ta commande est créée à l'état **Nouvelle** : tant qu'un chef ne l'a pas validée, **tu es le seul à la voir** dans le tableau. Tu peux la modifier ou la supprimer à tout moment via les icônes en bout de ligne (uniquement tes propres commandes).
 
