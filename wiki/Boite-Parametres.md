@@ -19,7 +19,7 @@ Les options qui touchent au comportement de l'extension :
 
 Cet onglet expose deux champs : les **identifiants des sections cachées du forum d'alliance** que Toolzzz utilise comme stockage partagé pour les fonctionnalités d'utilitaire d'alliance (commandes, infos membres, rangs, coordonnées).
 
-Tu n'as **pas besoin de remplir ces champs à la main** dans la majorité des cas — Toolzzz les auto-détecte quand tu visites le forum de ton alliance, à condition que les sections existent. Les sections sont créées par le chef d'alliance via le bouton **Préparer le forum pour un SDC** sur la page forum d'alliance (voir [Enrichissements de pages](Enrichissements-de-pages#forum)).
+Tu n'as **pas besoin de remplir ces champs à la main** dans la majorité des cas — Toolzzz les auto-détecte quand tu visites le forum de ton alliance, à condition que les sections existent. Les sections sont créées par le chef d'alliance via le bouton **Préparer le forum pour un SDC** sur la page forum d'alliance (voir [SDC — Commandes de ressources](SDC-Commandes-de-ressources)).
 
 Modifie ici uniquement si :
 

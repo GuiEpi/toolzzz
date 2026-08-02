@@ -60,6 +60,7 @@ C'est l'une des pages les plus enrichies par Toolzzz.
 - **Info capacité d'étable** : affiche combien de ressources peut transporter une ouvrière à ton niveau d'Étable.
 - Boutons **Arrondir** sur les champs Nourriture et Matériaux : arrondit la quantité au multiple exact de la capacité d'ouvrière, pour éviter de gaspiller la place du convoi.
 - **Recalcul automatique** du nombre d'ouvrières quand tu modifies les ressources.
+- Si le SDC est en place, le **tableau des commandes de l'alliance** et le bouton **Commander** apparaissent ici — voir la page dédiée [SDC — Commandes de ressources](SDC-Commandes-de-ressources).
 
 ## Chat
 
@@ -70,6 +71,7 @@ C'est l'une des pages les plus enrichies par Toolzzz.
 ## Forum
 
 - Bouton **Préparer le forum pour un SDC** (Système de Commandement) : crée automatiquement les sections cachées `Toolzzz_Commande` et `Toolzzz_Membre` qui servent de stockage partagé pour les fonctionnalités d'utilitaire d'alliance. **Réservé aux chefs d'alliance**.
+- Dans la section `Toolzzz_Commande`, les chefs disposent d'un **sélecteur pour changer l'état des commandes** (validation de la file du SDC) — voir [SDC — Commandes de ressources](SDC-Commandes-de-ressources).
 - Voir [Boîte Paramètres → Utilitaire](Boite-Parametres#onglet-utilitaire) pour le contexte.
 
 ## Alliance Membres

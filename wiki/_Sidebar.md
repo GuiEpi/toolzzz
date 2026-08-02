@@ -17,6 +17,7 @@
 - [Overlay Compte+](Overlay-Compte-Plus)
 - [Boîte Radar](Boite-Radar)
 - [Carte d'alliance](Carte-d-alliance)
+- [SDC — Commandes de ressources](SDC-Commandes-de-ressources)
 - [Courbes de coûts](Courbes-de-couts)
 - [Enrichissements de pages](Enrichissements-de-pages)
 

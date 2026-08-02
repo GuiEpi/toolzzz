@@ -24,6 +24,7 @@ Ce wiki est destiné aux joueurs qui veulent comprendre ce que l'extension appor
 - [Overlay Compte+](Overlay-Compte-Plus) — le panneau de droite (non-C+)
 - [Boîte Radar](Boite-Radar) — dans le panneau Compte+
 - [Carte d'alliance](Carte-d-alliance)
+- [SDC — Commandes de ressources](SDC-Commandes-de-ressources) — commandes et livraisons organisées via le forum d'alliance
 - [Courbes de coûts](Courbes-de-couts)
 - [Enrichissements de pages](Enrichissements-de-pages) — Reine, Armée, Messagerie, Chat, Forum, Commerce…
 
