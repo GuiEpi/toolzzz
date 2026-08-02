@@ -6,7 +6,9 @@ Comme pour les commandes, tout est stocké dans une **section cachée du forum d
 
 ## Mise en place
 
-La section `Toolzzz_Membre` est créée en même temps que `Toolzzz_Commande` par le bouton **Préparer le forum pour un SDC** (voir [SDC — Commandes de ressources](SDC-Commandes-de-ressources#mise-en-place-une-fois-par-alliance)).
+La section `Toolzzz_Membre` est créée en même temps que `Toolzzz_Commande` par le bouton **Préparer le forum pour un SDC** (voir [SDC — Commandes de ressources](SDC-Commandes-de-ressources#mise-en-place-une-fois-par-alliance)) :
+
+> ![Préparer le forum pour un SDC](assets/wiki/sdc-preparer-forum.png)
 
 Ensuite, un **chef** doit remplir l'annuaire : sur la page **Membres** de l'alliance, un bouton **Actualiser l'alliance** apparaît dans la barre de boutons du tableau. Il récupère le profil de chaque membre qui n'a pas encore de fiche (pour obtenir ses coordonnées), et crée les fiches manquantes — grade du jeu inclus.
 
