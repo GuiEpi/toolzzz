@@ -77,7 +77,7 @@ C'est l'une des pages les plus enrichies par Toolzzz.
 ## Alliance Membres
 
 - L'onglet **Carte** est injecté dans le menu — voir page dédiée [Carte d'alliance](Carte-d-alliance).
-- Sur le tableau des membres, des colonnes Tdt (Temps de trajet) / Retour / Coordonnées sont ajoutées si l'utilitaire d'alliance est en place.
+- Sur le tableau des membres, des colonnes Grade / Tdt (Temps de trajet) / Retour sont ajoutées si l'utilitaire d'alliance est en place — voir la page dédiée [SDC — Infos membres](SDC-Infos-membres).
 
 ## Alliance Forum (forum_menu)
 
