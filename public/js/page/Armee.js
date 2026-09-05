@@ -76,6 +76,7 @@ class PageArmee {
     });
 
     if (!Utils.comptePlus) this.plus();
+    AttaqueLancee.afficherTableaux();
     // Affichage du temps Hof de votre armée
     $(".simulateur:first").append(
       "<tr><td colspan=10>Temps <span class='gras' title='Hall Of Fame' >HOF : " +
@@ -388,24 +389,8 @@ class PageArmee {
     this.afficherLigneAttaque();
     this.afficherLigneDefense();
     this.afficherLigneConsommation();
-    // Sauvegarde des attaques en cours
-    let listeAttaque = new Array();
-    $("span[id^='attaque_']").each((i, elt) => {
-      if ($(elt).prev().find("a").length) {
-        // attaque normale
-        listeAttaque.push({
-          cible: $(elt).prev().text(),
-          exp: moment().add($(elt).next().text().split(",")[0].split("(")[1], "s"),
-        });
-        // Affichage du retour
-        $(elt).after(
-          `<span class='small'> - Retour le ${Utils.roundMinute($(elt).next().text().split(",")[0].split("(")[1]).format("D MMM YYYY à HH[h]mm")}</span>`,
-        );
-      } else // renfort
-        $(elt).after(
-          `<span class='small'> - Retour le ${Utils.roundMinute($(elt).next().next().text().split(",")[0].split("(")[1]).format("D MMM YYYY à HH[h]mm")}</span>`,
-        );
-    });
+    // Affichage de l'arrivée + sauvegarde des attaques en cours
+    let listeAttaque = AttaqueLancee.enrichirLignes();
     // Verification si les données sont deja enregistré
     this.saveAttaque(listeAttaque);
   }

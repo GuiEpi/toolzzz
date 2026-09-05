@@ -939,6 +939,12 @@ input[id^="input_cout_nourriture"] {
   padding: 0 5px;
 }
 
+/* Récapitulatif des attaques lancées, pages : Armee.php, ennemie.php?Attaquer=... */
+.o_attaquesLancees td,
+.o_attaquesLancees th {
+  padding: 2px 6px;
+}
+
 /* Lanceur de flood, page : ennemie.php?Attaquer=... */
 #o_simulationFlood tr {
   height: 22px;

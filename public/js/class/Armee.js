@@ -1038,6 +1038,23 @@ class Armee {
             $("#o_simulationFlood tr:eq(" + (indice + 2) + ")").addClass(
               res.indexOf("Vos troupes sont en marche") == -1 ? "red" : "green",
             );
+            // capture de l'attaque confirmée pour le récapitulatif par cible
+            // (lieu toujours le terrain : le flood envoie lieu=1)
+            if (res.indexOf("Vos troupes sont en marche") != -1 && AttaqueLancee.contexteFlood) {
+              let unite = {};
+              this._repartition[indice].forEach((nb, ind) => {
+                if (nb) unite[NOM_UNITE[ind + 1]] = nb;
+              });
+              AttaqueLancee.enregistrer(
+                AttaqueLancee.contexteFlood.cible,
+                "Terrain de chasse",
+                unite,
+                {
+                  html: data,
+                  terrain: AttaqueLancee.contexteFlood.terrain,
+                },
+              );
+            }
             setTimeout(() => {
               this.envoyerFlood(idCible, ++indice, securite);
             }, 1000);

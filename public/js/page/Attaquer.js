@@ -55,6 +55,7 @@ class PageAttaquer {
       });
     }
     if (!Utils.comptePlus) this.plus();
+    AttaqueLancee.afficherTableaux();
     return this;
   }
   /**
@@ -101,6 +102,19 @@ class PageAttaquer {
   ajouterOption() {
     // on deplace le bouton standarf à droite
     $("input[name='ChoixArmee']").unwrap().wrap("<div id='o_btnLancer' class='right'></div>");
+    // Capture de l'attaque au moment de l'envoi pour le récapitulatif par
+    // cible. Hook sur le submit du formulaire : couvre le clic sur le bouton,
+    // la touche Entrée, et les lancements programmés (Synchroniser / Sonder).
+    $("input[name='ChoixArmee']")
+      .closest("form")
+      .on("submit", () => {
+        AttaqueLancee.enregistrer(
+          this._cible.pseudo,
+          $("#lieu option:selected").text().trim(),
+          this.extraitArmee(),
+          { terrain: this._cible.terrain },
+        );
+      });
     // Ajout du bouton pour la synchro simple
     // Ajout du temps de trajet
     const nbSonde = monProfil.parametre["uniteSonde"].valeur;
@@ -169,9 +183,11 @@ class PageAttaquer {
    * @method formulaireFlood
    */
   formulaireFlood() {
-    let methode = monProfil.parametre["methodeFlood"].valeur;
+    let methode = monProfil.parametre["methodeFlood"].valeur,
+      // créneaux d'attaques simultanées encore libres (VA + 1 au total)
+      creneaux = Math.max(0, this._nbAttaque);
     $(".simulateur:eq(0)")
-      .append(`<fieldset id='o_prepaFlood' class='centre'><legend><span class='titre'>Lanceur de Flood</span></legend>
+      .append(`<fieldset id='o_prepaFlood' class='centre'><legend><span class='titre'>Lanceur de Flood</span> <span class='reduce'>(${creneaux} créneau${creneaux > 1 ? "x" : ""} libre${creneaux > 1 ? "s" : ""} sur ${monProfil.niveauRecherche[6] + 1})</span></legend>
             <table id='o_simulationFlood' class='o_maxWidth' cellspacing=0>
 			<tr class='gras'><td>Etape</td><td>Troupes</td><td>Supp.*</td><td>Mon Terrain</td><td>${this._cible.pseudo} (${Utils.intToTime(monProfil.getTempsParcours2(this._cible))})</td></tr>
 			<tr><td><select id='o_methodeFlood'><option value='0' ${methode == 0 ? "selected" : ""}>${METHODE_FLOOD[0]}</option><option value='1' ${methode == 1 ? "selected" : ""}>${METHODE_FLOOD[1]}</option><option value='2' ${methode == 2 ? "selected" : ""}>${METHODE_FLOOD[2]}</option><option value='3' ${methode == 3 ? "selected" : ""}>${METHODE_FLOOD[3]}</option></select></td><td colspan="2"></td><td><input value='${Utils.terrain}' size='12' id='o_floodTDCA'/></td><td><input value='${this._cible.terrain}' size='12' id='o_floodTDCB'/></td></tr>
@@ -220,6 +236,13 @@ class PageAttaquer {
       this.preparerFlood($("#o_floodTDCA").spinner("value"), $("#o_floodTDCB").spinner("value"));
     });
     $("#o_lanceFlood").click((e) => {
+      // contexte pour que envoyerFlood capture chaque attaque confirmée. Le
+      // terrain de départ est celui saisi dans la simulation (par défaut celui
+      // du profil, modifiable si on connaît une valeur plus fraîche)
+      AttaqueLancee.contexteFlood = {
+        cible: this._cible.pseudo,
+        terrain: $("#o_floodTDCB").spinner("value"),
+      };
       this._armee.envoyerFlood(
         this._cible.id,
         0,
@@ -366,24 +389,8 @@ class PageAttaquer {
    * @method plus
    */
   plus() {
-    // Sauvegarde des attaques en cours
-    let listeAttaque = new Array();
-    $("span[id^='attaque_']").each((i, elt) => {
-      if ($(elt).prev().find("a").length) {
-        // attaque normale
-        listeAttaque.push({
-          cible: $(elt).prev().text(),
-          exp: moment().add($(elt).next().text().split(",")[0].split("(")[1], "s"),
-        });
-        // Affichage du retour
-        $(elt).after(
-          `<span class='small'> - Retour le ${Utils.roundMinute($(elt).next().text().split(",")[0].split("(")[1]).format("D MMM YYYY à HH[h]mm")}</span>`,
-        );
-      } else // renfort
-        $(elt).after(
-          `<span class='small'> - Retour le ${Utils.roundMinute($(elt).next().next().text().split(",")[0].split("(")[1]).format("D MMM YYYY à HH[h]mm")}</span>`,
-        );
-    });
+    // Affichage de l'arrivée + sauvegarde des attaques en cours
+    let listeAttaque = AttaqueLancee.enrichirLignes();
     // Verification si les données sont deja enregistré
     this.saveAttaque(listeAttaque);
   }
