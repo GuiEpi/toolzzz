@@ -182,7 +182,21 @@ class Joueur {
       "Affectation des ressources",
       "select",
       0,
-      ["Non", "Materiaux", "Nourriture"],
+      ["Non", "Materiaux", "Nourriture", "Ratio"],
+    );
+    // part des ouvrières affectée à la nourriture en mode Ratio (le reste va
+    // aux matériaux), par pas de 10 %
+    this._parametre["ratioRecolte"] = new Parametre(
+      "ratioRecolte",
+      "Part en nourriture",
+      "slider",
+      50,
+      {
+        min: 0,
+        max: 100,
+        step: 10,
+        unite: " %",
+      },
     );
     return this;
   }

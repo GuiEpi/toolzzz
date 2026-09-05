@@ -50,6 +50,7 @@ class BoiteParametre extends Boite {
       "reserveFlood",
       "reserveFloodAuto",
       "replacerArmeeAuto",
+      "ratioRecolte",
     ];
   }
   /**
@@ -121,6 +122,12 @@ class BoiteParametre extends Boite {
     for (let param of this._paramStyle) monProfil.parametre[param].ajouterEvent();
     for (let param of this._paramUtilitaire) monProfil.parametre[param].ajouterEvent();
     for (let param of this._paramGeneral) monProfil.parametre[param].ajouterEvent();
+    // le curseur de ratio n'a de sens qu'en mode Ratio
+    $("#affectationRessource")
+      .on("change", (e) => {
+        $("#ratioRecolteGroupe").toggle(e.currentTarget.value == "3");
+      })
+      .trigger("change");
     $("#dockPosition").on("change", () => Dock.appliquerPosition());
     // Sync de la réserve avec les antisondes quand « Suivre antisondes » est coché.
     // Quand actif : on désactive le spinner et on le force à la somme antisondeTerrain + antisondeDome.
@@ -196,7 +203,9 @@ class BoiteParametre extends Boite {
     let blocAffectation = Utils.comptePlus
       ? ""
       : `<p class='left reduce gras'>L'affectation sera automatique lors de la consultation de la page ressource</p>
-         ${monProfil.parametre[this._paramGeneral[0]].getForm()}`;
+         <p class='left small'><em>Ratio : les ouvrières sont réparties entre nourriture et matériaux selon la part choisie, et le restent après une chasse ou un flood.</em></p>
+         ${monProfil.parametre[this._paramGeneral[0]].getForm()}
+         ${monProfil.parametre[this._paramGeneral[8]].getForm()}`;
     $("#o_tabsParametre1").append(`<form>
             ${blocAffectation}
             <p class='left reduce gras'>La méthode sera sélectionnée par défaut dans le lanceur de flood</p>

@@ -116,6 +116,10 @@ class Parametre {
       case "checkbox":
         return `<div class="group left"><label for="${this._id}">${this._libelle}</label><input id="${this._id}" class="o_checkbox" type="checkbox" ${this._valeur ? "checked" : ""}/></div>`;
         break;
+      case "slider":
+        // valeurPossible = { min, max, step, unite } ; la valeur courante est
+        // rappelée dans le libellé, le curseur jQuery UI est posé dans ajouterEvent
+        return `<div id="${this._id}Groupe" class="group left"><label for="${this._id}">${this._libelle} : <span id="${this._id}Valeur" class="gras">${this._valeur}${this._valeurPossible.unite || ""}</span></label><div id="${this._id}" class="slider" style="margin:6px 12px 0 3px;"></div></div>`;
       case "select":
         html += `<select id="${this._id}" class="o_input" required>`;
         this._valeurPossible.forEach((item, index, array) => {
@@ -161,6 +165,22 @@ class Parametre {
         $("#" + this._id).on("change", (e) => {
           this._valeur = e.currentTarget.checked;
           this.sauvegarde();
+        });
+        break;
+      case "slider":
+        $("#" + this._id).slider({
+          min: this._valeurPossible.min,
+          max: this._valeurPossible.max,
+          step: this._valeurPossible.step || 1,
+          value: parseInt(this._valeur),
+          slide: (e, ui) => {
+            $("#" + this._id + "Valeur").text(ui.value + (this._valeurPossible.unite || ""));
+          },
+          change: (e, ui) => {
+            this._valeur = ui.value;
+            $("#" + this._id + "Valeur").text(ui.value + (this._valeurPossible.unite || ""));
+            this.sauvegarde();
+          },
         });
         break;
       default:

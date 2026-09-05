@@ -489,14 +489,38 @@ class PageRessource {
     });
     // Sauvegarde de la chasse en cours
     if (listeChasse.length) this.saveChasse(listeChasse);
-    let affection = parseInt(monProfil.parametre["affectationRessource"].valeur);
+    let affection = parseInt(monProfil.parametre["affectationRessource"].valeur),
+      ratio = parseInt(monProfil.parametre["ratioRecolte"].valeur),
+      libelleRatio = (r) =>
+        `<span class="gras">${r} %</span> <img alt="nourriture" src="images/icone/icone_pomme.png" height="14" class="o_vAlign"/> nourriture, <span class="gras">${100 - r} %</span> <img alt="matériaux" src="images/icone/icone_bois.png" height="13" class="o_vAlign"/> matériaux`;
     // Ajout de la pref pour l'affectation auto
     $("#ChangeRessource").parent().parent().before(`<tr>
             <td><span class="text"><img src="images/icone/favicon.gif" height="16"> Affectation des ouvrières lors de la consultation de la page : </span></td>
             <td style="white-space:nowrap;"><label><input type="radio" name="choixOuvriere" value="nourriture" ${affection == 2 ? 'checked="checked"' : ""}><img alt="nourritures" src="images/icone/icone_pomme.png" height="18" title="Nourriture"></label>
             <label><input type="radio" name="choixOuvriere" value="materiaux" ${affection == 1 ? 'checked="checked"' : ""}> <img alt="materiaux" src="images/icone/icone_bois.png" height="17" title="Materiaux"></label>
+            <label title="Répartir les ouvrières entre nourriture et matériaux selon une part fixe, conservée après une chasse ou un flood"><input type="radio" name="choixOuvriere" value="ratio" ${affection == 3 ? 'checked="checked"' : ""}> Ratio</label>
             <label><input type="radio" name="choixOuvriere" value="rien" ${affection == 0 ? 'checked="checked"' : ""}> <img alt="rien" src="http:images/croix.gif" height="23" title="Pas d'affectation automatique"></label>
-        </td></tr>`);
+        </td></tr>
+        <tr id="o_ratioRecolte" style="${affection == 3 ? "" : "display:none;"}">
+            <td><span class="text"><img src="images/icone/favicon.gif" height="16"> Répartition : <span id="o_ratioRecolteValeur">${libelleRatio(ratio)}</span></span></td>
+            <td><div id="o_ratioRecolteCurseur" class="slider" title="Par pas de 10 %" style="width:150px;margin:6px 0;"></div></td>
+        </tr>`);
+    $("#o_ratioRecolteCurseur").slider({
+      min: 0,
+      max: 100,
+      step: 10,
+      value: ratio,
+      slide: (e, ui) => {
+        $("#o_ratioRecolteValeur").html(libelleRatio(ui.value));
+      },
+      change: (e, ui) => {
+        ratio = ui.value;
+        $("#o_ratioRecolteValeur").html(libelleRatio(ratio));
+        monProfil.parametre["ratioRecolte"].valeur = ratio;
+        monProfil.parametre["ratioRecolte"].sauvegarde();
+        this.affecterOuvrieres(3, ratio);
+      },
+    });
     $("input[name=choixOuvriere]").change(() => {
       switch ($("input[name=choixOuvriere]:checked").val()) {
         case "nourriture":
@@ -505,39 +529,65 @@ class PageRessource {
         case "materiaux":
           monProfil.parametre["affectationRessource"].valeur = 1;
           break;
+        case "ratio":
+          monProfil.parametre["affectationRessource"].valeur = 3;
+          break;
         default:
           monProfil.parametre["affectationRessource"].valeur = 0;
           break;
       }
       monProfil.parametre["affectationRessource"].sauvegarde();
+      $("#o_ratioRecolte").toggle(monProfil.parametre["affectationRessource"].valeur == 3);
+      // le ratio se voit tout de suite, les autres modes agissent à la prochaine consultation
+      if (monProfil.parametre["affectationRessource"].valeur == 3) this.affecterOuvrieres(3, ratio);
       return false;
     });
     // Affectation des ouvriéres inutilisé si on a la pref
-    if (affection) {
-      let RecolteMateriaux = numeral($("#RecolteMateriaux").val()).value(),
-        RecolteNourriture = numeral($("#RecolteNourriture").val()).value();
-      // si on ne couvre pas le terrain et qu'on a assez d'ouvriére
-      if (
-        RecolteMateriaux + RecolteNourriture < Utils.terrain &&
-        RecolteMateriaux + RecolteNourriture < Utils.ouvrieres
-      ) {
-        switch (affection) {
-          case 1:
-            $("#RecolteMateriaux").val(
-              Math.min(Utils.ouvrieres - RecolteNourriture, Utils.terrain - RecolteNourriture),
-            );
-            break;
-          case 2:
-            $("#RecolteNourriture").val(
-              Math.min(Utils.ouvrieres - RecolteMateriaux, Utils.terrain - RecolteMateriaux),
-            );
-            break;
-          default:
-            break;
-        }
-        $("#ChangeRessource").click();
-      }
+    if (affection) this.affecterOuvrieres(affection, ratio);
+  }
+  /**
+   * Affecte les ouvrières selon le mode choisi et soumet le formulaire du jeu
+   * si quelque chose change. Matériaux / Nourriture complètent seulement les
+   * ouvrières inutilisées ; Ratio impose la répartition.
+   *
+   * @private
+   * @method affecterOuvrieres
+   * @param {Integer} mode 1 matériaux, 2 nourriture, 3 ratio
+   * @param {Integer} ratio part en nourriture (%) pour le mode 3
+   */
+  affecterOuvrieres(mode, ratio) {
+    const CLE_TENTATIVE = "outiiil_affectationTentee";
+    let materiaux = numeral($("#RecolteMateriaux").val()).value(),
+      nourriture = numeral($("#RecolteNourriture").val()).value(),
+      affectables = Math.min(Utils.ouvrieres, Utils.terrain),
+      nouveauMateriaux = materiaux,
+      nouvelleNourriture = nourriture;
+    if (mode == 3) {
+      nouvelleNourriture = Math.round((affectables * ratio) / 100);
+      nouveauMateriaux = affectables - nouvelleNourriture;
+    } else if (materiaux + nourriture < affectables) {
+      // si on ne couvre pas le terrain et qu'on a assez d'ouvrières
+      if (mode == 1) nouveauMateriaux = affectables - nourriture;
+      else if (mode == 2) nouvelleNourriture = affectables - materiaux;
     }
+    if (nouveauMateriaux == materiaux && nouvelleNourriture == nourriture) {
+      sessionStorage.removeItem(CLE_TENTATIVE);
+      return;
+    }
+    // la soumission recharge la page : si le jeu n'a pas appliqué la valeur
+    // demandée on ne retente pas, sinon la page rechargerait en boucle
+    if (sessionStorage.getItem(CLE_TENTATIVE)) {
+      sessionStorage.removeItem(CLE_TENTATIVE);
+      $.toast({
+        ...TOAST_WARNING,
+        text: "L'affectation automatique des ouvrières n'a pas été appliquée par le jeu.",
+      });
+      return;
+    }
+    sessionStorage.setItem(CLE_TENTATIVE, "1");
+    $("#RecolteMateriaux").val(nouveauMateriaux);
+    $("#RecolteNourriture").val(nouvelleNourriture);
+    $("#ChangeRessource").click();
   }
   /**
    * Sauvegarde la chasse en cours.

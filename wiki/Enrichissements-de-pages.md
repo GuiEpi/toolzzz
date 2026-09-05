@@ -27,7 +27,7 @@ Page `Ressources.php`, l'onglet où tu lances tes chasses :
   > ![Lanceur de chasse intégré](assets/wiki/lanceur-de-chasse.png)
 
 - **Bouton "Annuler toutes les chasses"** ajouté dans le bloc des chasses en cours, pour rappeler tout le monde en un clic.
-- **Affectation automatique des ouvrières** sur les terrains de chasse.
+- **Affectation automatique des ouvrières** sur les terrains de chasse : compléter en Matériaux ou en Nourriture, ou maintenir un **ratio** nourriture / matériaux réglable au curseur, conservé après une chasse ou un flood (voir [Boîte Paramètres](Boite-Parametres)).
 
   > ![Affectation auto des ouvrières sur les terrains de chasse](assets/wiki/affectation-auto.png)
 
