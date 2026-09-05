@@ -304,9 +304,13 @@ class PageAttaquer {
    *
    */
   ajouterAttaque(silencieux = false) {
-    let nbAttaque = $("input[id^='o_attaque']").length + 1;
+    let nbAttaque = $("input[id^='o_attaque']").length + 1,
+      // l'antisonde occupe un créneau d'attaque seulement si elle est envoyée :
+      // à 0 la simulation place une attaque de plus, la ligne doit exister
+      // sinon elle est envoyée sans être affichée
+      creneaux = this._nbAttaque - ($("#o_floodAntiSonde").spinner("value") ? 1 : 0);
     // si le nombre d'attaque depasse la VA
-    if (nbAttaque >= this._nbAttaque) {
+    if (nbAttaque > creneaux) {
       // Toast seulement sur clic manuel : en pré-remplissage auto (preparerFlood),
       // l'utilisateur n'a rien fait, l'avertissement est trompeur.
       if (!silencieux)
