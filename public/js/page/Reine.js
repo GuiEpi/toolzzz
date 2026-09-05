@@ -160,9 +160,31 @@ class PageReine {
       let suffix = $(input).attr("id").replace("input_cout_nombre", ""),
         iUnite = suffix === "" ? 0 : parseInt(suffix),
         tempsParUnite = TEMPS_UNITE[iUnite] * Math.pow(0.9, monProfil.getTDP()),
-        max7j = Math.floor(SECONDES_7J / tempsParUnite);
+        max7j = Math.floor(SECONDES_7J / tempsParUnite),
+        sliderId = "o_sliderPonte" + suffix,
+        step = 0,
+        slidMax = 0;
+      // Met à jour les affichages et le champ caché que le jeu soumet. L'input
+      // n'est réécrit que si la valeur ne vient pas de lui (saisie en cours).
+      let sync = (nombre, depuisSaisie = false) => {
+        $("#cout_nombre" + suffix).text(numeral(nombre).format());
+        if (!depuisSaisie) $("#input_cout_nombre" + suffix).val(nombre);
+        $("#nombre_de_ponte" + suffix)
+          .val(nombre)
+          .attr("value", nombre);
+        $("#cout_temps" + suffix).text(Utils.intToTime(nombre * tempsParUnite));
+        $("#cout_nourriture" + suffix).text(numeral(nombre * COUT_UNITE[iUnite]).format("0 a"));
+      };
+      // Saisie clavier du nombre : le onkeyup natif a été retiré plus haut,
+      // sans ce relais le champ caché garderait la valeur du curseur et le
+      // jeu pondrait ce nombre-là (issue #24). Accepte 30 000, 30k, 0.5M.
+      $(input).on("input", (e) => {
+        let nombre = Math.max(0, Math.floor(numeral(e.currentTarget.value).value() || 0));
+        sync(nombre, true);
+        if (slidMax)
+          $("#" + sliderId).slider("value", nombre >= max7j ? slidMax : Math.max(1, nombre));
+      });
       if (max7j < 1) return;
-      let sliderId = "o_sliderPonte" + suffix;
       $(input)
         .closest("form")
         .find("table:first tbody")
@@ -174,15 +196,8 @@ class PageReine {
       // donc on aligne `slidMax` sur `1 + 20*step`, et on remappe la
       // dernière position vers `max7j` pour atteindre exactement 7 jours.
       const PALIERS = 20;
-      let step = Math.max(1, Math.floor((max7j - 1) / PALIERS));
-      let slidMax = 1 + PALIERS * step;
-      let sync = (nombre) => {
-        $("#cout_nombre" + suffix).text(numeral(nombre).format());
-        $("#input_cout_nombre" + suffix).val(nombre);
-        $("#nombre_de_ponte" + suffix).attr("value", nombre);
-        $("#cout_temps" + suffix).text(Utils.intToTime(nombre * tempsParUnite));
-        $("#cout_nourriture" + suffix).text(numeral(nombre * COUT_UNITE[iUnite]).format("0 a"));
-      };
+      step = Math.max(1, Math.floor((max7j - 1) / PALIERS));
+      slidMax = 1 + PALIERS * step;
       $("#" + sliderId).slider({
         min: 1,
         max: slidMax,
