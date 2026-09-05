@@ -385,7 +385,7 @@ class PageAttaquer {
         );
     });
     // Verification si les données sont deja enregistré
-    if (listeAttaque.length) this.saveAttaque(listeAttaque);
+    this.saveAttaque(listeAttaque);
   }
   /**
    * Verifie les attaques en cours avec ce qui est sauvegarder.
@@ -398,8 +398,9 @@ class PageAttaquer {
     if (
       !dataEvo.hasOwnProperty("attaque") ||
       dataEvo.attaque.length != listeAttaque.length ||
-      dataEvo.attaque[0]["cible"] != listeAttaque[0]["cible"] ||
-      listeAttaque[0]["exp"].diff(dataEvo.attaque[0]["exp"], "s") > 1
+      (listeAttaque.length &&
+        (dataEvo.attaque[0]["cible"] != listeAttaque[0]["cible"] ||
+          listeAttaque[0]["exp"].diff(dataEvo.attaque[0]["exp"], "s") > 1))
     ) {
       dataEvo.attaque = listeAttaque;
       dataEvo.startAttaque = moment();

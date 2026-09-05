@@ -527,10 +527,11 @@ class PageArmee {
     if (
       !this._boiteComptePlus.hasOwnProperty("attaque") ||
       this._boiteComptePlus.attaque.length != listeAttaque.length ||
-      this._boiteComptePlus.attaque[0]["cible"] != listeAttaque[0]["cible"] ||
-      (listeAttaque[0]["exp"].diff(this._boiteComptePlus.attaque[0]["exp"], "s") > 1 &&
-        !Utils.comptePlus &&
-        $("#boiteComptePlus").length)
+      (listeAttaque.length &&
+        (this._boiteComptePlus.attaque[0]["cible"] != listeAttaque[0]["cible"] ||
+          (listeAttaque[0]["exp"].diff(this._boiteComptePlus.attaque[0]["exp"], "s") > 1 &&
+            !Utils.comptePlus &&
+            $("#boiteComptePlus").length)))
     ) {
       this._boiteComptePlus.attaque = listeAttaque;
       this._boiteComptePlus.startAttaque = moment();
