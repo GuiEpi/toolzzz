@@ -41,6 +41,8 @@ class PageRessource {
     });
     // Sauvegarde les chasses en cours et ajoute les boutons max recolte
     if (!Utils.comptePlus) this.plus();
+    // Affectation automatique des ouvrières (tous comptes)
+    this.affectation();
     // Bouton "Annuler toutes les chasses" si au moins une est en cours
     this.boutonAnnulerChasses();
     return this;
@@ -489,22 +491,73 @@ class PageRessource {
     });
     // Sauvegarde de la chasse en cours
     if (listeChasse.length) this.saveChasse(listeChasse);
+  }
+  /**
+   * Choix du mode d'affectation automatique des ouvrières sur la page, et
+   * application du mode enregistré. Pour tous les comptes : en C+ le jeu
+   * propose nativement Matériaux / Nourriture, mais pas le ratio.
+   *
+   * @private
+   * @method affectation
+   */
+  affectation() {
     let affection = parseInt(monProfil.parametre["affectationRessource"].valeur),
       ratio = parseInt(monProfil.parametre["ratioRecolte"].valeur),
       libelleRatio = (r) =>
         `<span class="gras">${r} %</span> <img alt="nourriture" src="images/icone/icone_pomme.png" height="14" class="o_vAlign"/> nourriture, <span class="gras">${100 - r} %</span> <img alt="matériaux" src="images/icone/icone_bois.png" height="13" class="o_vAlign"/> matériaux`;
-    // Ajout de la pref pour l'affectation auto
-    $("#ChangeRessource").parent().parent().before(`<tr>
-            <td><span class="text"><img src="images/icone/favicon.gif" height="16"> Affectation des ouvrières lors de la consultation de la page : </span></td>
-            <td style="white-space:nowrap;"><label><input type="radio" name="choixOuvriere" value="nourriture" ${affection == 2 ? 'checked="checked"' : ""}><img alt="nourritures" src="images/icone/icone_pomme.png" height="18" title="Nourriture"></label>
-            <label><input type="radio" name="choixOuvriere" value="materiaux" ${affection == 1 ? 'checked="checked"' : ""}> <img alt="materiaux" src="images/icone/icone_bois.png" height="17" title="Materiaux"></label>
-            <label title="Répartir les ouvrières entre nourriture et matériaux selon une part fixe, conservée après une chasse ou un flood"><input type="radio" name="choixOuvriere" value="ratio" ${affection == 3 ? 'checked="checked"' : ""}> Ratio</label>
-            <label><input type="radio" name="choixOuvriere" value="rien" ${affection == 0 ? 'checked="checked"' : ""}> <img alt="rien" src="http:images/croix.gif" height="23" title="Pas d'affectation automatique"></label>
-        </td></tr>
-        <tr id="o_ratioRecolte" style="${affection == 3 ? "" : "display:none;"}">
+    // Ajout de la pref pour l'affectation auto.
+    // C+ : le jeu a déjà sa rangée « Affectation automatique des ouvrières »
+    // (radios choixOuvriere, envoyées au serveur). On y ajoute un choix
+    // « Ratio » dans le même groupe pour garder une seule sélection. Sa valeur
+    // est « rien », comme la croix : le jeu enregistre « pas d'affectation
+    // automatique » (sinon il replacerait les ouvrières libres d'un seul côté
+    // entre deux visites) et Toolzzz garde le mode Ratio de son côté. Le
+    // radio est reconnu par son id, pas par sa valeur.
+    // Non-C+ : rangée Toolzzz complète, avec un nom de groupe qui lui est propre.
+    let ligneRatio = `<tr id="o_ratioRecolte" style="display:none;">
             <td><span class="text"><img src="images/icone/favicon.gif" height="16"> Répartition : <span id="o_ratioRecolteValeur">${libelleRatio(ratio)}</span></span></td>
             <td><div id="o_ratioRecolteCurseur" class="slider" title="Par pas de 10 %" style="width:150px;margin:6px 0;"></div></td>
-        </tr>`);
+        </tr>`;
+    if (Utils.comptePlus) {
+      // état enregistré côté serveur, lu avant d'ajouter notre radio
+      let natifCoche = $("input[name=choixOuvriere]:checked").val();
+      $("input[name=choixOuvriere][value=rien]")
+        .closest("label")
+        .before(
+          `<label title="Répartir les ouvrières entre nourriture et matériaux selon une part fixe, refaite à chaque consultation de la page (Toolzzz)"><input type="radio" name="choixOuvriere" value="rien" id="o_ratioRadio"> Ratio</label> `,
+        );
+      // L'exclusion mutuelle des radios se fait par formulaire propriétaire, pas
+      // par position dans le DOM : inséré dynamiquement, notre radio n'en a
+      // aucun (le HTML du jeu ferme son <form> avant cette cellule) et forme
+      // donc un groupe à part, où il reste coché en même temps qu'un choix
+      // natif. On le rattache explicitement au formulaire des radios du jeu,
+      // ce qui rétablit l'exclusion et l'envoi de sa valeur (« rien »).
+      let formNatif = $("input[name=choixOuvriere]").not("#o_ratioRadio")[0].form;
+      if (formNatif) {
+        if (!formNatif.id) formNatif.id = "o_formRessource";
+        $("#o_ratioRadio").attr("form", formNatif.id);
+      }
+      // Le mode Ratio soumet toujours « rien » au jeu : si le serveur a
+      // enregistré autre chose, c'est que l'affectation native a été choisie
+      // depuis, on abandonne le ratio. Sans ce recalage, un ratio mémorisé
+      // recocherait Ratio à chaque chargement et rendrait les autres choix
+      // impossibles à conserver.
+      if (affection == 3 && natifCoche && natifCoche != "rien") {
+        affection = 0;
+        monProfil.parametre["affectationRessource"].valeur = 0;
+        monProfil.parametre["affectationRessource"].sauvegarde();
+      }
+      if (affection == 3) $("#o_ratioRadio").prop("checked", true);
+      $("input[name=choixOuvriere]").closest("tr").after(ligneRatio);
+    } else
+      $("#ChangeRessource").parent().parent().before(`<tr>
+            <td><span class="text"><img src="images/icone/favicon.gif" height="16"> Affectation des ouvrières lors de la consultation de la page : </span></td>
+            <td style="white-space:nowrap;"><label><input type="radio" name="o_choixOuvriere" value="nourriture" ${affection == 2 ? 'checked="checked"' : ""}><img alt="nourritures" src="images/icone/icone_pomme.png" height="18" title="Nourriture"></label>
+            <label><input type="radio" name="o_choixOuvriere" value="materiaux" ${affection == 1 ? 'checked="checked"' : ""}> <img alt="materiaux" src="images/icone/icone_bois.png" height="17" title="Materiaux"></label>
+            <label title="Répartir les ouvrières entre nourriture et matériaux selon une part fixe, conservée après une chasse ou un flood"><input type="radio" name="o_choixOuvriere" value="ratio" ${affection == 3 ? 'checked="checked"' : ""}> Ratio</label>
+            <label><input type="radio" name="o_choixOuvriere" value="rien" ${affection == 0 ? 'checked="checked"' : ""}> <img alt="rien" src="http:images/croix.gif" height="23" title="Pas d'affectation automatique"></label>
+        </td></tr>${ligneRatio}`);
+    $("#o_ratioRecolte").toggle(affection == 3);
     $("#o_ratioRecolteCurseur").slider({
       min: 0,
       max: 100,
@@ -521,27 +574,44 @@ class PageRessource {
         this.affecterOuvrieres(3, ratio);
       },
     });
-    $("input[name=choixOuvriere]").change(() => {
-      switch ($("input[name=choixOuvriere]:checked").val()) {
-        case "nourriture":
-          monProfil.parametre["affectationRessource"].valeur = 2;
-          break;
-        case "materiaux":
-          monProfil.parametre["affectationRessource"].valeur = 1;
-          break;
-        case "ratio":
-          monProfil.parametre["affectationRessource"].valeur = 3;
-          break;
-        default:
-          monProfil.parametre["affectationRessource"].valeur = 0;
-          break;
-      }
-      monProfil.parametre["affectationRessource"].sauvegarde();
-      $("#o_ratioRecolte").toggle(monProfil.parametre["affectationRessource"].valeur == 3);
-      // le ratio se voit tout de suite, les autres modes agissent à la prochaine consultation
-      if (monProfil.parametre["affectationRessource"].valeur == 3) this.affecterOuvrieres(3, ratio);
-      return false;
-    });
+    if (Utils.comptePlus)
+      // sur "click" et non "change" : le jeu peut réagir au changement en
+      // rechargeant la page, l'écriture du paramètre doit être faite avant.
+      // On identifie notre radio par son id, sa valeur étant « rien » comme
+      // celle de la croix native.
+      $("input[name=choixOuvriere]").on("click", (e) => {
+        let actif = e.currentTarget.id == "o_ratioRadio";
+        // un choix natif (nourriture, matériaux, rien) désactive le ratio Toolzzz
+        monProfil.parametre["affectationRessource"].valeur = actif ? 3 : 0;
+        monProfil.parametre["affectationRessource"].sauvegarde();
+        $("#o_ratioRecolte").toggle(actif);
+        // soumission même si la répartition est déjà bonne : le jeu doit
+        // enregistrer « rien » pour son affectation automatique
+        if (actif) this.affecterOuvrieres(3, ratio, true);
+      });
+    else
+      $("input[name=o_choixOuvriere]").change(() => {
+        switch ($("input[name=o_choixOuvriere]:checked").val()) {
+          case "nourriture":
+            monProfil.parametre["affectationRessource"].valeur = 2;
+            break;
+          case "materiaux":
+            monProfil.parametre["affectationRessource"].valeur = 1;
+            break;
+          case "ratio":
+            monProfil.parametre["affectationRessource"].valeur = 3;
+            break;
+          default:
+            monProfil.parametre["affectationRessource"].valeur = 0;
+            break;
+        }
+        monProfil.parametre["affectationRessource"].sauvegarde();
+        $("#o_ratioRecolte").toggle(monProfil.parametre["affectationRessource"].valeur == 3);
+        // le ratio se voit tout de suite, les autres modes agissent à la prochaine consultation
+        if (monProfil.parametre["affectationRessource"].valeur == 3)
+          this.affecterOuvrieres(3, ratio);
+        return false;
+      });
     // Affectation des ouvriéres inutilisé si on a la pref
     if (affection) this.affecterOuvrieres(affection, ratio);
   }
@@ -554,8 +624,9 @@ class PageRessource {
    * @method affecterOuvrieres
    * @param {Integer} mode 1 matériaux, 2 nourriture, 3 ratio
    * @param {Integer} ratio part en nourriture (%) pour le mode 3
+   * @param {Boolean} forcer soumettre même si la répartition ne change pas
    */
-  affecterOuvrieres(mode, ratio) {
+  affecterOuvrieres(mode, ratio, forcer = false) {
     const CLE_TENTATIVE = "outiiil_affectationTentee";
     let materiaux = numeral($("#RecolteMateriaux").val()).value(),
       nourriture = numeral($("#RecolteNourriture").val()).value(),
@@ -570,7 +641,7 @@ class PageRessource {
       if (mode == 1) nouveauMateriaux = affectables - nourriture;
       else if (mode == 2) nouvelleNourriture = affectables - materiaux;
     }
-    if (nouveauMateriaux == materiaux && nouvelleNourriture == nourriture) {
+    if (nouveauMateriaux == materiaux && nouvelleNourriture == nourriture && !forcer) {
       sessionStorage.removeItem(CLE_TENTATIVE);
       return;
     }
