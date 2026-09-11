@@ -118,8 +118,9 @@ class Parametre {
         break;
       case "slider":
         // valeurPossible = { min, max, step, unite } ; la valeur courante est
-        // rappelée dans le libellé, le curseur jQuery UI est posé dans ajouterEvent
-        return `<div id="${this._id}Groupe" class="group left"><label for="${this._id}">${this._libelle} : <span id="${this._id}Valeur" class="gras">${this._valeur}${this._valeurPossible.unite || ""}</span></label><div id="${this._id}" class="slider" style="margin:6px 12px 0 3px;"></div></div>`;
+        // aussi saisissable au clavier dans un champ synchronisé avec le
+        // curseur, posé dans ajouterEvent
+        return `<div id="${this._id}Groupe" class="group left"><label for="${this._id}Valeur">${this._libelle} : <input id="${this._id}Valeur" class="o_sliderValeur" type="text" value="${this._valeur}"/>${this._valeurPossible.unite || ""}</label><div id="${this._id}" class="slider" style="margin:6px 12px 0 3px;"></div></div>`;
       case "select":
         html += `<select id="${this._id}" class="o_input" required>`;
         this._valeurPossible.forEach((item, index, array) => {
@@ -167,22 +168,44 @@ class Parametre {
           this.sauvegarde();
         });
         break;
-      case "slider":
+      case "slider": {
+        let min = this._valeurPossible.min,
+          max = this._valeurPossible.max,
+          pas = this._valeurPossible.step || 1,
+          champ = $("#" + this._id + "Valeur"),
+          enregistrer = (v) => {
+            this._valeur = v;
+            champ.spinner("value", v);
+            this.sauvegarde();
+          };
+        // Le pas jQuery UI reste à 1 : avec un pas de `pas`, une valeur fine
+        // posée depuis le champ serait arrondie. Le glissement à la souris
+        // est filtré sur les multiples de `pas` pour garder un curseur rapide ;
+        // le clavier sur la poignée garde la précision.
         $("#" + this._id).slider({
-          min: this._valeurPossible.min,
-          max: this._valeurPossible.max,
-          step: this._valeurPossible.step || 1,
+          min: min,
+          max: max,
+          step: 1,
           value: parseInt(this._valeur),
           slide: (e, ui) => {
-            $("#" + this._id + "Valeur").text(ui.value + (this._valeurPossible.unite || ""));
+            if ((ui.value - min) % pas && !(e.originalEvent && e.originalEvent.type == "keydown"))
+              return false;
+            champ.spinner("value", ui.value);
           },
+          // seulement sur action de l'utilisateur : une valeur posée depuis le
+          // champ est enregistrée par le champ
           change: (e, ui) => {
-            this._valeur = ui.value;
-            $("#" + this._id + "Valeur").text(ui.value + (this._valeurPossible.unite || ""));
-            this.sauvegarde();
+            if (e.originalEvent) enregistrer(ui.value);
           },
         });
+        champ.spinner({ min: min, max: max, numberFormat: "i" });
+        champ.on("spinstop change", () => {
+          let v = Math.min(max, Math.max(min, parseInt(champ.val()) || 0));
+          $("#" + this._id).slider("value", v);
+          enregistrer(v);
+        });
         break;
+      }
       default:
         $("#" + this._id).on("input", (e) => {
           this._valeur = e.currentTarget.value;

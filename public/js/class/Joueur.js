@@ -185,7 +185,7 @@ class Joueur {
       ["Non", "Materiaux", "Nourriture", "Ratio"],
     );
     // part des ouvrières affectée à la nourriture en mode Ratio (le reste va
-    // aux matériaux), par pas de 10 %
+    // aux matériaux) : curseur de 10 en 10, champ au pourcent près
     this._parametre["ratioRecolte"] = new Parametre(
       "ratioRecolte",
       "Part en nourriture",

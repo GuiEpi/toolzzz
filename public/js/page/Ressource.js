@@ -503,8 +503,14 @@ class PageRessource {
   affectation() {
     let affection = parseInt(monProfil.parametre["affectationRessource"].valeur),
       ratio = parseInt(monProfil.parametre["ratioRecolte"].valeur),
+      // la part en nourriture est saisissable au clavier, celle en matériaux
+      // en découle ; les deux suivent le curseur
       libelleRatio = (r) =>
-        `<span class="gras">${r} %</span> <img alt="nourriture" src="images/icone/icone_pomme.png" height="14" class="o_vAlign"/> nourriture, <span class="gras">${100 - r} %</span> <img alt="matériaux" src="images/icone/icone_bois.png" height="13" class="o_vAlign"/> matériaux`;
+        `<input id="o_ratioRecoltePart" class="o_sliderValeur" type="text" value="${r}"/> % <img alt="nourriture" src="images/icone/icone_pomme.png" height="14" class="o_vAlign"/> nourriture, <span id="o_ratioRecolteReste" class="gras">${100 - r} %</span> <img alt="matériaux" src="images/icone/icone_bois.png" height="13" class="o_vAlign"/> matériaux`,
+      majRatio = (r) => {
+        $("#o_ratioRecoltePart").spinner("value", r);
+        $("#o_ratioRecolteReste").text(`${100 - r} %`);
+      };
     // Ajout de la pref pour l'affectation auto.
     // C+ : le jeu a déjà sa rangée « Affectation automatique des ouvrières »
     // (radios choixOuvriere, envoyées au serveur). On y ajoute un choix
@@ -516,7 +522,7 @@ class PageRessource {
     // Non-C+ : rangée Toolzzz complète, avec un nom de groupe qui lui est propre.
     let ligneRatio = `<tr id="o_ratioRecolte" style="display:none;">
             <td><span class="text"><img src="images/icone/favicon.gif" height="16"> Répartition : <span id="o_ratioRecolteValeur">${libelleRatio(ratio)}</span></span></td>
-            <td><div id="o_ratioRecolteCurseur" class="slider" title="Par pas de 10 %" style="width:150px;margin:6px 0;"></div></td>
+            <td><div id="o_ratioRecolteCurseur" class="slider" style="width:150px;margin:6px 0;"></div></td>
         </tr>`;
     if (Utils.comptePlus) {
       // état enregistré côté serveur, lu avant d'ajouter notre radio
@@ -558,21 +564,39 @@ class PageRessource {
             <label><input type="radio" name="o_choixOuvriere" value="rien" ${affection == 0 ? 'checked="checked"' : ""}> <img alt="rien" src="http:images/croix.gif" height="23" title="Pas d'affectation automatique"></label>
         </td></tr>${ligneRatio}`);
     $("#o_ratioRecolte").toggle(affection == 3);
+    $("#o_ratioRecoltePart").spinner({ min: 0, max: 100, numberFormat: "i" });
+    let appliquerRatio = (r) => {
+      ratio = r;
+      majRatio(ratio);
+      monProfil.parametre["ratioRecolte"].valeur = ratio;
+      monProfil.parametre["ratioRecolte"].sauvegarde();
+      this.affecterOuvrieres(3, ratio);
+    };
+    // Le pas jQuery UI reste à 1 : avec un pas de 10, une valeur fine posée
+    // depuis le champ serait arrondie. Le glissement à la souris est filtré
+    // sur les multiples de 10 pour garder un curseur rapide ; le clavier sur
+    // la poignée garde la précision.
     $("#o_ratioRecolteCurseur").slider({
       min: 0,
       max: 100,
-      step: 10,
+      step: 1,
       value: ratio,
       slide: (e, ui) => {
-        $("#o_ratioRecolteValeur").html(libelleRatio(ui.value));
+        if (ui.value % 10 && !(e.originalEvent && e.originalEvent.type == "keydown")) return false;
+        majRatio(ui.value);
       },
+      // seulement sur action de l'utilisateur : une valeur posée depuis le
+      // champ est appliquée par le champ
       change: (e, ui) => {
-        ratio = ui.value;
-        $("#o_ratioRecolteValeur").html(libelleRatio(ratio));
-        monProfil.parametre["ratioRecolte"].valeur = ratio;
-        monProfil.parametre["ratioRecolte"].sauvegarde();
-        this.affecterOuvrieres(3, ratio);
+        if (e.originalEvent) appliquerRatio(ui.value);
       },
+    });
+    // saisie au clavier : validée à la sortie du champ ou avec les flèches,
+    // pas à chaque frappe (un « 5 » tapé avant « 0 » lancerait une affectation)
+    $("#o_ratioRecoltePart").on("spinstop change", (e) => {
+      let v = Math.min(100, Math.max(0, parseInt($(e.currentTarget).val()) || 0));
+      $("#o_ratioRecolteCurseur").slider("value", v);
+      appliquerRatio(v);
     });
     if (Utils.comptePlus)
       // sur "click" et non "change" : le jeu peut réagir au changement en

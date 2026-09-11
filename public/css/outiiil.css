@@ -949,6 +949,13 @@ input[id^="input_cout_nourriture"] {
   margin-bottom: 4px;
 }
 
+/* Valeur saisissable d'un curseur (part de ratio, paramètre slider) */
+.o_sliderValeur {
+  width: 38px;
+  text-align: right;
+  font-weight: bold;
+}
+
 /* Récapitulatif des attaques lancées, pages : Armee.php, ennemie.php?Attaquer=... */
 .o_attaquesLancees td,
 .o_attaquesLancees th {
