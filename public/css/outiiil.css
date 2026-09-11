@@ -939,6 +939,16 @@ input[id^="input_cout_nourriture"] {
   padding: 0 5px;
 }
 
+/* Filtres de la carte de l'alliance, page : alliance.php?Membres */
+#o_carteFiltres label {
+  display: inline-block;
+  margin: 0 12px 4px 0;
+  white-space: nowrap;
+}
+#o_carteFiltres p {
+  margin-bottom: 4px;
+}
+
 /* Récapitulatif des attaques lancées, pages : Armee.php, ennemie.php?Attaquer=... */
 .o_attaquesLancees td,
 .o_attaquesLancees th {

@@ -19,6 +19,15 @@ class PageAlliance {
      * Connexion à l'utilitaire.
      */
     this._utilitaire = new PageForum();
+    /**
+     * Grade natif du jeu par pseudo, relevé avant tout écrasement par un rang
+     * SDC : la carte propose les deux comme filtres distincts.
+     */
+    this._gradesNatifs = {};
+    /**
+     * Dernière liste complète de membres passée à la carte (avant filtrage).
+     */
+    this._carteMembres = null;
   }
   /**
    *
@@ -85,6 +94,7 @@ class PageAlliance {
         // Les "/" sont remplacés : le titre du sujet forum est parsé avec " / ".
         rang: $(elt).find("td:eq(2)").text().trim().replace(/\//g, "-"),
       });
+      this._gradesNatifs[pseudo] = tmpJoueurs[pseudo].rang;
       if (!Utils.comptePlus && !tmpJoueurs[pseudo].estJoueurCourant()) {
         if (tmpJoueurs[pseudo].estAttaquable()) $(elt).find("td:eq(6)").html(IMG_ATT);
         if (tmpJoueurs[pseudo].estAttaquant()) $(elt).find("td:eq(4)").html(IMG_DEF);
@@ -465,6 +475,7 @@ class PageAlliance {
           <button id='o_carteAllianceExportForum' class='o_button f_success' style='margin-left:8px;'>Exporter pour le forum</button>
           <span id='o_carteAllianceStatus' class='reduce' style='margin-left:12px;color:#666;'></span>
         </div>
+        <div id='o_carteFiltres' class='left o_marginT15' style='display:none;'></div>
         <div id='o_carteAllianceChart' style='height:800px;margin-top:15px;display:none;'></div>
       </div>
     `);
@@ -601,7 +612,16 @@ class PageAlliance {
       });
       return;
     }
-    const members = cached.members;
+    // même sélection que la carte à l'écran
+    if (!this._filtres) this._filtres = this._chargerFiltres();
+    const members = this._filtrerMembres(this._carteMembres || cached.members);
+    if (!members.length) {
+      $.toast({
+        ...TOAST_WARNING,
+        text: "Aucun membre affiché : élargis les filtres avant d'exporter.",
+      });
+      return;
+    }
     const xs = members.map((m) => m.x);
     const ys = members.map((m) => m.y);
     const xMin = Math.min(...xs);
@@ -752,14 +772,233 @@ class PageAlliance {
     $("#o_carteAllianceStatus").text(`Données ${age}`);
   }
   /**
+   * Clé de persistance de la sélection des filtres (par serveur et alliance).
+   *
+   * @private
+   * @method _cleFiltres
+   */
+  _cleFiltres() {
+    return `outiiil_carteFiltres_${Utils.serveur}_${Utils.alliance}`;
+  }
+  /**
+   * Sélection courante. On mémorise ce qui est *masqué* et non ce qui est
+   * affiché : un membre ou un grade apparu depuis la dernière visite est
+   * visible par défaut, au lieu d'être silencieusement absent de la carte.
+   *
+   * @private
+   * @method _chargerFiltres
+   */
+  _chargerFiltres() {
+    let f = {};
+    try {
+      f = JSON.parse(localStorage.getItem(this._cleFiltres())) || {};
+    } catch (e) {
+      f = {};
+    }
+    return {
+      grades: f.grades || [],
+      rangs: f.rangs || [],
+      joueurs: f.joueurs || [],
+    };
+  }
+  /**
+   *
+   * @private
+   * @method _sauverFiltres
+   */
+  _sauverFiltres() {
+    try {
+      localStorage.setItem(this._cleFiltres(), JSON.stringify(this._filtres));
+    } catch (e) {
+      console.warn("outiiil: localStorage write failed", e);
+    }
+    return this;
+  }
+  /**
+   * Grade natif du jeu d'un membre.
+   *
+   * @private
+   * @method _gradeDe
+   */
+  _gradeDe(pseudo) {
+    return this._gradesNatifs[pseudo] || "Sans grade";
+  }
+  /**
+   * Rang SDC d'un membre, ou une chaîne vide si l'alliance n'utilise pas le
+   * SDC ou si rien n'a été saisi pour lui.
+   *
+   * @private
+   * @method _rangSdcDe
+   */
+  _rangSdcDe(pseudo) {
+    // `alliance` vaut null tant que la section SDC n'a pas été chargée, et le
+    // reste si l'alliance n'utilise pas l'utilitaire
+    let alliance = this._utilitaire.alliance,
+      joueur = alliance && alliance.joueurs ? alliance.joueurs[pseudo] : null;
+    return (joueur && joueur.rang) || "";
+  }
+  /**
+   * Applique la sélection à une liste de membres. Un membre sans rang SDC
+   * n'est jamais masqué par le filtre des rangs — sinon toute alliance
+   * n'utilisant pas le SDC verrait sa carte se vider.
+   *
+   * @private
+   * @method _filtrerMembres
+   */
+  _filtrerMembres(membres) {
+    let f = this._filtres;
+    return membres.filter((m) => {
+      let rang = this._rangSdcDe(m.pseudo);
+      return (
+        f.grades.indexOf(this._gradeDe(m.pseudo)) == -1 &&
+        (!rang || f.rangs.indexOf(rang) == -1) &&
+        f.joueurs.indexOf(m.pseudo) == -1
+      );
+    });
+  }
+  /**
+   * Construit le bloc de filtres : une case par grade, une par rang SDC quand
+   * l'alliance en a, et la liste dépliable des joueurs.
+   *
+   * @private
+   * @method _construireFiltres
+   */
+  _construireFiltres(membres) {
+    const esc = (t) => $("<div>").text(t).html();
+    // Un grade d'alliance est du texte libre : chaque chef y met ce qu'il veut,
+    // souvent long et décoré. On n'essaie pas de deviner sa mise en forme, on
+    // se contente de retirer les remplisseurs invisibles (U+3164, espaces
+    // insécables…) qui creusent des trous dans la liste, et de tronquer pour
+    // que les cases restent alignées. Le libellé complet est en infobulle et
+    // la valeur filtrée reste le grade brut.
+    const lisible = (t) => {
+      let net = t
+        .replace(/[\u3164\u00a0\u200b\u2800]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+      return esc(net.length > 34 ? net.slice(0, 34) + "…" : net || t);
+    };
+    // valeurs passées par index : un grade peut contenir n'importe quel caractère
+    let compte = (valeur, accesseur) =>
+        membres.filter((m) => accesseur.call(this, m.pseudo) == valeur).length,
+      // grades les plus portés en tête : dans beaucoup d'alliances chaque
+      // membre a son grade décoratif à lui, et les rares grades partagés
+      // (VIP, passeurs…) sont justement ceux sur lesquels on veut filtrer
+      parEffectif = (accesseur) => (a, b) =>
+        compte(b, accesseur) - compte(a, accesseur) || a.localeCompare(b),
+      grades = [...new Set(membres.map((m) => this._gradeDe(m.pseudo)))].sort(
+        parEffectif(this._gradeDe),
+      ),
+      rangs = [...new Set(membres.map((m) => this._rangSdcDe(m.pseudo)).filter((r) => r))].sort(
+        parEffectif(this._rangSdcDe),
+      ),
+      pseudos = membres.map((m) => m.pseudo).sort(),
+      cases = (liste, classe, accesseur) =>
+        liste
+          .map(
+            (v, i) =>
+              `<label title='${esc(v)}'><input type='checkbox' class='${classe}' data-i='${i}'/> ${lisible(v)}${accesseur ? ` <span class='reduce'>(${compte(v, accesseur)})</span>` : ""}</label>`,
+          )
+          .join("");
+    this._filtresValeurs = { grades: grades, rangs: rangs, joueurs: pseudos };
+    // un grade unique par membre ne regroupe rien : on le signale plutôt que
+    // d'afficher une liste de grades qui double celle des joueurs
+    let partages = grades.filter((g) => compte(g, this._gradeDe) > 1).length;
+    // Chaque section est repliée par défaut pour ne pas alourdir la page. Le
+    // titre indique combien d'entrées sont masquées, pour qu'un filtre actif
+    // reste visible même section fermée.
+    let section = (id, titre, contenu) =>
+      `<p class='left reduce gras'>${titre} <span id='${id}Masques' class='reduce' style='font-weight:normal;'></span> <span class='o_filtreVoir cliquable2 cursor' data-cible='${id}' style='font-size:0.8em;font-weight:normal;'>Afficher la liste</span></p>
+      <div id='${id}' style='display:none;'>${contenu}</div>`;
+    let html = section(
+      "o_filtreGrades",
+      "Grades",
+      `${partages ? "" : `<p class='left small'><em>Chaque membre a un grade différent dans cette alliance : la liste des joueurs sera sans doute plus pratique.</em></p>`}
+        <div>${cases(grades, "o_filtreGrade", this._gradeDe)}</div>`,
+    );
+    if (rangs.length)
+      html += section(
+        "o_filtreRangs",
+        "Rangs SDC",
+        `<div>${cases(rangs, "o_filtreRang", this._rangSdcDe)}</div>`,
+      );
+    html += section(
+      "o_filtreJoueurs",
+      "Joueurs",
+      `<p class='left small'><em><span id='o_filtreTout' class='souligne cursor'>Tout cocher</span> · <span id='o_filtreAucun' class='souligne cursor'>Tout décocher</span></em></p>
+        <div>${cases(pseudos, "o_filtreJoueur", null)}</div>`,
+    );
+    $("#o_carteFiltres").html(html).show();
+    // état initial des cases depuis la sélection mémorisée
+    let poser = (classe, valeurs, exclus) =>
+      $("." + classe).each((i, elt) => {
+        $(elt).prop("checked", exclus.indexOf(valeurs[$(elt).data("i")]) == -1);
+      });
+    poser("o_filtreGrade", grades, this._filtres.grades);
+    poser("o_filtreRang", rangs, this._filtres.rangs);
+    poser("o_filtreJoueur", pseudos, this._filtres.joueurs);
+    let afficherMasques = () => {
+      let libelle = (n) => (n ? `(${n} masqué${n > 1 ? "s" : ""})` : "");
+      $("#o_filtreGradesMasques").text(libelle(this._filtres.grades.length));
+      $("#o_filtreRangsMasques").text(libelle(this._filtres.rangs.length));
+      $("#o_filtreJoueursMasques").text(libelle(this._filtres.joueurs.length));
+    };
+    afficherMasques();
+    let appliquer = () => {
+      let lire = (classe, valeurs) =>
+        $("." + classe)
+          .filter((i, elt) => !elt.checked)
+          .map((i, elt) => valeurs[$(elt).data("i")])
+          .get();
+      this._filtres = {
+        grades: lire("o_filtreGrade", grades),
+        rangs: lire("o_filtreRang", rangs),
+        joueurs: lire("o_filtreJoueur", pseudos),
+      };
+      this._sauverFiltres();
+      afficherMasques();
+      this._dessinerCarte(this._filtrerMembres(this._carteMembres), this._carteMembres.length);
+    };
+    $("#o_carteFiltres input[type=checkbox]").on("change", appliquer);
+    $("#o_carteFiltres .o_filtreVoir").click((e) => {
+      let cible = $("#" + $(e.currentTarget).data("cible"));
+      cible.toggle();
+      $(e.currentTarget).text(cible.is(":visible") ? "Masquer la liste" : "Afficher la liste");
+    });
+    $("#o_filtreTout").click(() => {
+      $(".o_filtreJoueur").prop("checked", true);
+      appliquer();
+    });
+    $("#o_filtreAucun").click(() => {
+      $(".o_filtreJoueur").prop("checked", false);
+      appliquer();
+    });
+    return this;
+  }
+  /**
+   * Point d'entrée de la carte : mémorise la liste complète, (re)construit les
+   * filtres, puis dessine la carte filtrée.
+   *
+   * @private
+   * @method _renderCarte
+   */
+  _renderCarte(membres) {
+    this._carteMembres = membres;
+    this._filtres = this._chargerFiltres();
+    this._construireFiltres(membres);
+    return this._dessinerCarte(this._filtrerMembres(membres), membres.length);
+  }
+  /**
    * Render Highcharts dans #o_carteAllianceChart.
    * Regroupe les membres par case (x,y), trace les liens en-dessous d'un seuil,
    * affiche le tooltip avec temps de trajet (sans / avec bonus Vitesse d'attaque).
    *
    * @private
-   * @method _renderCarte
+   * @method _dessinerCarte
+   * @param {Array} members membres à tracer (déjà filtrés)
+   * @param {Integer} total effectif avant filtrage, pour le titre
    */
-  _renderCarte(members) {
+  _dessinerCarte(members, total) {
     $("#o_carteAllianceChart").show();
     // Désactive le warning Highcharts #15 : nos séries `line` représentent des arêtes
     // arbitraires entre cases (a→b dans n'importe quelle direction), donc les x ne
@@ -833,7 +1072,7 @@ class PageAlliance {
         spacingTop: 25,
       },
       title: {
-        text: `${members.length} membres sur ${spots.length} cases • ${edges.length} liens (${K_NEIGHBORS} plus proches voisins)`,
+        text: `${total > members.length ? `${members.length} membres affichés sur ${total}` : `${members.length} membres`} • ${spots.length} cases • ${edges.length} liens (${K_NEIGHBORS} plus proches voisins)`,
         style: { fontSize: "14px", fontWeight: "600" },
       },
       subtitle: {

@@ -27,6 +27,18 @@ La carte est interactive (basée sur Highcharts) :
 - **Clic** sur un point — zoom 4× centré sur ce point. Très utile dans les clusters denses où plusieurs membres sont voisins.
 - **Bouton Reset zoom** (apparaît après le premier zoom) — revient à la vue d'ensemble.
 
+## Filtrer ce qui s'affiche
+
+Sous les boutons, un bloc de filtres permet de choisir qui apparaît sur la carte. Chaque section est repliée par défaut, clique sur _Afficher la liste_ pour la déplier. Le titre d'une section indique combien d'entrées y sont masquées, pour qu'un filtre actif reste visible même section fermée.
+
+- **Grades affichés** — une case par grade de l'alliance, avec le nombre de membres concernés. Décoche un grade pour retirer tous ses membres de la carte. Pratique pour ne garder que les passeurs, ou pour sortir les VIP d'une carte qui sert à préparer une attaque. Les grades les plus portés sont en tête de liste. Un grade long est raccourci pour garder les cases alignées, son libellé complet reste visible au survol. Si chaque membre a un grade différent, Toolzzz te renvoie vers la liste des joueurs, plus adaptée.
+- **Rangs SDC affichés** — même principe, sur les rangs saisis dans le [SDC](SDC-Infos-membres). Cette section n'apparaît que si ton alliance en utilise. Un membre sans rang saisi n'est jamais masqué par ce filtre.
+- **Joueurs** — la liste complète des membres, pour cocher ou décocher un joueur en particulier. Les liens _Tout cocher_ et _Tout décocher_ font le tri en un clic.
+
+Le titre de la carte rappelle combien de membres sont affichés sur l'effectif total, et l'export pour le forum reprend exactement la même sélection.
+
+Ta sélection est **mémorisée par alliance et par serveur** : tu la retrouves telle quelle à la prochaine ouverture de la carte. Toolzzz mémorise ce qui est masqué, donc un membre qui rejoint l'alliance plus tard apparaît sur la carte au lieu d'être oublié en silence.
+
 ## Exporter pour le forum
 
 Le bouton **Exporter pour le forum** génère un PNG de la carte zoomée comme tu la vois actuellement, prêt à être partagé sur le forum d'alliance ou un Discord. C'est une capture simple, sans interactivité — pour discuter de stratégie collective sans demander à chaque membre de venir voir la carte sur son écran.
