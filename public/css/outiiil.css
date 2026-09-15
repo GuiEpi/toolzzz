@@ -812,6 +812,14 @@ hr.o_calcSepar {
   margin: 18px 0;
 }
 
+/* Une boite est en position fixe sans largeur max : elle s'ajuste à son
+ * contenu, et un paragraphe long l'élargirait jusqu'à l'écran avant de passer
+ * à la ligne. Les paragraphes de texte (titres de section, notes) sont donc
+ * bornés à une largeur lisible et wrappent. */
+.o_content p.left {
+  max-width: 60ch;
+}
+
 /* Parametre */
 #o_boiteParametre {
   min-width: 40%;

@@ -201,7 +201,7 @@ class BoiteParametre extends Boite {
     // tous les comptes : en C+ le jeu propose nativement Matériaux /
     // Nourriture, le mode Ratio reste un apport de l'extension.
     let blocAffectation = `<p class='left reduce gras'>L'affectation sera automatique lors de la consultation de la page ressource</p>
-         <p class='left small'><em>Ratio : les ouvrières sont réparties entre nourriture et matériaux selon la part choisie, et le restent après une chasse ou un flood.${Utils.comptePlus ? " En Compte+, Matériaux et Nourriture existent déjà dans le jeu : seul le ratio est proposé sur la page Ressources, et l'activer là-bas met l'affectation automatique du jeu sur « rien »." : ""}</em></p>
+         <p class='left small'><em>Ratio : les ouvrières suivent la part choisie, même après une chasse ou un flood.${Utils.comptePlus ? " En Compte+, l'activer sur la page Ressources coupe l'affectation automatique du jeu." : ""}</em></p>
          ${monProfil.parametre[this._paramGeneral[0]].getForm()}
          ${monProfil.parametre[this._paramGeneral[8]].getForm()}`;
     $("#o_tabsParametre1").append(`<form>
