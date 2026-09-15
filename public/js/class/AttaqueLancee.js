@@ -110,7 +110,7 @@ class AttaqueLancee {
    * d'un document, triées par id d'attaque croissant (= ordre de lancement).
    *
    * @param {jQuery} racine document (ou fragment) à parcourir
-   * @return {Array} liste {elt, id, cible (null pour un renfort), secondes, arrivee}
+   * @return {Array} liste {elt, id, cible (null pour un renfort), cibleHtml, secondes, arrivee}
    */
   static extraireLignes(racine = $(document)) {
     let lignes = [];
@@ -130,6 +130,10 @@ class AttaqueLancee {
         id: parseInt($(elt).attr("id").split("_")[1]),
         // attaque normale (la cible est un lien) — un renfort n'a pas de cible
         cible: $(elt).prev().find("a").length ? $(elt).prev().find("a:first").text() : null,
+        // HTML natif du bloc cible (lien vers le profil, et vers l'alliance
+        // entre parenthèses quand le jeu l'affiche), réutilisé tel quel dans
+        // le titre du tableau pour garder les pseudos cliquables (issue #25)
+        cibleHtml: $(elt).prev().find("a").length ? $(elt).prev().html() : null,
         secondes: secondes,
         arrivee: moment().add(secondes, "s"),
         lieuNatif: lieu ? lieu[1] : null,
@@ -305,7 +309,7 @@ class AttaqueLancee {
         id = `o_attaquesLancees${index}`,
         annulables = groupe.filter((a) => a.annuler.length),
         html = `<br/><div id="${id}" class="boite_amelioration simulateur centre">
-          <h2>Attaques sur ${cible}</h2>
+          <h2>Attaques sur ${groupe[0].ligne.cibleHtml || cible}</h2>
           <table class="o_attaquesLancees o_maxWidth centre" cellspacing="0">
           <thead><tr><th>#</th><th>Lieu</th><th>Troupes</th><th>Reste</th><th>Arrivée</th><th>Terrain de ${cible}*</th><th></th></tr></thead>
           <tbody>`;
