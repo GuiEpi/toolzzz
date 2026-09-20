@@ -36,6 +36,7 @@ web-ext.config.ts
 # AI
 .claude/*
 !.claude/skills/
+!.claude/plans/
 
 # Fourmizzz scenario captures (contain session cookies)
 *.har

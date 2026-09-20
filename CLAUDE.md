@@ -122,11 +122,12 @@ Note: the Chrome secrets above are the CWS **v1** API (refresh-token flow). Goog
 
 ## Project-specific Claude skills
 
-Trois skills sont versionnés dans `.claude/skills/` et s'auto-chargent quand pertinent :
+Quatre skills sont versionnés dans `.claude/skills/` et s'auto-chargent quand pertinent :
 
 - **`analyze-fourmizzz`** — méthodologie pour analyser un scénario du jeu via capture HAR : guide la capture côté navigateur, puis génère un rapport structuré du protocole client/serveur. À déclencher quand tu veux comprendre comment une feature du jeu communique avec le backend.
 - **`ui-primitives`** — inventaire des classes CSS et patterns réutilisables (tableaux, boutons, jQuery UI widgets, toasts, données globales `monProfil`/`Utils`/`Joueur.rechercher`). À consulter avant d'écrire du HTML/CSS dans une Boite ou une Page — la plupart des choses qu'on serait tenté d'ajouter existent déjà.
 - **`release-notes`** — format et méthodologie pour rédiger les release notes Toolzzz (audience joueurs FR, pas devs). Structure 3 sections (Nouveautés / Corrections / Sous le capot), template footer avec liens stores. À consulter avant `gh release create` ou `gh release edit`.
+- **`wxt`** — règles, conventions et pièges de WXT 0.21 (entrypoints, manifest généré, `browser.*`, `wxt/utils/storage`, assets, zip/submit, double cible Chrome + Firefox). À charger avant de toucher `wxt.config.ts`, un entrypoint ou le manifest. Le plan de migration vers la structure WXT idiomatique est dans `.claude/plans/wxt-migration.md`.
 
 Le dossier `docs/` est gitignored (workspace personnel d'exploration : HAR, scenario reports). Tout ce qui a une valeur durable est promu en skill ou intégré ici.
 
