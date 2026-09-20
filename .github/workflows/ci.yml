@@ -28,3 +28,9 @@ jobs:
 
       - name: Typecheck
         run: bun run compile
+
+      # Build Chrome + exécution du bundle dans jsdom : vérifie que les 18
+      # bibliothèques vendorisées s'exposent comme avant (jQuery, DataTables,
+      # Highcharts, moment…) et que main() démarre sans ReferenceError.
+      - name: Vendor bundle smoke test
+        run: bun run test:vendor

@@ -1,16 +1,71 @@
 import { defineConfig } from "wxt";
+import type { Plugin } from "vite";
+
+/**
+ * Fait exécuter les bibliothèques tierces de `src/vendor/lib/` comme des
+ * scripts classiques, pas comme des modules.
+ *
+ * Ce sont des UMD / IIFE d'époque (jQuery 3.2, jQuery UI 1.12, Highcharts 6,
+ * un combo DataTables généré par le download builder…) qui sondent
+ * `typeof module` / `exports` / `define` / `require` et se rabattent sur
+ * `window` (souvent via `this` au niveau module). rolldown y voit du
+ * CommonJS : il tente de résoudre les `require('../moment')` et, pour le
+ * combo DataTables (6 wrappers UMD dans un fichier), ne garde que le dernier
+ * `module.exports` sans jamais appeler les factories → `$.fn.dataTable`
+ * n'existe pas. L'enveloppe ci-dessous masque ces quatre identifiants par
+ * des paramètres (donc plus de détection CJS ni de résolution), donne
+ * `this === window` au code d'origine et marque le fichier comme ESM. Les
+ * fichiers restent identiques à l'octet sur le disque — c'est ce que les
+ * relecteurs d'AMO reçoivent dans le zip des sources.
+ *
+ * Vérifié par `bun run test:vendor` (scripts/test-vendor.mjs).
+ */
+function vendorScripts(): Plugin {
+  return {
+    name: "toolzzz:vendor-scripts",
+    enforce: "pre",
+    transform(code, id) {
+      if (!/\/src\/vendor\/lib\/[^/]+\.js$/.test(id)) return null;
+      return {
+        code: `(function (module, exports, require, define) {\n${code}\n}).call(window);\nexport {};\n`,
+        map: null,
+      };
+    },
+  };
+}
 
 // https://wxt.dev/api/reference/wxt/interfaces/InlineConfig.html
 export default defineConfig({
-  srcDir: ".",
+  srcDir: "src",
+  // Pas d'auto-imports : chaque dépendance est un `import` explicite, les
+  // API WXT viennent de `#imports`. Toute la migration consiste à tuer les
+  // globales implicites — les auto-imports les réintroduiraient sous un
+  // autre nom.
+  imports: false,
   manifestVersion: 3,
+  vite: () => ({
+    plugins: [vendorScripts()],
+    build: {
+      // Les `url(images/…)` du thème jQuery UI (src/assets/jquery-ui-humanity.css)
+      // doivent finir en data: URI : un chemin dans une feuille de content
+      // script se résout contre l'origine de la page, pas de l'extension.
+      // Les icônes font ≤ 7 Ko ; le reste des CSS est déjà en data: URI.
+      assetsInlineLimit: 16384,
+    },
+    css: {
+      // datatables.css contient un hack IE (`*cursor: hand`) que lightningcss
+      // refuse de minifier. errorRecovery le retire — il est ignoré par tous
+      // les navigateurs ciblés, donc aucun changement de rendu.
+      lightningcss: { errorRecovery: true },
+    },
+  }),
   zip: {
     // Depuis WXT 0.21 le zip sources (AMO) est une allowlist stricte : tout ce
     // qui n'est pas listé ici n'est pas envoyé au reviewer. AMO doit pouvoir
     // rebuilder à l'identique → sources + lockfile + config + README (commandes).
     includeSources: [
       "public/**",
-      "entrypoints/**",
+      "src/**",
       "package.json",
       "bun.lock",
       "tsconfig.json",
@@ -52,82 +107,9 @@ export default defineConfig({
     },
     permissions: [],
     host_permissions: ["http://*.fourmizzz.fr/*"],
-    content_scripts: [
-      // Bootstrap au document_start : pose des classes CSS sur <html> dès
-      // l'arrivée du HTML, avant le parsing du body. Permet d'éviter le flash
-      // de contenu natif (sur construction.php#cout notamment) en laissant
-      // outiiil.css cacher la simulation pendant le parse.
-      {
-        matches: ["http://*.fourmizzz.fr/*"],
-        js: ["js/bootstrap.js"],
-        run_at: "document_start",
-      },
-      {
-        matches: ["http://*.fourmizzz.fr/*"],
-        css: ["css/outiiil.css", "css/toasts.css", "css/datatables.css"],
-        js: [
-          "js/lib/jquery_3.2.1.js",
-          "js/lib/jquery-ui_1.12.1.js",
-          "js/lib/jquery-ui-touch-punch_0.2.3.js",
-          "js/lib/jquery-datetimepicker_1.6.3.js",
-          "js/lib/jquery-toast_1.3.1.js",
-          "js/lib/globalize_0.1.1.js",
-          "js/lib/globalize-locale-fr.js",
-          "js/lib/clipboard_1.7.1.js",
-          "js/lib/highcharts_6.0.7.js",
-          "js/lib/highcharts-more.js",
-          "js/lib/highcharts-data.js",
-          "js/lib/highcharts-stock.js",
-          "js/lib/datatables_1.10.16.js",
-          "js/lib/numeral_2.0.6.js",
-          "js/lib/numeral-locale-fr.js",
-          "js/lib/moment_2.19.1.js",
-          "js/lib/moment-locale-fr.js",
-          "js/lib/moment-duration-format.js",
-          "js/data/couts.js",
-          "js/data/menuRapide.js",
-          "js/class/Utils.js",
-          "js/class/Alliance.js",
-          "js/class/Armee.js",
-          "js/class/AttaqueLancee.js",
-          "js/class/Chasse.js",
-          "js/class/Combat.js",
-          "js/class/Commande.js",
-          "js/class/Convoi.js",
-          "js/class/Joueur.js",
-          "js/class/Parametre.js",
-          "js/boite/ComptePlus.js",
-          "js/boite/Radar.js",
-          "js/boite/Dock.js",
-          "js/boite/Boite.js",
-          "js/boite/Ponte.js",
-          "js/boite/Chasse.js",
-          "js/boite/Combat.js",
-          "js/boite/Commande.js",
-          "js/boite/Parametres.js",
-          "js/boite/Rapport.js",
-          "js/boite/Rang.js",
-          "js/page/Alliance.js",
-          "js/page/Armee.js",
-          "js/page/Attaquer.js",
-          "js/page/Chat.js",
-          "js/page/Commerce.js",
-          "js/page/Compte.js",
-          "js/page/Construction.js",
-          "js/page/Description.js",
-          "js/page/Forum.js",
-          "js/page/Laboratoire.js",
-          "js/page/Messagerie.js",
-          "js/page/Profil.js",
-          "js/page/Reine.js",
-          "js/page/Ressource.js",
-          "js/content.js",
-        ],
-      },
-    ],
     web_accessible_resources: [
       {
-        resources: ["images/*", "images/**", "css/*", "js/*"],
+        resources: ["images/*", "images/**"],
         matches: ["http://*.fourmizzz.fr/*"],
       },
     ],

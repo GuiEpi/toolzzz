@@ -1,0 +1,46 @@
+// Libellés français pour moment / Highcharts / le datepicker jQuery UI.
+export const MOIS_FR = [
+  "Janvier",
+  "Février",
+  "Mars",
+  "Avril",
+  "Mai",
+  "Juin",
+  "Juillet",
+  "Août",
+  "Septembre",
+  "Octobre",
+  "Novembre",
+  "Décembre",
+];
+export const MOIS_RAC_FR = [
+  "Janv.",
+  "Févr.",
+  "Mars",
+  "Avril",
+  "Mai",
+  "Juin",
+  "Juil.",
+  "Août",
+  "Sept.",
+  "Oct.",
+  "Nov.",
+  "Déc.",
+];
+export const JOUR_FR = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
+export const DATEPICKER_OPTION = {
+  closeText: "Fermer",
+  prevText: "Précédent",
+  nextText: "Suivant",
+  currentText: "Aujourd'hui",
+  monthNames: MOIS_FR,
+  monthNamesShort: MOIS_RAC_FR,
+  dayNames: JOUR_FR,
+  dayNamesShort: ["Dim.", "Lun.", "Mar.", "Mer.", "Jeu.", "Ven.", "Sam."],
+  dayNamesMin: ["D", "L", "M", "M", "J", "V", "S"],
+  weekHeader: "Sem.",
+  dateFormat: "dd-mm-yy",
+  firstDay: "1",
+  changeYear: true,
+  changeMonth: true,
+};
