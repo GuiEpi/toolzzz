@@ -4,6 +4,21 @@ import { defineConfig } from "wxt";
 export default defineConfig({
   srcDir: ".",
   manifestVersion: 3,
+  zip: {
+    // Depuis WXT 0.21 le zip sources (AMO) est une allowlist stricte : tout ce
+    // qui n'est pas listé ici n'est pas envoyé au reviewer. AMO doit pouvoir
+    // rebuilder à l'identique → sources + lockfile + config + README (commandes).
+    includeSources: [
+      "public/**",
+      "entrypoints/**",
+      "package.json",
+      "bun.lock",
+      "tsconfig.json",
+      "wxt.config.ts",
+      "README.md",
+      "LICENSE",
+    ],
+  },
   manifest: {
     name: "Toolzzz",
     description: "Extension pour www.fourmizzz.fr.",

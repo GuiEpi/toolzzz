@@ -86,7 +86,7 @@ oxfmt (Rust-based, Prettier-compatible output) is configured via `.oxfmtrc.json`
 
 If you modify files that oxfmt would reformat, let the pre-commit hook handle it — don't skip it with `--no-verify`.
 
-Note: oxfmt's `.ts` config loader breaks in CI due to a Node version-check bug (detects 20.20.2 as not matching `^20.19.0`). Stick with `.oxfmtrc.json` unless that's fixed upstream.
+Note: oxfmt's `.ts` config loader used to break in CI on Node 20 (version-check bug: 20.20.2 read as not matching `^20.19.0`). CI now runs Node 22 (required by WXT 0.21) so that bug is moot, but there is no reason to switch — stay on `.oxfmtrc.json`.
 
 ## Release pipeline
 
@@ -99,7 +99,7 @@ Both run in parallel and upload to the **same** GitHub Release for the tag (`sof
 
 Submission uses **`wxt submit`** (a thin wrapper around the `publish-extension` package). Both extensions are published as **listed** store entries — users install from the official stores, not from GitHub Releases. The GitHub Release is kept as an archive of the exact artefacts uploaded to the stores (useful for audit and rollback context).
 
-To regenerate credentials locally without committing them, run `bunx publish-extension init` — it walks through the OAuth/JWT flow and writes to `.env.submit` (gitignored). Then copy each value into the corresponding GitHub Secret.
+To regenerate credentials locally without committing them, run `bun run wxt submit init` — it walks through the OAuth/JWT flow and writes to `.env.submit` (gitignored). Then copy each value into the corresponding GitHub Secret.
 
 Required GitHub Secrets:
 
@@ -116,9 +116,9 @@ Required GitHub Secrets:
 - `FIREFOX_JWT_ISSUER`
 - `FIREFOX_JWT_SECRET`
 
-(Secret names match the env-var names that `publish-extension` expects, and what `bunx publish-extension init` writes to `.env.submit`.)
+(Secret names match the env-var names that `publish-extension` expects, and what `wxt submit init` writes to `.env.submit`.)
 
-Note: WXT 0.20.x doesn't expose `wxt submit init` — that subcommand only exists in newer WXT releases. Run `bunx publish-extension init` directly until WXT is upgraded.
+Note: the Chrome secrets above are the CWS **v1** API (refresh-token flow). Google shuts v1 down on **15 October 2026**; `publish-extension` v5 (bundled with WXT 0.21) supports the v2 API (service account). Switching is a credential change — `wxt submit init`, choose v2, replace the `CHROME_*` secrets and the env block in `release-chrome.yml` — and must be done deliberately by the maintainer, not as a side effect of another change.
 
 ## Project-specific Claude skills
 
