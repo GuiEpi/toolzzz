@@ -234,61 +234,56 @@ class PageArmee {
    */
   placerAntisondeSuffisant(indUnite, nbTroupeDispo) {
     let securite = $("#t").attr("name") + "=" + $("#t").val();
-    $.post(
-      "http://" + Utils.serveur + ".fourmizzz.fr/Armee.php?deplacement=3&" + securite,
-      (data) => {
-        let correspondanceUnite = [1, 2, 3, 4, 5, 6, 14, 7, 8, 9, 10, 13, 11, 12];
-        // si on a pas assez de troupes on prend un nombre au hasard
-        let nbTroupes = Math.round(
-          Math.random() *
-            (monProfil.parametre["uniteAntisondeDome"].valeur -
-              monProfil.parametre["uniteAntisondeDome"].valeur * 0.9) +
-            monProfil.parametre["uniteAntisondeDome"].valeur * 0.9,
+    $.post(location.origin + "/Armee.php?deplacement=3&" + securite, (data) => {
+      let correspondanceUnite = [1, 2, 3, 4, 5, 6, 14, 7, 8, 9, 10, 13, 11, 12];
+      // si on a pas assez de troupes on prend un nombre au hasard
+      let nbTroupes = Math.round(
+        Math.random() *
+          (monProfil.parametre["uniteAntisondeDome"].valeur -
+            monProfil.parametre["uniteAntisondeDome"].valeur * 0.9) +
+          monProfil.parametre["uniteAntisondeDome"].valeur * 0.9,
+      );
+      if (nbTroupeDispo < nbTroupes)
+        nbTroupes = Math.round(
+          Math.random() * (nbTroupeDispo - nbTroupeDispo * 0.9) + nbTroupeDispo * 0.9,
         );
-        if (nbTroupeDispo < nbTroupes)
+      // on place l'antisonde en dome
+      $.post(
+        location.origin +
+          "/Armee.php?Transferer=Envoyer&LieuOrigine=3&LieuDestination=2&ChoixUnite=unite" +
+          correspondanceUnite[indUnite] +
+          "&nbTroupes=" +
+          nbTroupes +
+          "&" +
+          securite,
+        (data) => {
+          nbTroupeDispo -= nbTroupes;
           nbTroupes = Math.round(
-            Math.random() * (nbTroupeDispo - nbTroupeDispo * 0.9) + nbTroupeDispo * 0.9,
+            Math.random() *
+              (monProfil.parametre["uniteAntisondeTerrain"].valeur -
+                monProfil.parametre["uniteAntisondeTerrain"].valeur * 0.9) +
+              monProfil.parametre["uniteAntisondeTerrain"].valeur * 0.9,
           );
-        // on place l'antisonde en dome
-        $.post(
-          "http://" +
-            Utils.serveur +
-            ".fourmizzz.fr/Armee.php?Transferer=Envoyer&LieuOrigine=3&LieuDestination=2&ChoixUnite=unite" +
-            correspondanceUnite[indUnite] +
-            "&nbTroupes=" +
-            nbTroupes +
-            "&" +
-            securite,
-          (data) => {
-            nbTroupeDispo -= nbTroupes;
+          // si on a pas assez de troupes on prend un nombre au hasard
+          if (nbTroupeDispo < nbTroupes)
             nbTroupes = Math.round(
-              Math.random() *
-                (monProfil.parametre["uniteAntisondeTerrain"].valeur -
-                  monProfil.parametre["uniteAntisondeTerrain"].valeur * 0.9) +
-                monProfil.parametre["uniteAntisondeTerrain"].valeur * 0.9,
+              Math.random() * (nbTroupeDispo - nbTroupeDispo * 0.9) + nbTroupeDispo * 0.9,
             );
-            // si on a pas assez de troupes on prend un nombre au hasard
-            if (nbTroupeDispo < nbTroupes)
-              nbTroupes = Math.round(
-                Math.random() * (nbTroupeDispo - nbTroupeDispo * 0.9) + nbTroupeDispo * 0.9,
-              );
-            $.post(
-              "http://" +
-                Utils.serveur +
-                ".fourmizzz.fr/Armee.php?Transferer=Envoyer&LieuOrigine=3&LieuDestination=1&ChoixUnite=unite" +
-                correspondanceUnite[indUnite] +
-                "&nbTroupes=" +
-                nbTroupes +
-                "&" +
-                securite,
-              (data) => {
-                location = "/Armee.php";
-              },
-            );
-          },
-        );
-      },
-    );
+          $.post(
+            location.origin +
+              "/Armee.php?Transferer=Envoyer&LieuOrigine=3&LieuDestination=1&ChoixUnite=unite" +
+              correspondanceUnite[indUnite] +
+              "&nbTroupes=" +
+              nbTroupes +
+              "&" +
+              securite,
+            (data) => {
+              location = "/Armee.php";
+            },
+          );
+        },
+      );
+    });
     return this;
   }
   /**
@@ -296,36 +291,31 @@ class PageArmee {
    */
   placerAntisondeInsuffisant(indUnite, nbTroupeDispo) {
     let securite = $("#t").attr("name") + "=" + $("#t").val();
-    $.post(
-      "http://" + Utils.serveur + ".fourmizzz.fr/Armee.php?deplacement=3&" + securite,
-      (data) => {
-        let correspondanceUnite = [1, 2, 3, 4, 5, 6, 14, 7, 8, 9, 10, 13, 11, 12];
-        // on place l'antisonde en dome
-        $.post(
-          "http://" +
-            Utils.serveur +
-            ".fourmizzz.fr/Armee.php?Transferer=Envoyer&LieuOrigine=3&LieuDestination=2&ChoixUnite=unite" +
-            correspondanceUnite[indUnite] +
-            "&nbTroupes=" +
-            Math.round(nbTroupeDispo * 0.3) +
-            "&" +
-            securite,
-          (data) => {
-            $.post(
-              "http://" +
-                Utils.serveur +
-                ".fourmizzz.fr/Armee.php?Transferer=Envoyer&LieuOrigine=3&LieuDestination=1&ChoixUnite=unite" +
-                correspondanceUnite[indUnite] +
-                "&nbTroupes=1&" +
-                securite,
-              (data) => {
-                location = "/Armee.php";
-              },
-            );
-          },
-        );
-      },
-    );
+    $.post(location.origin + "/Armee.php?deplacement=3&" + securite, (data) => {
+      let correspondanceUnite = [1, 2, 3, 4, 5, 6, 14, 7, 8, 9, 10, 13, 11, 12];
+      // on place l'antisonde en dome
+      $.post(
+        location.origin +
+          "/Armee.php?Transferer=Envoyer&LieuOrigine=3&LieuDestination=2&ChoixUnite=unite" +
+          correspondanceUnite[indUnite] +
+          "&nbTroupes=" +
+          Math.round(nbTroupeDispo * 0.3) +
+          "&" +
+          securite,
+        (data) => {
+          $.post(
+            location.origin +
+              "/Armee.php?Transferer=Envoyer&LieuOrigine=3&LieuDestination=1&ChoixUnite=unite" +
+              correspondanceUnite[indUnite] +
+              "&nbTroupes=1&" +
+              securite,
+            (data) => {
+              location = "/Armee.php";
+            },
+          );
+        },
+      );
+    });
     return this;
   }
   /**
@@ -359,7 +349,7 @@ class PageArmee {
           $(elt)
             .next()
             .html(
-              `<a href="${lien}" class='cursor'><img width='9' height='15' src='http://img2.fourmizzz.fr/images/bouton/fleche-champs-droite.gif'/></a>`,
+              `<a href="${lien}" class='cursor'><img width='9' height='15' src='//img2.fourmizzz.fr/images/bouton/fleche-champs-droite.gif'/></a>`,
             );
         }
         if (lieuDep != 1) {
@@ -379,7 +369,7 @@ class PageArmee {
           $(elt)
             .prev()
             .html(
-              `<a href="${lien}" class='cursor'><img width='9' height='15' src='http://img2.fourmizzz.fr/images/bouton/fleche-champs-gauche.gif'/></a>`,
+              `<a href="${lien}" class='cursor'><img width='9' height='15' src='//img2.fourmizzz.fr/images/bouton/fleche-champs-gauche.gif'/></a>`,
             );
         }
       }

@@ -68,7 +68,7 @@ class PageRessource {
       let promesses = chasses
         .map((_, span) => $(span).attr("id").replace("chasse_", ""))
         .get()
-        .map((id) => $.get(`http://${Utils.serveur}.fourmizzz.fr/Ressources.php?annuler=${id}`));
+        .map((id) => $.get(`${location.origin}/Ressources.php?annuler=${id}`));
       Promise.all(promesses).then(
         () => {
           location.reload();
@@ -231,7 +231,7 @@ class PageRessource {
           nbChasse = $("#o_chasseNbr").spinner("value"),
           intervalle = $("#o_chasseInt").val() * 1000;
         $.ajax({
-          url: "http://" + Utils.serveur + ".fourmizzz.fr/AcquerirTerrain.php",
+          url: location.origin + "/AcquerirTerrain.php",
         }).then((data) => {
           let parsed = Utils.parseHtml(data);
           // AcquerirTerrain.php a un id="t" sur la <table> principale ET sur l'<input> du token CSRF.
@@ -561,7 +561,7 @@ class PageRessource {
             <td style="white-space:nowrap;"><label><input type="radio" name="o_choixOuvriere" value="nourriture" ${affection == 2 ? 'checked="checked"' : ""}><img alt="nourritures" src="images/icone/icone_pomme.png" height="18" title="Nourriture"></label>
             <label><input type="radio" name="o_choixOuvriere" value="materiaux" ${affection == 1 ? 'checked="checked"' : ""}> <img alt="materiaux" src="images/icone/icone_bois.png" height="17" title="Materiaux"></label>
             <label title="Répartir les ouvrières entre nourriture et matériaux selon une part fixe, conservée après une chasse ou un flood"><input type="radio" name="o_choixOuvriere" value="ratio" ${affection == 3 ? 'checked="checked"' : ""}> Ratio</label>
-            <label><input type="radio" name="o_choixOuvriere" value="rien" ${affection == 0 ? 'checked="checked"' : ""}> <img alt="rien" src="http:images/croix.gif" height="23" title="Pas d'affectation automatique"></label>
+            <label><input type="radio" name="o_choixOuvriere" value="rien" ${affection == 0 ? 'checked="checked"' : ""}> <img alt="rien" src="images/croix.gif" height="23" title="Pas d'affectation automatique"></label>
         </td></tr>${ligneRatio}`);
     $("#o_ratioRecolte").toggle(affection == 3);
     $("#o_ratioRecoltePart").spinner({ min: 0, max: 100, numberFormat: "i" });

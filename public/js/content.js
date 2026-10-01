@@ -418,7 +418,7 @@ const DATEPICKER_OPTION = {
   if ($(".boite_connexion_titre:first").text() != "Connexion") {
     // Modification du theme jquery humanity
     $("head").append(
-      "<link rel='stylesheet' href='http://code.jquery.com/ui/1.12.1/themes/humanity/jquery-ui.min.css'/>",
+      "<link rel='stylesheet' href='https://code.jquery.com/ui/1.12.1/themes/humanity/jquery-ui.min.css'/>",
     );
     // Chargement du language francais
     numeral.locale("fr");

@@ -1070,7 +1070,7 @@ class BoiteCombat extends Boite {
    * @return {Promise<Object>}
    */
   _mfFetchProfil(pseudo) {
-    let url = `http://${Utils.serveur}.fourmizzz.fr/Membre.php?Pseudo=${encodeURIComponent(pseudo)}`;
+    let url = `${location.origin}/Membre.php?Pseudo=${encodeURIComponent(pseudo)}`;
     return $.get(url).then((html) => {
       let $page = Utils.parseHtml(html),
         coords = $page.find(".boite_membre a[href^='carte2.php?']").text(),
@@ -1401,7 +1401,7 @@ class BoiteCombat extends Boite {
       return;
     }
     let { cible, prises, indices } = aLancer[idx];
-    $.get(`http://${Utils.serveur}.fourmizzz.fr/ennemie.php?Attaquer=${cible.id}`)
+    $.get(`${location.origin}/ennemie.php?Attaquer=${cible.id}`)
       .then((html) => {
         let $page = Utils.parseHtml(html),
           tInput = $page.find("input#t").last();
@@ -1445,19 +1445,15 @@ class BoiteCombat extends Boite {
     }
     let i = indices[k],
       donnees = this._mfBuildPayload(securite, this._mfArmee.repartition[k], cible.pseudo);
-    $.post(
-      `http://${Utils.serveur}.fourmizzz.fr/ennemie.php?Attaquer=${cible.id}`,
-      donnees,
-      (data) => {
-        let txt = Utils.parseHtml(data).find("center:last").text(),
-          ok = txt.indexOf("Vos troupes sont en marche") !== -1;
-        this._mfMarquerAttaque(cible.pseudo, i, ok);
-        setTimeout(
-          () => this._mfEnvoyerAttaqueSuivante(cible, securite, indices, k + 1, onComplete),
-          1000,
-        );
-      },
-    );
+    $.post(`${location.origin}/ennemie.php?Attaquer=${cible.id}`, donnees, (data) => {
+      let txt = Utils.parseHtml(data).find("center:last").text(),
+        ok = txt.indexOf("Vos troupes sont en marche") !== -1;
+      this._mfMarquerAttaque(cible.pseudo, i, ok);
+      setTimeout(
+        () => this._mfEnvoyerAttaqueSuivante(cible, securite, indices, k + 1, onComplete),
+        1000,
+      );
+    });
   }
   /**
    * Construit le payload `application/x-www-form-urlencoded` attendu par `ennemie.php`.

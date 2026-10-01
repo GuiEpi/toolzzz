@@ -97,7 +97,7 @@ class Armee {
    * @method getArmee
    */
   getArmee() {
-    return $.ajax({ url: "http://" + Utils.serveur + ".fourmizzz.fr/Armee.php" });
+    return $.ajax({ url: location.origin + "/Armee.php" });
   }
   /**
    *
@@ -779,7 +779,7 @@ class Armee {
       donnees["unite13"] = this._repartition[indice][11];
       donnees["unite14"] = this._repartition[indice][6];
       // Requete
-      $.post("http://" + Utils.serveur + ".fourmizzz.fr/AcquerirTerrain.php", donnees, (data) => {
+      $.post(location.origin + "/AcquerirTerrain.php", donnees, (data) => {
         if (data.indexOf("La chasse est lancée.") > -1)
           $("#o_simulationChasse tr:eq(" + (indice + 1) + ")").html(
             `<td class='green'>${indice + 1}</td><td colspan='14' class='green'>La chasse est lancée.</td>`,
@@ -1030,36 +1030,32 @@ class Armee {
         donnees["unite13"] = this._repartition[indice][11];
         donnees["unite14"] = this._repartition[indice][6];
         // Requete
-        $.post(
-          "http://" + Utils.serveur + ".fourmizzz.fr/ennemie.php?Attaquer=" + idCible,
-          donnees,
-          (data) => {
-            let res = Utils.parseHtml(data).find("center:last").text();
-            $("#o_simulationFlood tr:eq(" + (indice + 2) + ")").addClass(
-              res.indexOf("Vos troupes sont en marche") == -1 ? "red" : "green",
+        $.post(location.origin + "/ennemie.php?Attaquer=" + idCible, donnees, (data) => {
+          let res = Utils.parseHtml(data).find("center:last").text();
+          $("#o_simulationFlood tr:eq(" + (indice + 2) + ")").addClass(
+            res.indexOf("Vos troupes sont en marche") == -1 ? "red" : "green",
+          );
+          // capture de l'attaque confirmée pour le récapitulatif par cible
+          // (lieu toujours le terrain : le flood envoie lieu=1)
+          if (res.indexOf("Vos troupes sont en marche") != -1 && AttaqueLancee.contexteFlood) {
+            let unite = {};
+            this._repartition[indice].forEach((nb, ind) => {
+              if (nb) unite[NOM_UNITE[ind + 1]] = nb;
+            });
+            AttaqueLancee.enregistrer(
+              AttaqueLancee.contexteFlood.cible,
+              "Terrain de chasse",
+              unite,
+              {
+                html: data,
+                terrain: AttaqueLancee.contexteFlood.terrain,
+              },
             );
-            // capture de l'attaque confirmée pour le récapitulatif par cible
-            // (lieu toujours le terrain : le flood envoie lieu=1)
-            if (res.indexOf("Vos troupes sont en marche") != -1 && AttaqueLancee.contexteFlood) {
-              let unite = {};
-              this._repartition[indice].forEach((nb, ind) => {
-                if (nb) unite[NOM_UNITE[ind + 1]] = nb;
-              });
-              AttaqueLancee.enregistrer(
-                AttaqueLancee.contexteFlood.cible,
-                "Terrain de chasse",
-                unite,
-                {
-                  html: data,
-                  terrain: AttaqueLancee.contexteFlood.terrain,
-                },
-              );
-            }
-            setTimeout(() => {
-              this.envoyerFlood(idCible, ++indice, securite);
-            }, 1000);
-          },
-        );
+          }
+          setTimeout(() => {
+            this.envoyerFlood(idCible, ++indice, securite);
+          }, 1000);
+        });
       } else // on passe à l'attaque suivante
       this.envoyerFlood(idCible, ++indice, securite);
     } else {
