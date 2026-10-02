@@ -20,6 +20,17 @@ class Utils {
     return location.hostname.split(".")[0].toUpperCase();
   }
   /**
+   * AntLeaks ne référence que le serveur s4 : ailleurs, ses liens mèneraient
+   * à des joueurs/alliances homonymes d'un autre serveur.
+   *
+   * @static
+   * @method antleaksDisponible
+   * @return {Boolean}
+   */
+  static get antleaksDisponible() {
+    return Utils.serveur === "S4";
+  }
+  /**
    *
    */
   static get alliance() {

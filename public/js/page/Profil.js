@@ -56,12 +56,12 @@ class PageProfil {
       );
     }
 
-    // Ajout de l'option pour ajouter au radar + un lien vers AntLeaks
+    // Ajout de l'option pour ajouter au radar + un lien vers AntLeaks (s4 seulement)
     // (https://antleaks.guics.st) avec le pseudo dans le chemin — outil community
     // pour consulter l'historique public d'un joueur Fourmizzz.
     let antleaksUrl = `https://antleaks.guics.st/player/${encodeURIComponent(this._profil.pseudo)}`;
     $(".boite_membre:eq(1) table tr td:eq(0)").append(
-      `${Utils.comptePlus ? "<br/>" : ""}- <span id='o_surveiller' class='cursor gras'>${this._boiteRadar.joueurs.hasOwnProperty(this._profil.pseudo) ? "Supprimer la surveillance" : "Surveiller ce joueur"}</span><br/>- <a class='gras' href='${antleaksUrl}' target='_blank' rel='noopener'>Voir sur AntLeaks</a>`,
+      `${Utils.comptePlus ? "<br/>" : ""}- <span id='o_surveiller' class='cursor gras'>${this._boiteRadar.joueurs.hasOwnProperty(this._profil.pseudo) ? "Supprimer la surveillance" : "Surveiller ce joueur"}</span>${Utils.antleaksDisponible ? `<br/>- <a class='gras' href='${antleaksUrl}' target='_blank' rel='noopener'>Voir sur AntLeaks</a>` : ""}`,
     );
 
     $("#o_surveiller").click((e) => {
