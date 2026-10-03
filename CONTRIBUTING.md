@@ -4,7 +4,9 @@ Merci de l'intérêt que tu portes au projet. Ce document décrit comment mettre
 
 ## Prérequis
 
-[Bun](https://bun.com/docs/installation)
+- [Bun](https://bun.com/docs/installation) — testé avec 1.3.14
+- [Node](https://nodejs.org) **22 ou plus** : WXT 0.21 l'exige, et `bun run wxt`
+  lance le binaire `wxt` sous Node, pas sous Bun (testé avec v25.0.0)
 
 ```bash
 bun install
@@ -32,16 +34,51 @@ Cette commande build l'extension, lance un navigateur avec l'extension déjà ch
 | `bun run compile`       | Vérification TypeScript                                |
 | `bun run format`        | Formate tous les fichiers avec [oxfmt](https://oxc.rs) |
 | `bun run format:check`  | Vérifie le formatage sans modifier les fichiers        |
+| `bun run test:vendor`   | Build + exécution du bundle dans jsdom (bibliothèques) |
+| `bun run smoke:browser` | Test dans un vrai Chromium sur un vrai compte          |
 
 ## Formatage
 
-Le projet utilise [oxfmt](https://oxc.rs) pour le formatage. La config est dans `.oxfmtrc.json` et les libs vendorées (`public/js/lib/`) sont exclues.
+Le projet utilise [oxfmt](https://oxc.rs) pour le formatage. La config est dans `.oxfmtrc.json` et les libs vendorées (`src/vendor/lib/`) sont exclues.
 
 **Hook pre-commit** : [husky](https://typicode.github.io/husky/) + [lint-staged](https://github.com/lint-staged/lint-staged) formatent automatiquement les fichiers stagés à chaque `git commit`. Rien à installer manuellement — le hook est posé à l'exécution de `bun install` (via le script `prepare`).
 
 Pour le formatage à la sauvegarde dans ton éditeur, consulte la [doc officielle d'oxfmt](https://oxc.rs/docs/guide/usage/formatter/editors.html). Sinon, lance `bun run format` manuellement.
 
 Côté CI, chaque push et PR sur `master` lance `bun run format:check` — un PR non formaté échoue.
+
+## Tests
+
+Il n'y a pas de framework de test ; trois scripts jouent ce rôle.
+
+```bash
+bun run test:vendor           # bibliothèques tierces + démarrage de main()
+node scripts/test-storage.mjs # migration des données 3.x, cloisonnement par serveur
+bun run smoke:browser         # pages réelles, compte réel (manuel)
+```
+
+Les deux premiers tournent en CI. Ils chargent le vrai bundle dans jsdom, sans
+réseau : le `Promise.all` de démarrage ne se résout donc jamais et le code des
+pages n'est pas exercé. C'est `smoke:browser` qui couvre cette partie — il pilote
+Chromium par le DevTools Protocol, navigue sans jamais cliquer, et échoue si
+l'extension écrit quoi que ce soit côté jeu. Son en-tête décrit la mise en place.
+
+## Construire depuis les sources (relecture AMO)
+
+Le zip des sources envoyé à Mozilla contient `src/`, `public/`, `package.json`,
+`bun.lock`, `tsconfig.json`, `wxt.config.ts`, `README.md` et `LICENSE`. Pour
+reproduire le paquet publié :
+
+```bash
+bun install --frozen-lockfile   # Bun 1.3.14, Node v25.0.0 (ou plus récent, >= 22)
+bun run zip:firefox             # → .output/toolzzz-<version>-firefox.zip
+```
+
+Les bibliothèques tierces (`src/vendor/lib/`) sont vendorées en clair, non
+minifiées, et ne sont ni modifiées ni générées à la construction — à deux
+exceptions documentées dans `CLAUDE.md` : un contournement de la CSP MV3 dans
+`jquery-datetimepicker_1.6.3.js` et un correctif `requestAnimationFrame` dans
+`highcharts_6.0.7.js`.
 
 ## Assistants IA
 

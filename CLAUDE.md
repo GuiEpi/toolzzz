@@ -21,37 +21,93 @@ bun run zip:firefox       # zip for Firefox AMO
 bun run compile           # tsc --noEmit (typecheck only, no emitted files)
 bun run format            # oxfmt — writes changes in place
 bun run format:check      # oxfmt --check — CI uses this
+bun run test:vendor       # build + run the bundle in jsdom: the 18 vendored
+                          # libraries expose what they should, main() starts
+node scripts/test-storage.mjs   # migration of the 3.x data, per-server keys
+bun run smoke:browser     # real Chromium on a real account (see the script's
+                          # header for the setup; never runs in CI)
 ```
 
-There is no test suite and no linter configured. Formatting is handled by oxfmt.
+No unit test framework and no linter: the three scripts above are the test
+suite, and formatting is oxfmt. CI runs `format:check`, `compile`,
+`test:vendor` and the storage test.
+
+`smoke:browser` drives Chromium over the DevTools Protocol, navigates (never
+clicks) and fails if the extension writes anything to the game. It is the only
+check that exercises the pages: the jsdom harnesses stop at the startup
+`Promise.all`, which never resolves without network.
 
 ## Architecture — read this before touching WXT or the manifest
 
-This project uses WXT unconventionally. **Do not assume standard WXT conventions apply.**
+Standard WXT conventions apply: `srcDir` is `src/`, the manifest is generated
+from the entrypoints, and the bundler builds ES modules. (Up to 3.9.1 none of
+that was true — the manifest listed 58 concatenated scripts by hand. If you
+find notes saying so, they describe the old layout.)
 
-### srcDir is the repo root, not `src/`
+### Layout
 
-`wxt.config.ts` sets `srcDir: "."`. The actual extension source lives in `public/` (served verbatim by WXT as static assets) and `entrypoints/`.
+```
+src/
+  entrypoints/
+    bootstrap.content.ts      document_start: html classes, inline <style>
+    game.content/
+      index.ts                the entrypoint: vendor → stylesheets → app
+      main.ts                 startup, moved out of index.ts so the entrypoint
+                              stays importable by WXT under Node
+  vendor/        index.ts + lib/ — the 18 third-party scripts, byte-identical
+  assets/        the four stylesheets + the jQuery UI theme images
+  constants/     game constants, split by domain, re-exported by index.ts
+  data/          costs.ts, quickMenu.ts
+  models/        domain classes (Player, Army, Battle, Hunt, Convoy, Order…)
+  boxes/         the floating panels (Box and its subclasses, Dock, RadarBox…)
+  pages/         one module per game page + index.ts, the route table
+  lib/           Utils, version
+  storage/       the persistence layer (see below)
+```
 
-### Manifest is hand-written, not generated from entrypoints
+`public/` holds only images now; they need `web_accessible_resources` and
+`browser.runtime.getURL("/images/…")` to be reachable from a content script.
 
-The standard WXT workflow is to put `entrypoints/content.ts` + `defineContentScript()` and let WXT build the manifest. This project does the opposite: the entire `content_scripts` block (40+ libraries and modules) is declared manually in `wxt.config.ts` under `manifest.content_scripts`. When adding/removing a script, edit `wxt.config.ts` — there is no entrypoint file to update.
+### Two content scripts
 
-### `entrypoints/background.ts` is a required no-op stub
+`bootstrap.content.ts` runs at `document_start` with no dependency: it puts
+classes on `<html>` and injects a small inline stylesheet, so the game's own
+markup never flashes before ours replaces it. `game.content/` runs at the
+default time and imports, in this order: `~/vendor`, then the stylesheets,
+then `./main`. The order is load-bearing — see `src/vendor/index.ts`.
 
-WXT refuses to build without at least one entrypoint (`ERROR No entrypoints found`). Since the real content scripts are declared in the manifest directly, `entrypoints/background.ts` exists only as `defineBackground(() => {})` to satisfy WXT. **Do not delete it** — the build breaks. Deleting it and migrating to entrypoint-style content scripts would be a sizable refactor given the strict load order of the 40+ libs.
+Nothing may touch the DOM or `browser.*` at module level: WXT imports each
+entrypoint under Node at build time to read its options, so anything outside
+`main()` runs there too.
 
-### Content script load order matters
+### Vendored libraries are plain scripts, not modules
 
-Files under `public/js/` are concatenated in the order listed in `wxt.config.ts`. The order is:
+The 18 files in `src/vendor/lib/` are UMD/IIFE scripts from 2016-2018 that put
+themselves on `window`. A Vite plugin in `wxt.config.ts`
+(`toolzzz:vendor-scripts`) wraps each one so it executes as a classic script;
+without it rolldown treats them as CommonJS and the DataTables combo — six UMD
+wrappers in one file — never runs. `bun run test:vendor` executes the built
+bundle in jsdom and checks every global they are supposed to expose.
 
-1. `js/lib/*` — vendored libraries (jQuery, Highcharts, DataTables, moment, numeral, globalize, clipboard — all loaded as non-module globals)
-2. `js/class/*` — domain model classes (`Joueur`, `Alliance`, `Armee`, `Combat`, `Convoi`, `Utils`, etc.)
-3. `js/boite/*` — UI widget ("boîte") modules that render the in-game panels
-4. `js/page/*` — per-page entry points that hook into specific Fourmizzz URLs (`Attaquer.js`, `Messagerie.js`, `Profil.js`, etc.)
-5. `js/content.js` — final bootstrap, declares game-wide constants and wires everything together
+Keep them byte-identical to what AMO reviewers can diff against upstream, and
+re-apply the `__outiiil_safeParseAttr` patch if the datetimepicker is updated.
 
-Each tier depends on everything above it being present as globals. Reordering will break runtime references.
+### Persistence
+
+`src/storage/` is the only place that talks to `browser.storage.local`. Keys
+are `local:<server>:<name>`, `local:<server>:<name>:<tag>` for the
+alliance-scoped ones and `local:global:<name>`; the server segment is
+lower-case, unlike `Utils.server`, which is upper-case because it also built
+request URLs. Everything is hydrated once at the top of `main()` and read
+synchronously from that snapshot afterwards, because the rest of the code
+reads settings while rendering.
+
+`src/storage/legacy-import.ts` copies the `outiiil_*` data of 3.x once per
+server and never deletes it. It is the only file allowed to name those keys,
+and it goes away two releases after 4.0.
+
+`sessionStorage` stays as it is (`src/storage/session.ts`): those six flags
+are per-tab, and WXT's `session:` area is extension-wide.
 
 ### Single domain
 
@@ -63,8 +119,8 @@ The `data_collection_permissions.required: ["none"]` declaration in the manifest
 
 The migration from MV2 to MV3 tightened CSP. Two non-obvious patches exist:
 
-- **`public/js/lib/jquery-datetimepicker_1.6.3.js`** replaces the library's original `eval(attrValue)` call with a local `__outiiil_safeParseAttr()` helper (JSON.parse with raw-string fallback). Any future update of this vendored lib must re-apply the patch.
-- **`public/js/content.js`** uses `chrome.runtime.getURL` (not the MV2 `chrome.extension.getURL`) and reads `VERSION` dynamically from `chrome.runtime.getManifest().version` instead of hardcoding it.
+- **`src/vendor/lib/jquery-datetimepicker_1.6.3.js`** replaces the library's original `eval(attrValue)` call with a local `__outiiil_safeParseAttr()` helper (JSON.parse with raw-string fallback). Any future update of this vendored lib must re-apply the patch.
+- the extension uses WXT's `browser.*` (never the `chrome` global) and reads `VERSION` from `browser.runtime.getManifest().version` (`src/lib/version.ts`) rather than hardcoding it.
 
 Firefox exposes `chrome.*` as an alias for `browser.*`, so `chrome.runtime.*` works on both targets without polyfill.
 
@@ -72,7 +128,7 @@ Firefox exposes `chrome.*` as an alias for `browser.*`, so `chrome.runtime.*` wo
 
 - `browser_specific_settings.gecko.id` is `toolzzz@guiepi.github.io` — this ID must stay stable across uploads to AMO (changing it breaks updates for installed users).
 - `strict_min_version: "142.0"` — Firefox **142** is when `data_collection_permissions` is honored on **Firefox for Android** (desktop got it earlier, but AMO's review surfaces an Android-specific warning if `strict_min_version` is below 142). Lower values let AMO accept the upload but warn that the privacy declaration is ignored on older Firefox/Android.
-- AMO requires non-minified sources for review — keep the vendored libs in `public/js/lib/` readable (they currently are).
+- AMO requires non-minified sources for review — keep the vendored libs in `src/vendor/lib/` readable (they currently are).
 - AMO requires `browser_specific_settings.gecko.data_collection_permissions` since November 2025 (will be enforced for all extensions in 2026). Currently declared as `required: ["none"]` which is accurate — the extension only reads fourmizzz.fr pages locally. If you add a feature that transmits data to an external server, you MUST update this declaration (values like `websiteContent`, `websiteActivity`, etc.) or AMO will reject the submission.
 - `manifest.author` must be a **string** on AMO (not the `{ email: string }` object form that Chrome accepts). WXT's TS types enforce the object form, so the config has a targeted `@ts-expect-error` directive on that line.
 
@@ -80,7 +136,7 @@ Firefox exposes `chrome.*` as an alias for `browser.*`, so `chrome.runtime.*` wo
 
 oxfmt (Rust-based, Prettier-compatible output) is configured via `.oxfmtrc.json`. Key points:
 
-- **`public/js/lib/` is excluded** — vendored upstream code (jQuery, Highcharts, DataTables, etc.) must not be reformatted. This ties into the AMO requirement for non-minified, auditable sources and preserves the `__outiiil_safeParseAttr` patch in `jquery-datetimepicker_1.6.3.js`.
+- **`src/vendor/lib/` is excluded** — vendored upstream code (jQuery, Highcharts, DataTables, etc.) must not be reformatted. This ties into the AMO requirement for non-minified, auditable sources and preserves the `__outiiil_safeParseAttr` patch in `jquery-datetimepicker_1.6.3.js`.
 - **Pre-commit hook** (husky + lint-staged, config in `package.json`) auto-formats staged files on `git commit`. Installed automatically via the `prepare` script when contributors run `bun install`.
 - **CI** (`.github/workflows/ci.yml`) runs `format:check` + `compile` on every push and PR to `master`. Unformatted code fails the check and blocks merge (if branch protection is enabled).
 

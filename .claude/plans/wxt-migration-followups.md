@@ -149,7 +149,35 @@ c'est lui qui a attrapé les trois régressions de la Phase 3 ci-dessous.
 Les rendre exécutables sous jsdom demanderait de stubber les réponses HTML du
 jeu pour chaque page : utile, pas encore fait.
 
-## Phase 5
+## Phase 5 — fait, avec ces décisions
+
+- **`tsconfig` reste à `"strict": false`.** Mesuré : `strict: true` donne
+  **1135 erreurs**, dont 948 TS7006 (paramètre sans annotation). En gardant
+  `noImplicitAny: false`, il en reste **423**, dont 289 TS2531 (« objet
+  possiblement null », essentiellement les retours de `querySelector` et les
+  accès indexés). Très au-dessus du seuil de 50 fixé dans le plan, donc on ne
+  durcit pas d'un bloc. La voie praticable : activer `strictNullChecks` seul
+  module par module (`storage/` et `lib/` d'abord, ils sont petits et déjà
+  typés), puis annoter les paramètres au fil des modifications.
+- **Le build Firefox reste minifié.** AMO l'accepte dès lors que le zip des
+  sources permet de rebuilder, ce qui est le cas (sources complètes, `bun.lock`,
+  et les commandes exactes dans CONTRIBUTING). Les bibliothèques vendorisées,
+  elles, restent en clair. Si un relecteur AMO demande malgré tout du non
+  minifié, le réglage est `vite: () => ({ build: { minify: false } })`.
+- Noms des artefacts vérifiés après la migration : `toolzzz-<version>-chrome.zip`,
+  `-firefox.zip` et `-sources.zip`, ce que les deux workflows attendent.
+
+## Reste à faire (hors migration)
+
+- **CWS API v1 → v2 avant le 15 octobre 2026** : `release-chrome.yml` utilise
+  encore le flux refresh-token. `bun run wxt submit init`, choisir v2 (compte
+  de service), remplacer les secrets `CHROME_*`. Décision mainteneur.
+- Passage sur Firefox : rien n'a encore été chargé dans Firefox, le harnais ne
+  pilote que Chromium.
+- Checklist manuelle (clics, survols, carte d'alliance, radar, parsing de
+  rapport) : `.claude/plans/wxt-smoke-checklist.md`.
+
+## Phase 5 (plan d'origine)
 
 - **Minification Firefox** : `.output/firefox-mv3/content-scripts/game.js`
   est minifié (1,3 Mo). AMO accepte si le zip des sources permet de

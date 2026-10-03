@@ -1,13 +1,17 @@
 ---
 name: ui-primitives
-description: Toolzzz UI conventions — CSS utility classes, table/form/button patterns, jQuery UI widgets, toast helpers, available globals (monProfil, Utils, Joueur.rechercher, BoiteRadar, Armee). Use when adding HTML/CSS to a Boite (`public/js/boite/*.js`) or a Page (`public/js/page/*.js`), when designing new UI components, or when refactoring existing markup. Read before introducing new classes/components — most things you'd want to add already exist in `public/css/outiiil.css` or as a global.
+description: Toolzzz UI conventions — CSS utility classes, table/form/button patterns, jQuery UI widgets, toast helpers, shared data (getProfile(), Utils, Player.search, RadarBox, Army). Use when adding HTML/CSS to a box (`src/boxes/*.ts`) or a page (`src/pages/*.ts`), when designing new UI components, or when refactoring existing markup. Read before introducing new classes/components — most things you'd want to add already exist in `src/assets/outiiil.css` or in a shared module.
 ---
 
 # Toolzzz UI primitives
 
 Inventaire des classes CSS et patterns réutilisables pour rester cohérent visuellement avec le reste de l'extension. **À consulter avant d'écrire du HTML/CSS dans une Boite ou une Page**.
 
-## Classes utilitaires (dans `public/css/outiiil.css`)
+> Depuis la 4.0 il n'y a plus de globales : tout s'importe (`import { $ } from
+"~/vendor"`, `import { UNIT_NAMES } from "~/constants"`, `import { getProfile }
+from "~/models/currentPlayer"`). Les noms ci-dessous sont ceux des exports.
+
+## Classes utilitaires (dans `src/assets/outiiil.css`)
 
 ### Couleurs (color)
 
@@ -25,7 +29,7 @@ Inventaire des classes CSS et patterns réutilisables pour rester cohérent visu
 
 ### Typographie
 
-Préférer les caractères UTF-8 aux substituts ASCII dans le texte affiché : `→` (U+2192) plutôt que `->`, idem `←` `≤` `≥` `…` `—`. Le rendu est nettement plus propre que la version ASCII qui fait « code source ». Les constantes `IMG_FLECHE` / `IMG_GAUCHE` / `IMG_DROITE` (cf. `content.js`) restent pertinentes quand on veut une vraie image (sprite Fourmizzz), mais pour du texte inline les caractères UTF-8 suffisent.
+Préférer les caractères UTF-8 aux substituts ASCII dans le texte affiché : `→` (U+2192) plutôt que `->`, idem `←` `≤` `≥` `…` `—`. Le rendu est nettement plus propre que la version ASCII qui fait « code source ». Les constantes `IMG_ARROW` / `IMG_LEFT` / `IMG_RIGHT` (cf. `~/constants`) restent pertinentes quand on veut une vraie image (sprite Fourmizzz), mais pour du texte inline les caractères UTF-8 suffisent.
 
 ### Layout
 
@@ -42,7 +46,7 @@ Préférer les caractères UTF-8 aux substituts ASCII dans le texte affiché : `
 
 ## Conteneur de widget injecté dans une page
 
-Pour un widget Toolzzz qui s'ajoute en bas (ou au milieu) d'une page Fourmizzz native — typiquement injecté via `$("#alliance").after(...)` ou `$("#cadre").append(...)` — utiliser le **même pattern que `Lanceur de Chasses`** (cf. `public/js/page/Ressource.js:92`) pour s'intégrer visuellement comme une vraie « boîte » du jeu :
+Pour un widget Toolzzz qui s'ajoute en bas (ou au milieu) d'une page Fourmizzz native — typiquement injecté via `$("#alliance").after(...)` ou `$("#cadre").append(...)` — utiliser le **même pattern que `Lanceur de Chasses`** (cf. `src/pages/Resources.ts`) pour s'intégrer visuellement comme une vraie « boîte » du jeu :
 
 ```html
 <br />
@@ -63,8 +67,8 @@ Détails :
 
 ⚠️ Distinction importante :
 
-- Pour un **widget injecté dans une page** (= `public/js/page/*.js`), utiliser ce pattern.
-- Pour une **Boite flottante** (= `public/js/boite/*.js`, fenêtre draggable affichée via `BoiteX.afficher()`), c'est la classe `Boite` qui gère le wrapper — passer juste le contenu via le constructeur `super(id, titre, html)`.
+- Pour un **widget injecté dans une page** (= `src/pages/*.ts`), utiliser ce pattern.
+- Pour une **Boite flottante** (= `src/boxes/*.ts`, fenêtre draggable affichée via `SomeBox.render()`), c'est la classe `Box` qui gère le wrapper — passer juste le contenu via le constructeur `super(id, titre, html)`.
 
 ## Sections dans un onglet de Boite
 
@@ -79,7 +83,7 @@ Quand un onglet (`#o_tabs<X>1`, `2`, …) regroupe **plusieurs paramètres ou ch
 </form>
 ```
 
-- **`<p class='left reduce gras'>`** — c'est la convention pour un titre/intro de section dans un form de Boite (cf. `parametreGeneral` et `parametreStyle` dans `public/js/boite/Parametres.js`).
+- **`<p class='left reduce gras'>`** — c'est la convention pour un titre/intro de section dans un form de Boite (cf. `generalTab()` et `styleTab()` dans `src/boxes/Settings.ts`).
 - **Le texte décrit ce que les champs en dessous contrôlent** — il joue le rôle de label de groupe, donc soit informatif (« La méthode sera sélectionnée par défaut dans le lanceur de flood ») plutôt que générique (« Méthodes »).
 - **Pour les notes/aides discrètes en dessous d'un titre**, ajouter une ligne `<p class='left small'><em>…</em></p>` (cf. la note « Le nombre est choisi aléatoirement entre 90% du max et le max. » sous les antisondes).
 - **Garder titres et notes courts : une phrase, ~120 caractères max.** La `.o_content` est en `position: fixed` sans `max-width`, donc elle s'ajuste à son contenu : un paragraphe long n'est pas coupé, il **élargit la boîte jusqu'à la largeur de l'écran**. Le CSS borne `.o_content p.left` à `60ch` pour forcer le wrap, mais c'est un filet de sécurité, pas une autorisation d'écrire un pavé. Si une explication est vraiment longue, la découper en plusieurs `<p>` courts ou la passer dans un spoiler « En savoir plus ? » (cf. section dédiée plus bas). Précédent : la note du mode Ratio (v3.9.0) faisait 250 caractères en Compte+ et rendait la boîte Paramètres aussi large que la fenêtre.
@@ -140,7 +144,7 @@ hr.o_<feature > Separ {
 }
 ```
 
-→ `currentColor` reprend automatiquement la `couleurTexte` de l'utilisateur — pas besoin de `monProfil.parametre[...]` côté JS.
+→ `currentColor` reprend automatiquement la `couleurTexte` de l'utilisateur — pas besoin de `getProfile().parametre[...]` côté JS.
 
 ### Onglets à contenu long
 
@@ -157,7 +161,7 @@ $("#o_tabs<X>1").css({ "max-height": "70vh", "overflow-y": "auto" });
 Dans la méthode `css()` de la Boite, ajouter le sélecteur :
 
 ```js
-$("#o_<feature> tr:even, …").css("background-color", monProfil.parametre["couleur2"].valeur);
+$("#o_<feature> tr:even, …").css("background-color", getProfile().parametre["couleur2"].valeur);
 ```
 
 → Convention : `tr:even` (jQuery 0-indexé) sur la table entière colore le `<thead>` (index 0) et les lignes paires d'index, donc `<thead>` foncé puis ligne 1 claire / ligne 2 foncée / ligne 3 claire... Ne pas inverser — c'est le pattern de toute l'extension.
@@ -217,7 +221,7 @@ Pattern natif Fourmizzz pour des actions liées rendues côte à côte dans un m
 
 **Préférer un `<span class='option_gestion cursor'>` + click jQuery à un `<a class='option_gestion'>` direct** pour les actions qui ouvrent une URL externe. L'`<a>` direct se comporte différemment du `<span>` au niveau layout (display inline vs option_gestion attendant un span), ce qui casse l'alignement et le hover. Le span avec `window.open(url, "_blank")` rend identique au reste du groupe.
 
-Exemple en place : `PageDescription` (`public/js/page/Description.js`) pour le bouton Alliance « Surveiller + Voir sur AntLeaks ».
+Exemple en place : `AllianceProfilePage` (`src/pages/AllianceProfile.ts`) pour le bouton Alliance « Surveiller + Voir sur AntLeaks ».
 
 ## Spoiler « En savoir plus ? » (natif Fourmizzz)
 
@@ -241,7 +245,7 @@ Pour un bloc d'explication optionnel (masqué par défaut, révélé au clic), r
 - **`font-weight:normal` inline sur le span** — nécessaire quand le parent porte `gras`, sinon l'héritage CSS rend le lien gras lui aussi (bien que `cliquable2` ne le force pas).
 - **`display:none` initial** sur le div cible — `spoilerId` se contente de basculer la visibilité.
 
-Cf. `BoiteParametres.parametreUtilitaire()` (`public/js/boite/Parametres.js`) pour un exemple en place.
+Cf. `SettingsBox.toolsTab()` (`src/boxes/Settings.ts`) pour un exemple en place.
 
 ## Inputs et widgets jQuery UI
 
@@ -265,7 +269,7 @@ $("#o_truc").spinner({ min: 0, numberFormat: "i" });
 ### Autres widgets
 
 - `$("#x").autocomplete({ source, select, … })` — autocomplete (cf. `Joueur.rechercher` + `Utils.extraitRecherche`)
-- `$("#x").datetimepicker(DATEPICKER_OPTION)` — date/heure. Sur l'`<input>` associé, **utiliser systématiquement `placeholder="JJ-MM-AAAA HH:mm"`** (le format affiché par `DATEPICKER_OPTION` + `dateFormat: "dd-mm-yy"`, `timeFormat: "HH:mm"`). Pas de `placeholder='—'` ni autre tiret — le tiret n'indique pas à l'utilisateur quel format saisir.
+- `$("#x").datetimepicker(DATEPICKER_OPTION)` — date/heure. Sur l'`<input>` associé, **utiliser systématiquement `placeholder="JJ-MM-AAAA HH:mm"`** (le format affiché par `DATEPICKER_OPTIONS` + `dateFormat: "dd-mm-yy"`, `timeFormat: "HH:mm"`). Pas de `placeholder='—'` ni autre tiret — le tiret n'indique pas à l'utilisateur quel format saisir.
 - `$("#x").slider({ min, max, change })` — slider 0/1
 - `$("#x").slider({ range: true, min, max, values: [a, b], slide })` — **range slider** (sélection d'une plage). Cf. la plage de niveaux du widget Coûts (`PageConstruction.couts`). Pour avoir des paliers nets, `step: Math.max(1, Math.floor((max - min) / N))` avec N ≈ 20–50 ; jQuery UI exige que `(max - min) % step == 0` pour snapper proprement.
 - `$("#x").tooltip({ position, content })` — tooltips
@@ -281,7 +285,7 @@ Le spinner conserve la valeur par défaut utile (= ce que l'utilisateur veut **p
 
 ## Toasts (feedback utilisateur)
 
-Constantes globales dans `content.js` :
+Constantes exportées par `~/constants` :
 
 - `TOAST_INFO` `TOAST_SUCCESS` `TOAST_WARNING` `TOAST_ERROR`
 
@@ -295,28 +299,28 @@ $.toast({ ...TOAST_WARNING, text: "message" });
 
 Avant de fetch quoi que ce soit, vérifier qu'on n'a pas déjà la donnée :
 
-- `monProfil` — Joueur courant (pseudo, x/y, niveauRecherche, niveauConstruction, parametre)
-- `Utils.serveur` — sous-domaine du serveur (uppercase)
+- `getProfile()` (`~/models/currentPlayer`) — le Player courant (pseudo, x/y, niveauRecherche, niveauConstruction, parametre)
+- `Utils.server` — sous-domaine du serveur (majuscules ; pour une URL, préférer `location.origin`)
 - `Utils.terrain` — terrain courant en cm² (depuis le DOM)
 - `Utils.ouvrieres` `Utils.nourriture` `Utils.materiaux` — stocks
 - `Utils.comptePlus` — booléen
 - `Utils.alliance` — tag alliance
-- `Joueur.rechercher(term)` — POST `classementAlliance.php` (autocomplete pseudo+alliance, page-agnostique)
-- `Alliance.rechercher(term)` — idem mais priorité alliance
-- `Utils.extraitRecherche(html, joueur=true, alliance=true)` — parse résultat de la recherche
-- `BoiteRadar` — instance créée à demande, lit `localStorage` (`outiiil_radar`)
-- `Armee.getArmee()` — Promise qui fetch l'armée du joueur (via la page Armée appropriée)
+- `Player.search(term)` — POST `classementAlliance.php` (autocomplete pseudo+alliance, page-agnostique)
+- `Alliance.search(term)` — idem mais priorité alliance
+- `Utils.extractResearch(html, player=true, alliance=true)` — parse résultat de la recherche
+- `RadarBox` — instance créée à demande, lit le storage de l'extension (`store.radar`)
+- `Army.getArmy()` — Promise qui fetch l'armée du joueur (via la page Armée appropriée)
 
 ## Constantes globales utiles
 
-Dans `public/js/content.js` :
+Dans `src/constants/` :
 
-- `NOM_UNITE` — noms des 14 unités, indexé 1-14
-- `ATT_UNITE` `DEF_UNITE` `VIE_UNITE` — stats par unité
-- `RATIO_CHASSE` `PERTE_*_CHASSE` `REPLIQUE_CHASSE` — constantes calibrage chasse
-- `IMG_FLECHE` `IMG_VIE` `IMG_ATT` `IMG_DEF` `IMG_COPY` `IMG_GAUCHE` `IMG_DROITE` — icônes inline (chaînes HTML)
-- `LIEU.TERRAIN` `LIEU.DOME` `LIEU.LOGE` — enums lieux d'attaque
-- `DATEPICKER_OPTION` — options par défaut pour datetimepicker
+- `UNIT_NAMES` — noms des 14 unités, indexé 1-14
+- `UNIT_ATTACK` `UNIT_DEFENSE` `UNIT_HP` — stats par unité
+- `HUNT_RATIO` `HUNT_LOSS_*` `HUNT_RETALIATION` — constantes calibrage chasse
+- `IMG_ARROW` `IMG_HP` `IMG_ATT` `IMG_DEF` `IMG_COPY_ARMY` `IMG_LEFT` `IMG_RIGHT` — icônes inline (chaînes HTML)
+- `PLACE.TERRAIN` `PLACE.DOME` `PLACE.LOGE` — enums lieux d'attaque
+- `DATEPICKER_OPTIONS` — options par défaut pour datetimepicker
 
 ## Vue qui prend la page en otage (« page takeover »)
 
@@ -324,10 +328,10 @@ Pour une feature qui remplace temporairement le contenu natif d'une page (ex. ca
 
 1. **Trigger dans le menu colonne natif** — injecter un `<li>` avec une classe `boutonX` existante dans `#menuFourmiliere` ou `#menuAlliance`, l'`href` pointe vers la page cible avec un hash distinct.
 2. **Toggle hash-based** — `location.hash === "#xxx"` détermine si on cache le natif et montre le widget. Un listener `hashchange` permet de basculer sans rechargement.
-3. **Anti-flash via bootstrap au document_start** — voir `public/js/bootstrap.js`, déclaré comme content_script séparé avec `run_at: "document_start"`. Le script (a) injecte un `<style>` inline avec les règles de masquage, et (b) pose une classe `toolzzz-mode-X` sur `<html>` selon `location.hash`. Comme tout est appliqué avant le parse du body, le natif n'a jamais l'occasion de flasher.
+3. **Anti-flash via bootstrap au document_start** — voir `src/entrypoints/bootstrap.content.ts`, un content script à part avec `runAt: "document_start"`. Le script (a) injecte un `<style>` inline avec les règles de masquage, et (b) pose une classe `toolzzz-mode-X` sur `<html>` selon `location.hash`. Comme tout est appliqué avant le parse du body, le natif n'a jamais l'occasion de flasher.
 
 ```js
-// public/js/bootstrap.js — content_scripts entry séparée, run_at: document_start
+// src/entrypoints/bootstrap.content.ts — entrypoint à part, runAt: document_start
 (function () {
   // ⚠️ Ne PAS compter sur content_scripts.css du manifest pour ce CSS-là :
   // il suit le run_at de son entrée. Chrome est rapide donc ça passe parfois,
@@ -357,4 +361,4 @@ Pour une feature qui remplace temporairement le contenu natif d'une page (ex. ca
 
 ## Règle d'or
 
-**Avant d'ajouter une nouvelle classe CSS ou un nouveau composant JS** : `Grep` dans `public/js/` et `public/css/outiiil.css` pour voir si quelque chose d'équivalent existe déjà. La leçon retenue dans le skill `analyze-fourmizzz` (« Lire avant de proposer un remplacement ») s'applique aussi aux primitives UI.
+**Avant d'ajouter une nouvelle classe CSS ou un nouveau composant JS** : `Grep` dans `src/` et `src/assets/outiiil.css` pour voir si quelque chose d'équivalent existe déjà. La leçon retenue dans le skill `analyze-fourmizzz` (« Lire avant de proposer un remplacement ») s'applique aussi aux primitives UI.
