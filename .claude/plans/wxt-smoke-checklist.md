@@ -3,24 +3,59 @@
 Objectif : comportement **identique** à la 3.9.1. Rien de nouveau à voir ;
 tout ce qui est listé ci-dessous existait déjà et doit encore marcher.
 
-## Mise en place
+## Automatisé : `node scripts/browser-smoke.mjs [serveur]`
 
-1. `bun run dev` (Chrome) ou `bun run dev:firefox` — `web-ext.config.ts`
-   local (`disabled: true`) n'ouvre pas de navigateur.
-2. Charger l'extension **non empaquetée** depuis Windows :
-   - Chrome → `chrome://extensions` → mode développeur → « Charger
-     l'extension non empaquetée » → `\\wsl$\…\toolzzz-fork\.output\chrome-mv3-dev`
-   - Firefox → `about:debugging#/runtime/this-firefox` → « Charger un module
-     temporaire » → `.output\firefox-mv3-dev\manifest.json`
-     (le suffixe `-dev` est nouveau depuis WXT 0.21 ; les builds prod restent
-     dans `.output/chrome-mv3` / `.output/firefox-mv3`.)
-3. Ouvrir la console (F12) **avant** de charger la première page du jeu et
-   la laisser ouverte : la cible est **zéro `ReferenceError`** et zéro
-   `TypeError … is not a function` provenant de `content-scripts/game.js`.
-   Les avertissements du jeu lui-même (`fourmizzz.fr`) ne comptent pas.
-4. Faire la première passe avec un compte qui a déjà des données Toolzzz
-   (radar, paramètres) : les clés `outiiil_*` n'ont pas bougé, tout doit se
-   recharger tel quel.
+Ce script pilote un vrai Chromium par le DevTools Protocol : il navigue (sans
+jamais cliquer), vérifie la présence de chaque enrichissement dans le DOM,
+capte les exceptions JS, et **échoue si l'extension déclenche une écriture
+côté jeu**. Préparation :
+
+```bash
+bun run build
+chromium-browser --no-sandbox --remote-debugging-port=9222 \
+  --user-data-dir=/tmp/toolzzz-smoke --load-extension=$PWD/.output/chrome-mv3
+# se connecter au jeu dans cette fenêtre, puis :
+node scripts/browser-smoke.mjs s4
+```
+
+Il saute automatiquement `Ressources.php` si « Affectation des ressources »
+est actif et `Armee.php` si « Replacer l'armée automatiquement » l'est : ces
+deux pages écrivent côté jeu dès le chargement quand le réglage est posé.
+
+**Dernier passage — 2026-10-03, compte réel (s4), build de la Phase 2 :
+27 vérifications OK, 0 exception JS, 0 écriture déclenchée par l'extension.**
+Couvert automatiquement : colonne « Terminé le » et stats d'unités (Reine),
+récap des évolutions et onglet Coûts (construction), courbes Highcharts et
+masquage du natif (`#cout`), lanceur de chasse + 15 spinners jQuery UI +
+ligne de répartition (Ressources), bouton Replacer / temps HOF / attaques
+restantes (Armée), boutons Arrondir et tableau SDC des commandes (Commerce),
+préférences du menu rapide (Compte), boutons Citer et barre de mise en forme
+(Chat), coloration des surveillés (Messagerie), colonne Temps (ennemie.php),
+onglet Carte + DataTables (Alliance Membres), temps de trajet live + bouton
+surveiller (profil d'un **autre** joueur — sur son propre profil le temps de
+trajet n'a pas lieu d'être).
+
+## Ce qui reste à faire à la main
+
+Le script ne clique pas et ne survole pas : tout ce qui suit demande des
+mains, et c'est là qu'il faut regarder en priorité.
+
+1. **Ouvrir chaque boîte du dock** (Ponte, Chasse, Combat, Paramètres) et la
+   boîte Compte+ / Radar : rendu, onglets, position, animation.
+2. **Survols** : tooltips Bouclier / Armes (laboratoire), tooltip Nourriture /
+   Matériaux du bandeau, tooltips multi-pontes / multi-attaques du Compte+.
+3. **Carte d'alliance** (`?Membres#carte`) : bouton de chargement, filtres,
+   export PNG — le chargement interroge le profil de chaque membre, donc
+   volontairement non automatisé.
+4. **Radar** : ajouter / retirer un joueur, sections, tri (sortable).
+5. **Messagerie** : ouvrir une conversation avec un rapport de chasse ou de
+   combat et vérifier le parsing au clic + les boutons copier.
+6. **Actions de jeu** (flood, sonder, lancer une ponte, annuler une chasse,
+   affectation des ouvrières) : jamais automatisées, par construction.
+7. **Firefox** : le script ne pilote que Chromium. Vérifier au moins une page
+   et l'absence de la classe `o_chrome`.
+
+## Mise en place manuelle
 
 ## Points spécifiques à la migration (à vérifier en premier)
 
