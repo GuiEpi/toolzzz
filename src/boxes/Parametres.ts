@@ -20,7 +20,7 @@ import * as storage from "~/storage";
  */
 export class BoiteParametre extends Boite {
   // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. docs/migration-followups.md).
+  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
   _paramStyle: any;
   _paramUtilitaire: any;
   _paramGeneral: any;

@@ -34,7 +34,7 @@ import * as session from "~/storage/session";
  */
 export class Armee {
   // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. docs/migration-followups.md).
+  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
   _unite: any;
   _nbrJSN: any;
   _floods: any;

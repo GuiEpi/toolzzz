@@ -20,7 +20,7 @@ import * as storage from "~/storage";
  */
 export class PageAttaquer {
   // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. docs/migration-followups.md).
+  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
   _boiteComptePlus: any;
   _nbAttaque: any;
   _cible: any;

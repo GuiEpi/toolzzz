@@ -17,7 +17,7 @@ import { Joueur } from "~/models/Joueur";
  */
 export class PageDescription {
   // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. docs/migration-followups.md).
+  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
   _alliance: any;
   _boiteRadar: any;
   constructor(boiteRadar) {

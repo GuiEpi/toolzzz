@@ -25,7 +25,7 @@ import * as session from "~/storage/session";
  */
 export class PageRessource {
   // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. docs/migration-followups.md).
+  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
   _boiteComptePlus: any;
   _nbChasse: any;
   _armee: any;

@@ -15,7 +15,7 @@ import { getProfile } from "~/models/monProfil";
  */
 export class Boite {
   // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. docs/migration-followups.md).
+  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
   _id: any;
   _titre: any;
   _content: any;

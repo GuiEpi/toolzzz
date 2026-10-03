@@ -39,7 +39,7 @@ const CLE_ANNULATION_ECHEC = "outiiil_annulationEchec";
 
 export class AttaqueLancee {
   // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. docs/migration-followups.md).
+  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
   // Posé par PageAttaquer au lancement d'un flood, lu par Armee.
   static contexteFlood: any;
   /**

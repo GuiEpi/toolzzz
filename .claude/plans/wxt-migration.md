@@ -230,7 +230,7 @@ BoiteCommande`) are method-body-only and tolerable. Put a one-line
   - hunt launcher (Ressource → boîte Chasse): fauna images
     (`browser.runtime.getURL("/images/faune/<slug>.png")`, dynamic path)
     render — confirms the `images/**` WAR entry still covers them;
-  - write `docs/smoke-checklist.md`: one section per game page (Reine,
+  - write `.claude/plans/wxt-smoke-checklist.md`: one section per game page (Reine,
     Attaquer, Alliance incl. `#carte`, Messagerie, Commerce, Compte,
     Construction incl. `#cout`, Description, Forum, Chat, Laboratoire,
     Profil, Ressource, Armee) listing what Toolzzz adds there, so I can test.
@@ -320,7 +320,7 @@ false`, `"allowJs": false`. Keep `verbatimModuleSyntax` on (use
   errors; otherwise leave a TODO with the count.
 - Add `zip.includeSources` entries for `src` (and drop `entrypoints`) if
   not already done in Phase 1; re-check the printed sources list.
-- Write `docs/migration-followups.md` with everything deferred, including:
+- Write `.claude/plans/wxt-migration-followups.md` with everything deferred, including:
   check whether the Firefox build is minified (`.output/firefox-mv3/
 content-scripts/game.js`) and decide on `vite: () => ({ build: { minify:
 false } })` before the first AMO submission; DOM id rename `o_*` → later;
@@ -332,7 +332,7 @@ false } })` before the first AMO submission; DOM id rename `o_*` → later;
   (WXT and its peers in Phase 0.5 are the only exception).
 - Never run `git commit --no-verify`.
 - If a change might alter behaviour and you are not sure, don't make it —
-  list it in `docs/migration-followups.md`.
+  list it in `.claude/plans/wxt-migration-followups.md`.
 - If you hit a WXT question the skill does not answer, fetch
   `https://wxt.dev/llms-full.txt` and quote the relevant section back to me
   before deciding.

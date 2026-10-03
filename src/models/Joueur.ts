@@ -19,7 +19,7 @@ import * as storage from "~/storage";
  */
 export class Joueur {
   // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. docs/migration-followups.md).
+  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
   _id: any;
   _pseudo: any;
   _x: any;
