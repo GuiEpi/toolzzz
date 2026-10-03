@@ -23,45 +23,55 @@ import { MessagesPage } from "~/pages/Messages";
 import { PlayerProfilePage } from "~/pages/PlayerProfile";
 import { QueenPage } from "~/pages/Queen";
 import { ResourcesPage } from "~/pages/Resources";
+import type { ComptePlusBox } from "~/boxes/ComptePlus";
+import type { RadarBox } from "~/boxes/Radar";
 
 /**
- * @typedef {{ boiteComptePlus: import("~/boxes/ComptePlus").BoiteComptePlus,
- *             boiteRadar: import("~/boxes/Radar").BoiteRadar }} Boites
- * @typedef {{ test: (uri: string) => boolean, run: (boites: Boites) => void }} Route
+ * The boxes a page may need. Typed for real rather than with JSDoc: in a .ts
+ * file JSDoc types are ignored, and that is how a rename once changed these
+ * property names on one side only without tsc noticing.
  */
+export interface Boxes {
+  comptePlusBox: ComptePlusBox;
+  radarBox: RadarBox;
+}
 
-/** @type {Route[]} */
-export const routes = [
+export interface Route {
+  test: (uri: string) => boolean;
+  run: (boxes: Boxes) => void;
+}
+
+export const routes: Route[] = [
   {
     test: (uri) => uri == "/Reine.php",
-    run: ({ boiteComptePlus }) => {
-      const page = new QueenPage(boiteComptePlus);
+    run: ({ comptePlusBox }) => {
+      const page = new QueenPage(comptePlusBox);
       if (!Utils.comptePlus) page.plus();
     },
   },
   {
     test: (uri) => uri == "/construction.php",
-    run: ({ boiteComptePlus }) => new BuildingsPage(boiteComptePlus).run(),
+    run: ({ comptePlusBox }) => new BuildingsPage(comptePlusBox).run(),
   },
   {
     test: (uri) => uri == "/laboratoire.php",
-    run: ({ boiteComptePlus }) => new LabPage(boiteComptePlus).run(),
+    run: ({ comptePlusBox }) => new LabPage(comptePlusBox).run(),
   },
   {
     test: (uri) => uri == "/Ressources.php",
-    run: ({ boiteComptePlus }) => new ResourcesPage(boiteComptePlus).run(),
+    run: ({ comptePlusBox }) => new ResourcesPage(comptePlusBox).run(),
   },
   {
     test: (uri) => uri == "/Armee.php",
-    run: ({ boiteComptePlus }) => new ArmyPage(boiteComptePlus).run(),
+    run: ({ comptePlusBox }) => new ArmyPage(comptePlusBox).run(),
   },
   {
     test: (uri) => uri == "/commerce.php",
-    run: ({ boiteComptePlus }) => new TradePage(boiteComptePlus).run(),
+    run: ({ comptePlusBox }) => new TradePage(comptePlusBox).run(),
   },
   {
     test: (uri) => uri == "/compte.php",
-    run: ({ boiteComptePlus }) => new AccountPage(boiteComptePlus).run(),
+    run: ({ comptePlusBox }) => new AccountPage(comptePlusBox).run(),
   },
   {
     test: (uri) => uri == "/messagerie.php",
@@ -81,20 +91,20 @@ export const routes = [
   },
   {
     test: (uri) => location.href.indexOf("/Membre.php?Pseudo") > 0 || uri == "/Membre.php",
-    run: ({ boiteRadar }) => new PlayerProfilePage(boiteRadar).run(),
+    run: ({ radarBox }) => new PlayerProfilePage(radarBox).run(),
   },
   {
     test: (uri) =>
       uri == "/classementAlliance.php" &&
       Utils.extractUrlParams()["alliance"] != "" &&
       Utils.extractUrlParams()["alliance"] != undefined,
-    run: ({ boiteRadar }) => new AllianceProfilePage(boiteRadar).run(),
+    run: ({ radarBox }) => new AllianceProfilePage(radarBox).run(),
   },
   {
     test: () =>
       location.href.indexOf("/ennemie.php?Attaquer") > 0 ||
       location.href.indexOf("/ennemie.php?annuler") > 0,
-    run: ({ boiteComptePlus }) => new AttackPage(boiteComptePlus).run(),
+    run: ({ comptePlusBox }) => new AttackPage(comptePlusBox).run(),
   },
   {
     test: (uri) => uri == "/ennemie.php" && location.search == "",
@@ -115,11 +125,9 @@ export const routes = [
 
 /**
  * Runs the first route matching the current URL (none → nothing happens).
- *
- * @param {Boites} boites
  */
-export function router(boites) {
+export function router(boxes: Boxes) {
   const uri = location.pathname;
   const route = routes.find((r) => r.test(uri));
-  if (route) route.run(boites);
+  if (route) route.run(boxes);
 }

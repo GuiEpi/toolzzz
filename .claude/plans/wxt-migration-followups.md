@@ -137,6 +137,18 @@ comportement identique, vérifié au niveau du bundle généré.
   d'où le report jusqu'ici). Le segment de clé reste en minuscules via
   `serverKey()`.
 
+## Trou de couverture connu (jsdom)
+
+`test:vendor` et `test:storage` chargent le bundle réel mais **sans réseau** :
+le `Promise.all` de démarrage (profil, constructions, recherches) ne se résout
+jamais, donc le routeur et le code des pages ne tournent pas. Ces harnais
+valident le démarrage, les bibliothèques et la persistance — pas les pages.
+C'est le test navigateur (`bun run smoke:browser`) qui couvre cette partie, et
+c'est lui qui a attrapé les trois régressions de la Phase 3 ci-dessous.
+
+Les rendre exécutables sous jsdom demanderait de stubber les réponses HTML du
+jeu pour chaque page : utile, pas encore fait.
+
 ## Phase 5
 
 - **Minification Firefox** : `.output/firefox-mv3/content-scripts/game.js`

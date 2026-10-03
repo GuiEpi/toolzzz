@@ -190,13 +190,13 @@ export class BattleBox extends Box {
                   <td class='left'>Multiplicateur de vie ennemi</td>
                   <td class='right'>×${probe.multiplicateur.toFixed(4)}</td>
                   <td class='left'>Vie HB × 3</td>
-                  <td class='right'>${numeral(probe.vieHBx3).format()}</td>
+                  <td class='right'>${numeral(probe.hpHBx3).format()}</td>
                 </tr>
                 <tr>
-                  <td class='left small'>${probe.lieuTxt ? "(" + probe.lieuTxt + ")" : ""}</td>
+                  <td class='left small'>${probe.placeTxt ? "(" + probe.placeTxt + ")" : ""}</td>
                   <td></td>
                   <td class='left'>Vie AB (lieu de la sonde)</td>
-                  <td class='right'>${numeral(Math.round(probe.vieAB)).format()}</td>
+                  <td class='right'>${numeral(Math.round(probe.hpAB)).format()}</td>
                 </tr>
                 <tr class='gras'>
                   <td></td>
@@ -206,7 +206,7 @@ export class BattleBox extends Box {
                 </tr>
                 <tr>
                   <td class='left'>Armes de l'ennemi</td>
-                  <td class='right'>${probe.armesEnnemi}</td>
+                  <td class='right'>${probe.weaponsEnnemi}</td>
                   <td class='left'>Défense AB</td>
                   <td class='right'>${numeral(probe.defenseAB).format()}</td>
                 </tr>
@@ -214,7 +214,7 @@ export class BattleBox extends Box {
                   <td></td>
                   <td></td>
                   <td class='left'>Réplique 10%</td>
-                  <td class='right'>${numeral(Math.round(probe.repliqueDef10)).format()}</td>
+                  <td class='right'>${numeral(Math.round(probe.retaliationDef10)).format()}</td>
                 </tr>
               </tbody>
             </table>
@@ -337,7 +337,7 @@ export class BattleBox extends Box {
     $("#o_calcStatusAtt").html(
       manqueAtt <= 0 ? "<span class='green'>OK</span>" : "<span class='red'>Alerte !</span>",
     );
-    let jsnNec = Math.ceil(probe.repliqueDef10 / (UNIT_HP[1] * bonusHp));
+    let jsnNec = Math.ceil(probe.retaliationDef10 / (UNIT_HP[1] * bonusHp));
     $("#o_calcJsnNec").text(numeral(jsnNec).format());
     $("#o_calcStatusJsn").html(
       qtyJsn >= jsnNec ? "<span class='green'>OK</span>" : "<span class='red'>Alerte !</span>",
@@ -1154,7 +1154,7 @@ export class BattleBox extends Box {
       // map of the previously ticked states (by nickname+i) so the player's choices survive
       previous = {};
     (this._mfResults || []).forEach((r) => {
-      r.attaques?.forEach((a, i) => {
+      r.attacks?.forEach((a, i) => {
         previous[r.cible.pseudo + ":" + i] = a.checked !== false;
       });
     });
@@ -1270,7 +1270,7 @@ export class BattleBox extends Box {
       } else if (r.tropBasse) {
         html += `<tr><td colspan="4" class="centre red"><em>Le terrain de la cible est trop bas</em></td></tr>`;
       } else {
-        r.attaques.forEach((a, i) => {
+        r.attacks.forEach((a, i) => {
           html += `<tr>
                     <td class="left"><label><input type="checkbox" class="o_mfAttaqueCheck" data-pseudo="${r.cible.pseudo}" data-i="${i}"${a.checked ? " checked" : ""}/> Attaque ${i + 1} <span class="reduce">(${a.pct}%)</span></label></td>
                     <td class="right">${numeral(a.tdcAttAvant).format()}</td>
@@ -1278,7 +1278,7 @@ export class BattleBox extends Box {
                     <td class="right">${numeral(a.prise).format()}</td>
                 </tr>`;
         });
-        let totalCapture = r.attaques.reduce((s, a) => s + a.prise, 0);
+        let totalCapture = r.attacks.reduce((s, a) => s + a.prise, 0);
         html += `<tr class="gras">
                     <td class="left">Résultat</td>
                     <td class="right">${numeral(r.tdcAttFin).format()}</td>
@@ -1295,8 +1295,8 @@ export class BattleBox extends Box {
         pseudo = $el.data("pseudo"),
         i = parseInt($el.data("i")),
         r = this._mfResults.find((x) => x.cible.pseudo === pseudo);
-      if (r && r.attaques[i]) {
-        r.attaques[i].checked = $el.is(":checked");
+      if (r && r.attacks[i]) {
+        r.attacks[i].checked = $el.is(":checked");
         this.renderMultiFloodRecap(this._mfResults);
       }
     });
@@ -1319,7 +1319,7 @@ export class BattleBox extends Box {
       cibles: any = new Set();
     results.forEach((r) => {
       if (r.tropHaute || r.tropBasse) return;
-      r.attaques.forEach((a) => {
+      r.attacks.forEach((a) => {
         if (a.checked === false) return; // attaques décochées exclues
         cibles.add(r.cible.pseudo);
         totalAttacks++;
@@ -1386,7 +1386,7 @@ export class BattleBox extends Box {
       if (r.tropHaute || r.tropBasse) return;
       let prises = [],
         indices = [];
-      r.attaques.forEach((a, i) => {
+      r.attacks.forEach((a, i) => {
         if (a.checked !== false && a.prise > 0) {
           prises.push(a.prise);
           indices.push(i);

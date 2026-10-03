@@ -214,7 +214,7 @@ export async function main(ctx) {
           });
       });
 
-      router({ boxComptePlus, boxRadar });
+      router({ comptePlusBox: boxComptePlus, radarBox: boxRadar });
     });
   }
 }

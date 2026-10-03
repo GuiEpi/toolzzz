@@ -18,6 +18,19 @@ import { Player } from "~/models/Player";
  * @constructor
  * @extends Rapport
  */
+/** What {@link Battle.analyzeProbe} returns; read by the BattleBox panel. */
+export interface ProbeAnalysis {
+  multiplicateur: number;
+  hpHB: number;
+  hpHBx3: number;
+  hpAB: number;
+  fdfNecessaire: number;
+  weaponsEnnemi: any;
+  defenseAB: number;
+  retaliationDef10: number;
+  placeTxt: string;
+}
+
 export class Battle {
   // Fields declared for TypeScript (Phase 2 was a straight conversion; real
   // typing is deferred — see .claude/plans/wxt-migration-followups.md).
@@ -481,10 +494,9 @@ export class Battle {
    *
    * @private
    * @method analyzeProbe
-   * @return {Object|null} { multiplicateur, vieHB, vieHBx3, vieAB, fdfNecessaire,
-   *                         armesEnnemi, defenseAB, repliqueDef10 }, or null when not applicable
+   * @return the analysis, or null when it does not apply
    */
-  analyzeProbe() {
+  analyzeProbe(): ProbeAnalysis | null {
     if (this._pointOfView !== 0) return null;
     if (!this._enemyArmyBefore || !this._enemyArmyAfter) return null;
     if (this._enemyArmyBefore.getBaseHp() === 0) return null;
