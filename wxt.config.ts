@@ -105,7 +105,9 @@ export default defineConfig({
     action: {
       default_icon: "images/icons/48.png",
     },
-    permissions: [],
+    // `storage` : persistance des réglages, du radar et des caches dans
+    // browser.storage.local (les données restent locales, aucune collecte).
+    permissions: ["storage"],
     host_permissions: ["http://*.fourmizzz.fr/*"],
     web_accessible_resources: [
       {

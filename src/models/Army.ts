@@ -126,7 +126,7 @@ export class Army {
    * @method getArmy
    */
   getArmy() {
-    return $.ajax({ url: "http://" + Utils.serveur + ".fourmizzz.fr/Armee.php" });
+    return $.ajax({ url: "http://" + Utils.server + ".fourmizzz.fr/Armee.php" });
   }
   /**
    *
@@ -823,7 +823,7 @@ export class Army {
       donnees["unite13"] = this._distribution[indice][11];
       donnees["unite14"] = this._distribution[indice][6];
       // Requete
-      $.post("http://" + Utils.serveur + ".fourmizzz.fr/AcquerirTerrain.php", donnees, (data) => {
+      $.post("http://" + Utils.server + ".fourmizzz.fr/AcquerirTerrain.php", donnees, (data) => {
         if (data.indexOf("La chasse est lancée.") > -1)
           $("#o_simulationChasse tr:eq(" + (indice + 1) + ")").html(
             `<td class='green'>${indice + 1}</td><td colspan='14' class='green'>La chasse est lancée.</td>`,
@@ -1074,7 +1074,7 @@ export class Army {
         donnees["unite14"] = this._distribution[indice][6];
         // Requete
         $.post(
-          "http://" + Utils.serveur + ".fourmizzz.fr/ennemie.php?Attaquer=" + idTarget,
+          "http://" + Utils.server + ".fourmizzz.fr/ennemie.php?Attaquer=" + idTarget,
           donnees,
           (data) => {
             let res = Utils.parseHtml(data).find("center:last").text();

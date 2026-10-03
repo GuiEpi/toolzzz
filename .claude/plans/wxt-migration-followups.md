@@ -114,6 +114,29 @@ comportement identique, vérifié au niveau du bundle généré.
 - Aucun `storage.watch` : l'inventaire n'a trouvé aucun comportement
   cross-onglet à préserver.
 
+## Phase 4 — fait, avec ces réserves
+
+- **Noms de champs stockés toujours en français.** Les valeurs sont copiées
+  telles quelles depuis la 3.x : `niveauConstruction`, `ordreRadar`,
+  `startPonte`… Les renommer aurait demandé une traduction clé à clé dans
+  l'import, en plus du changement de clés — deux risques dans la même
+  migration. À faire quand la 4.0 est stable, avec une montée de `version`
+  des items et une migration WXT (`migrations[2]`).
+- **Écritures asynchrones.** `localStorage` écrivait de façon synchrone ;
+  `browser.storage.local` rend la main avant que l'écriture soit faite. Une
+  fermeture d'onglet dans la milliseconde qui suit un `set()` peut perdre la
+  dernière valeur. Jamais observé, mais c'est une différence réelle.
+- **`src/storage/legacy-import.ts` à supprimer** deux releases après la 4.0,
+  avec le marqueur `local:<serveur>:legacyImported`. L'ancien `localStorage`
+  n'est jamais effacé : un retour en 3.x retrouve ses données.
+- **Pas de `storage.watch`** : l'inventaire n'avait trouvé aucun comportement
+  cross-onglet, on n'en invente pas.
+- **Pas d'`unlimitedStorage`** : le plus gros item est le cache de la carte
+  d'alliance (quelques dizaines de Ko), très loin du quota.
+- `Utils.serveur` est devenu `Utils.server` (il construisait aussi des URLs,
+  d'où le report jusqu'ici). Le segment de clé reste en minuscules via
+  `serverKey()`.
+
 ## Phase 5
 
 - **Minification Firefox** : `.output/firefox-mv3/content-scripts/game.js`

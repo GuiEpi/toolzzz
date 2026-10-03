@@ -7,7 +7,7 @@
  *  2. the stylesheets — WXT collects them into the content script's `css`
  *     entry. The jQuery UI theme (formerly a <link> to code.jquery.com) comes
  *     first so outiiil.css's overrides keep winning ties, as they do today;
- *  3. l'appli (`./main`).
+ *  3. the app itself (`./main`).
  *
  * Everything imported here must only be used inside `main()`: WXT strips
  * `main` and then the imports that became unused before evaluating this file
@@ -26,7 +26,7 @@ import { main } from "./main";
 
 export default defineContentScript({
   matches: ["http://*.fourmizzz.fr/*"],
-  main(ctx) {
-    main(ctx);
+  async main(ctx) {
+    await main(ctx);
   },
 });

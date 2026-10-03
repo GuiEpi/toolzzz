@@ -7,7 +7,7 @@ import { TOAST_ERROR, TOAST_SUCCESS, TOAST_WARNING } from "~/constants";
 import { Utils } from "~/lib/Utils";
 // Deliberate import cycle (used inside methods only, never at module level): SentAttack ↔ Army.
 import { Army } from "~/models/Army";
-import * as storage from "~/storage";
+import { store } from "~/storage";
 import * as session from "~/storage/session";
 
 /**
@@ -28,7 +28,6 @@ import * as session from "~/storage/session";
  *
  * @class SentAttack
  */
-const KEY_SENT_ATTACKS = "outiiil_attaquesLancees";
 // delay (s) after which a record never found in the game's list is dropped
 // (send refused by the server, page never reloaded…)
 const CAPTURE_TTL = 600;
@@ -49,7 +48,7 @@ export class SentAttack {
   static load() {
     let list;
     try {
-      list = storage.getJSON(KEY_SENT_ATTACKS) || [];
+      list = store.sentAttacks.get();
     } catch (e) {
       list = [];
     }
@@ -63,7 +62,7 @@ export class SentAttack {
    *
    */
   static save(list) {
-    storage.setJSON(KEY_SENT_ATTACKS, list);
+    store.sentAttacks.set(list);
   }
   /**
    * Records an attack as it is sent.

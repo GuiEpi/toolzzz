@@ -293,12 +293,26 @@ if (!(await s.eval(`!!document.querySelector("#pseudo")`))) {
   process.exit(2);
 }
 const pseudo = await s.eval(`document.querySelector("#pseudo").textContent`);
-const reglages = JSON.parse((await s.eval(`localStorage.getItem("outiiil_parametre")`)) || "{}");
 console.log(`compte : ${pseudo} sur ${SERVER}`);
-console.log(
-  `réglages à effet de bord : affectationRessource=${JSON.stringify(reglages.affectationRessource)}` +
-    ` replacerArmeeAuto=${JSON.stringify(reglages.replacerArmeeAuto)}\n`,
-);
+
+// Depuis la 4.0 les réglages vivent dans browser.storage.local, qu'une page ne
+// peut pas lire. On se rabat sur le localStorage laissé par la 3.x (jamais
+// effacé par l'import) ; sans lui, on ne sait pas et on saute les deux pages
+// qui écrivent côté jeu au chargement plutôt que de parier.
+const legacy = await s.eval(`localStorage.getItem("outiiil_parametre")`);
+const reglages = legacy === null ? null : JSON.parse(legacy);
+if (reglages) {
+  console.log(
+    `réglages à effet de bord (hérités de la 3.x) :` +
+      ` affectationRessource=${JSON.stringify(reglages.affectationRessource)}` +
+      ` replacerArmeeAuto=${JSON.stringify(reglages.replacerArmeeAuto)}\n`,
+  );
+} else {
+  console.log(
+    "réglages illisibles depuis la page (stockage de l'extension) :" +
+      " Ressources.php et Armee.php seront ignorées\n",
+  );
+}
 
 // un autre joueur que soi, pour la page profil
 await aller(BASE + "/alliance.php?Membres");
@@ -318,8 +332,9 @@ for (const page of PAGES) {
     }
     chemin = `/Membre.php?Pseudo=${encodeURIComponent(autre)}`;
   }
-  if (page.risque && reglages[page.risque]) {
-    console.log(`\n${chemin} — IGNORÉE : « ${page.risque} » est actif, la page écrirait côté jeu`);
+  if (page.risque && (!reglages || reglages[page.risque])) {
+    const pourquoi = reglages ? `« ${page.risque} » est actif` : "réglage inconnu";
+    console.log(`\n${chemin} — IGNORÉE : ${pourquoi}, la page écrirait côté jeu`);
     continue;
   }
 

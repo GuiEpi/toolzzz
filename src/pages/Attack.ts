@@ -10,7 +10,7 @@ import { getProfile } from "~/models/currentPlayer";
 import { Army } from "~/models/Army";
 import { SentAttack } from "~/models/SentAttack";
 import { Player } from "~/models/Player";
-import * as storage from "~/storage";
+import { store } from "~/storage";
 
 /**
  * Enriches the attack pages.
@@ -423,7 +423,7 @@ export class AttackPage {
    * @method saveAttacks
    */
   saveAttacks(listAttack) {
-    let dataEvo = storage.getJSON("outiiil_evolution") || {};
+    let dataEvo = store.upgrades.get();
     if (
       !dataEvo.hasOwnProperty("attaque") ||
       dataEvo.attaque.length != listAttack.length ||
@@ -433,7 +433,7 @@ export class AttackPage {
     ) {
       dataEvo.attaque = listAttack;
       dataEvo.startAttaque = moment();
-      storage.setJSON("outiiil_evolution", dataEvo);
+      store.upgrades.set(dataEvo);
       if (!Utils.comptePlus && $("#boiteComptePlus").length) {
         this._comptePlusBox.attaque = dataEvo.attaque;
         this._comptePlusBox.startAttaque = dataEvo.startAttaque;

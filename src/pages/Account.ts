@@ -4,8 +4,8 @@
 
 import { $ } from "~/vendor";
 import { Utils } from "~/lib/Utils";
-import { QUICK_MENU, QUICK_MENU_KEY } from "~/data/quickMenu";
-import * as storage from "~/storage";
+import { QUICK_MENU } from "~/data/quickMenu";
+import { store } from "~/storage";
 
 /**
  * Hooks into /compte.php to capture and configure the preferences of the
@@ -107,7 +107,7 @@ export class AccountPage {
    */
   _readPrefs() {
     try {
-      return storage.getJSON(QUICK_MENU_KEY) || {};
+      return store.quickMenu.get();
     } catch (e) {
       return {};
     }
@@ -122,7 +122,7 @@ export class AccountPage {
       snapshot[item.name] = $("#" + item.name).is(":checked");
     });
     try {
-      storage.setJSON(QUICK_MENU_KEY, snapshot);
+      store.quickMenu.set(snapshot);
     } catch (e) {}
   }
 }

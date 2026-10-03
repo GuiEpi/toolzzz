@@ -34,3 +34,8 @@ jobs:
       # Highcharts, moment…) et que main() démarre sans ReferenceError.
       - name: Vendor bundle smoke test
         run: bun run test:vendor
+
+      # Bascule de persistance (Phase 4) : import des données 3.x, isolation
+      # par serveur, pas de ré-import à la deuxième ouverture.
+      - name: Storage migration test
+        run: node scripts/test-storage.mjs

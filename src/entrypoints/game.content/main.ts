@@ -18,12 +18,12 @@ import { Dock } from "~/boxes/Dock";
 import { ComptePlusBox } from "~/boxes/ComptePlus";
 import { RadarBox } from "~/boxes/Radar";
 import { router } from "~/pages";
-import * as storage from "~/storage";
+import { hydrate, store } from "~/storage";
 
 /**
  * @param {import("#imports").ContentScriptContext} ctx
  */
-export function main(ctx) {
+export async function main(ctx) {
   // The `o_chrome` class on <html> scopes the CSS rules that must only apply
   // under Chromium (see the ComptePlus radar — Firefox and Chrome disagree on
   // how width is distributed with `table-layout: auto`).
@@ -31,6 +31,12 @@ export function main(ctx) {
 
   // the player is signed in
   if ($(".boite_connexion_titre:first").text() != "Connexion") {
+    // Everything persisted is read once here, before any box or page touches
+    // it: browser.storage.local is asynchronous, the rest of the code is not.
+    // The alliance tag comes from the page, and is what scopes the alliance
+    // map cache and its filters.
+    await hydrate(Utils.alliance || undefined);
+
     // The jQuery UI "humanity" theme is no longer fetched from code.jquery.com:
     // it is vendored (src/assets/jquery-ui-humanity.css) and injected by the
     // manifest alongside the extension's other stylesheets.
@@ -112,12 +118,11 @@ export function main(ctx) {
       // it does not come back. When the key is missing (installed before this
       // feature existed) it is shown anyway: a new user also benefits from seeing
       // the changelog once.
-      const LAST_SEEN_VERSION_KEY = "outiiil_lastSeenVersion";
-      if (storage.getRaw(LAST_SEEN_VERSION_KEY) !== VERSION) {
+      if (store.lastSeenVersion.get() !== VERSION) {
         // Points at the releases page (the latest is on top) so the player can
         // also browse the previous versions they may have missed.
         const releaseUrl = `https://github.com/GuiEpi/toolzzz/releases`;
-        const markSeen = () => storage.setRaw(LAST_SEEN_VERSION_KEY, VERSION);
+        const markSeen = () => store.lastSeenVersion.set(VERSION);
         $.toast({
           heading: "Toolzzz mis à jour",
           text: `Nouvelle version <b>v${VERSION}</b>. <a href='${releaseUrl}' target='_blank' rel='noopener' id='o_changelogLink'>Voir les nouveautés</a>`,

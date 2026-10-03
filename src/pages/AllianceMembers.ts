@@ -18,7 +18,7 @@ import { RankBox } from "~/boxes/Rank";
 import { Alliance } from "~/models/Alliance";
 import { Player } from "~/models/Player";
 import { ForumPage } from "~/pages/Forum";
-import * as storage from "~/storage";
+import { hasAllianceItems, store } from "~/storage";
 
 /**
  * Enriches the /alliance.php page.
@@ -162,10 +162,9 @@ export class AllianceMembersPage {
    * @method tableWithCachedMap
    */
   tableWithCachedMap() {
-    const cacheKey = `outiiil_carteAlliance_${Utils.serveur}_${Utils.alliance}`;
     let cached = null;
     try {
-      cached = storage.getJSON(cacheKey);
+      cached = hasAllianceItems() ? store.allianceMap.get() : null;
     } catch (e) {
       cached = null;
     }
@@ -487,7 +486,6 @@ export class AllianceMembersPage {
    */
   map() {
     if ($("#o_carteAlliance").length) return this; // déjà rendue
-    const cacheKey = `outiiil_carteAlliance_${Utils.serveur}_${Utils.alliance}`;
     $("#alliance").after(`
       <div id='o_carteAlliance' class='boite_amelioration simulateur centre' style='display:none;'>
         <h2>Carte de l'alliance</h2>
@@ -503,7 +501,7 @@ export class AllianceMembersPage {
     `);
     let cached = null;
     try {
-      cached = storage.getJSON(cacheKey);
+      cached = hasAllianceItems() ? store.allianceMap.get() : null;
     } catch (e) {
       cached = null;
     }
@@ -549,7 +547,6 @@ export class AllianceMembersPage {
     if (!pseudos.length) {
       return Promise.reject(new Error("Aucun membre détecté dans l'alliance."));
     }
-    const cacheKey = `outiiil_carteAlliance_${Utils.serveur}_${Utils.alliance}`;
     const promises = pseudos.map((pseudo) => {
       const player = this._alliance.joueurs[pseudo];
       return player
@@ -572,7 +569,7 @@ export class AllianceMembersPage {
       if (!members.length) throw new Error("Aucune coordonnée récupérée.");
       const timestamp = Date.now();
       try {
-        storage.setJSON(cacheKey, { timestamp, members });
+        if (hasAllianceItems()) store.allianceMap.set({ timestamp, members });
       } catch (e) {
         console.warn("outiiil: localStorage write failed", e);
       }
@@ -620,10 +617,9 @@ export class AllianceMembersPage {
    * @method _exportMapForumPng
    */
   _exportMapForumPng() {
-    const cacheKey = `outiiil_carteAlliance_${Utils.serveur}_${Utils.alliance}`;
     let cached = null;
     try {
-      cached = storage.getJSON(cacheKey);
+      cached = hasAllianceItems() ? store.allianceMap.get() : null;
     } catch (e) {
       cached = null;
     }
@@ -794,15 +790,6 @@ export class AllianceMembersPage {
     $("#o_carteAllianceStatus").text(`Données ${age}`);
   }
   /**
-   * Storage key for the filter selection (per server and alliance).
-   *
-   * @private
-   * @method _filtersKey
-   */
-  _filtersKey() {
-    return `outiiil_carteFiltres_${Utils.serveur}_${Utils.alliance}`;
-  }
-  /**
    * Current selection. What is stored is what is *hidden*, not what is shown: a
    * member or a grade that appeared since the last visit is visible by default
    * instead of being silently missing from the map.
@@ -813,7 +800,7 @@ export class AllianceMembersPage {
   _loadFilters() {
     let f: any = {};
     try {
-      f = storage.getJSON(this._filtersKey()) || {};
+      f = hasAllianceItems() ? store.allianceMapFilters.get() : {};
     } catch (e) {
       f = {};
     }
@@ -830,7 +817,7 @@ export class AllianceMembersPage {
    */
   _saveFilters() {
     try {
-      storage.setJSON(this._filtersKey(), this._filters);
+      if (hasAllianceItems()) store.allianceMapFilters.set(this._filters);
     } catch (e) {
       console.warn("outiiil: localStorage write failed", e);
     }

@@ -9,7 +9,7 @@ import { Utils } from "~/lib/Utils";
 import { getProfile } from "~/models/currentPlayer";
 import { Box } from "~/boxes/Box";
 import { Dock } from "~/boxes/Dock";
-import * as storage from "~/storage";
+import { store } from "~/storage";
 
 /**
  * Lets the player pick their preferences.
@@ -159,7 +159,7 @@ export class SettingsBox extends Box {
     // page, which rebuilds the profile (getProfile()) with the defaults.
     $("#o_resetParametres").click(() => {
       if (confirm("Réinitialiser tous les paramètres aux valeurs par défaut ?")) {
-        storage.remove("outiiil_parametre");
+        store.settings.remove();
         location.reload();
       }
     });

@@ -184,7 +184,7 @@ export class Alliance {
    */
   getDescription() {
     return $.ajax({
-      url: "http://" + Utils.serveur + ".fourmizzz.fr/classementAlliance.php?alliance=" + this._tag,
+      url: "http://" + Utils.server + ".fourmizzz.fr/classementAlliance.php?alliance=" + this._tag,
     });
   }
   /**
@@ -252,7 +252,7 @@ export class Alliance {
   static search(elt) {
     return $.ajax({
       type: "post",
-      url: "http://" + Utils.serveur + ".fourmizzz.fr/classementAlliance.php",
+      url: "http://" + Utils.server + ".fourmizzz.fr/classementAlliance.php",
       data: {
         requete: elt,
         recherche: 1,

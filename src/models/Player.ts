@@ -10,7 +10,7 @@ import { getProfile } from "~/models/currentPlayer";
 // Deliberate import cycle (used inside methods only, never at module level): Player ↔ RadarBox.
 import { RadarBox } from "~/boxes/Radar";
 import { Setting } from "~/models/Setting";
-import * as storage from "~/storage";
+import { store } from "~/storage";
 
 /**
  * Creates and manages a player.
@@ -490,7 +490,7 @@ export class Player {
    *
    */
   getSetting() {
-    let data = storage.getJSON("outiiil_parametre") || {};
+    let data = store.settings.get();
     // Load the stored data when it is present and still fresh
     for (let key in data) if (this._setting[key]) this._setting[key].valeur = data[key];
     return this;
@@ -499,20 +499,21 @@ export class Player {
    *
    */
   save() {
-    return storage.setJSON("outiiil_joueur", this, [
-      "id",
-      "x",
-      "y",
-      "niveauConstruction",
-      "niveauRecherche",
-    ]);
+    // stored field names are the ones 3.x wrote, kept as they are
+    return store.player.set({
+      id: this._id,
+      x: this._x,
+      y: this._y,
+      niveauConstruction: this._buildingLevels,
+      niveauRecherche: this._researchLevels,
+    });
   }
   /**
    *
    */
   getProfile() {
     return $.ajax({
-      url: "http://" + Utils.serveur + ".fourmizzz.fr/Membre.php?Pseudo=" + this._pseudo,
+      url: "http://" + Utils.server + ".fourmizzz.fr/Membre.php?Pseudo=" + this._pseudo,
     });
   }
   /**
@@ -522,7 +523,7 @@ export class Player {
     // for the current player the data may already be in storage
     if (getProfile().pseudo == this._pseudo) {
       // for the current player, try localStorage first
-      let data = storage.getJSON("outiiil_joueur") || {};
+      let data = store.player.get();
       // Load the stored data when it is present and still fresh
       if (data.hasOwnProperty("id") && data.hasOwnProperty("x") && data.hasOwnProperty("y")) {
         this._id = data.id;
@@ -567,7 +568,7 @@ export class Player {
    */
   getBuildings() {
     // for the current player, try localStorage first
-    let data = storage.getJSON("outiiil_joueur") || {};
+    let data = store.player.get();
     // Load the stored data when it is present and still fresh
     if (data.hasOwnProperty("niveauConstruction")) this._buildingLevels = data.niveauConstruction;
     // nothing in localStorage
@@ -576,7 +577,7 @@ export class Player {
         return elt == -1;
       })
     )
-      return $.ajax({ url: "http://" + Utils.serveur + ".fourmizzz.fr/construction.php" });
+      return $.ajax({ url: "http://" + Utils.server + ".fourmizzz.fr/construction.php" });
     return null;
   }
   /**
@@ -594,14 +595,14 @@ export class Player {
       time = parseInt(row.split(",")[0].split("(")[1]);
     // with a building running, the data expires when that building completes
     if (building) {
-      let dataEvo = storage.getJSON("outiiil_evolution") || {};
+      let dataEvo = store.upgrades.get();
       // nothing stored yet, or this building is not recorded
       if (!dataEvo.hasOwnProperty("construction")) {
         // nothing in localStorage
         dataEvo.construction = building.substr(0, 1).toUpperCase() + building.substr(1);
         dataEvo.expConstruction = moment().add(time, "s");
         dataEvo.startConstruction = moment();
-        storage.setJSON("outiiil_evolution", dataEvo);
+        store.upgrades.set(dataEvo);
       }
     }
     this.save();
@@ -614,7 +615,7 @@ export class Player {
    */
   getResearches() {
     // for the current player, try localStorage first
-    let data = storage.getJSON("outiiil_joueur") || {};
+    let data = store.player.get();
     // Load the stored data when it is present and still fresh
     if (data.hasOwnProperty("niveauRecherche")) this._researchLevels = data.niveauRecherche;
     // nothing in localStorage
@@ -623,7 +624,7 @@ export class Player {
         return elt == -1;
       })
     )
-      return $.ajax({ url: "http://" + Utils.serveur + ".fourmizzz.fr/laboratoire.php" });
+      return $.ajax({ url: "http://" + Utils.server + ".fourmizzz.fr/laboratoire.php" });
     return null;
   }
   /**
@@ -641,14 +642,14 @@ export class Player {
       time = parseInt(row.split(",")[0].split("(")[1]);
     // with a research running, the data expires when that research completes
     if (research) {
-      let dataEvo = storage.getJSON("outiiil_evolution") || {};
+      let dataEvo = store.upgrades.get();
       // nothing stored yet, or this research is not recorded
       if (!dataEvo.hasOwnProperty("recherche")) {
         // nothing in localStorage
         dataEvo.recherche = research;
         dataEvo.expRecherche = moment().add(time, "s");
         dataEvo.startRecherche = moment();
-        storage.setJSON("outiiil_evolution", dataEvo);
+        store.upgrades.set(dataEvo);
       }
     }
     this.save();
@@ -757,7 +758,7 @@ export class Player {
   static search(elt) {
     return $.ajax({
       type: "post",
-      url: "http://" + Utils.serveur + ".fourmizzz.fr/classementAlliance.php",
+      url: "http://" + Utils.server + ".fourmizzz.fr/classementAlliance.php",
       data: {
         requete: elt,
         recherche: 1,

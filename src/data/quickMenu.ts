@@ -144,5 +144,3 @@ export const QUICK_MENU = [
     target: "_blank",
   },
 ];
-
-export const QUICK_MENU_KEY = "outiiil_menuRapide";

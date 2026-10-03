@@ -18,9 +18,9 @@ import {
 import { VERSION } from "~/lib/version";
 import { Utils } from "~/lib/Utils";
 import { getProfile } from "~/models/currentPlayer";
-import { QUICK_MENU, QUICK_MENU_KEY } from "~/data/quickMenu";
+import { QUICK_MENU } from "~/data/quickMenu";
 import { Player } from "~/models/Player";
-import * as storage from "~/storage";
+import { store } from "~/storage";
 
 export class ComptePlusBox {
   // Fields declared for TypeScript (Phase 2 was a straight conversion; real
@@ -232,7 +232,7 @@ export class ComptePlusBox {
    * @method getRadar
    */
   getData() {
-    let data = storage.getJSON("outiiil_evolution") || {};
+    let data = store.upgrades.get();
     if (data.ponte) this._spawn = data.ponte;
     if (data.startPonte) this._spawnStart = data.startPonte;
     if (data.construction) this._building = data.construction;
@@ -274,7 +274,7 @@ export class ComptePlusBox {
    *
    */
   save() {
-    storage.setJSON("outiiil_evolution", this);
+    store.upgrades.set(this);
     return this;
   }
   /**
@@ -352,7 +352,7 @@ export class ComptePlusBox {
   _quickMenuShortcutsHtml() {
     let prefs = {};
     try {
-      prefs = storage.getJSON(QUICK_MENU_KEY) || {};
+      prefs = store.quickMenu.get();
     } catch (e) {
       return "";
     }
@@ -389,7 +389,7 @@ export class ComptePlusBox {
    * @method render
    */
   render() {
-    let visible = storage.getRaw("outiiil_boiteActive");
+    let visible = store.activeBox.get();
     if (!Utils.comptePlus) {
       // Add the content
       $("#boiteComptePlus").replaceWith(

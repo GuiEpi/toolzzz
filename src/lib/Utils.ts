@@ -23,10 +23,10 @@ export class Utils {
    * Returns the server the player is on.
    *
    * @static
-   * @method serveur
-   * @return {String} le serveur en cours.
+   * @method server
+   * @return {String} the current server.
    */
-  static get serveur() {
+  static get server() {
     return location.hostname.split(".")[0].toUpperCase();
   }
   /**

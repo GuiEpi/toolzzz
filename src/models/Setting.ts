@@ -5,7 +5,7 @@
 
 import { $ } from "~/vendor";
 import { getProfile } from "~/models/currentPlayer";
-import * as storage from "~/storage";
+import { store } from "~/storage";
 
 /**
  * Holds a single user setting.
@@ -106,7 +106,7 @@ export class Setting {
    *
    */
   save() {
-    storage.setJSON("outiiil_parametre", getProfile().parametre);
+    store.settings.set(getProfile().parametre);
     return this;
   }
   /**

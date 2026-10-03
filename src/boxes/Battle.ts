@@ -1088,7 +1088,7 @@ export class BattleBox extends Box {
    * @return {Promise<Object>}
    */
   _mfFetchProfile(pseudo) {
-    let url = `http://${Utils.serveur}.fourmizzz.fr/Membre.php?Pseudo=${encodeURIComponent(pseudo)}`;
+    let url = `http://${Utils.server}.fourmizzz.fr/Membre.php?Pseudo=${encodeURIComponent(pseudo)}`;
     return $.get(url).then((html) => {
       let $page = Utils.parseHtml(html),
         coords = $page.find(".boite_membre a[href^='carte2.php?']").text(),
@@ -1420,7 +1420,7 @@ export class BattleBox extends Box {
       return;
     }
     let { cible, prises, indices } = aLaunch[idx];
-    $.get(`http://${Utils.serveur}.fourmizzz.fr/ennemie.php?Attaquer=${cible.id}`)
+    $.get(`http://${Utils.server}.fourmizzz.fr/ennemie.php?Attaquer=${cible.id}`)
       .then((html) => {
         let $page = Utils.parseHtml(html),
           tInput = $page.find("input#t").last();
@@ -1465,7 +1465,7 @@ export class BattleBox extends Box {
     let i = indices[k],
       donnees = this._mfBuildPayload(securite, this._mfArmy.repartition[k], cible.pseudo);
     $.post(
-      `http://${Utils.serveur}.fourmizzz.fr/ennemie.php?Attaquer=${cible.id}`,
+      `http://${Utils.server}.fourmizzz.fr/ennemie.php?Attaquer=${cible.id}`,
       donnees,
       (data) => {
         let txt = Utils.parseHtml(data).find("center:last").text(),

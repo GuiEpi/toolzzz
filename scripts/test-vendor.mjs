@@ -38,12 +38,33 @@ function load(html, url) {
   });
   const w = dom.window;
   const errors = [];
+  // storage.local en mémoire : depuis la Phase 4, main() hydrate la couche de
+  // persistance avant tout le reste, donc l'API doit répondre.
+  const memoire = {};
   w.chrome = {
     runtime: {
       id: "fake",
       getURL: (p) => "chrome-extension://fake" + p,
       getManifest: () => ({ version: "0.0.0-test" }),
       onMessage: { addListener() {} },
+      lastError: undefined,
+    },
+    storage: {
+      local: {
+        get: (keys) => {
+          const demande = keys == null ? Object.keys(memoire) : Array.isArray(keys) ? keys : [keys];
+          return Promise.resolve(
+            Object.fromEntries(demande.filter((k) => k in memoire).map((k) => [k, memoire[k]])),
+          );
+        },
+        set: (entrees) => Object.assign(memoire, entrees) && Promise.resolve(),
+        remove: (keys) => {
+          for (const k of Array.isArray(keys) ? keys : [keys]) delete memoire[k];
+          return Promise.resolve();
+        },
+        onChanged: { addListener() {}, removeListener() {} },
+      },
+      onChanged: { addListener() {}, removeListener() {} },
     },
   };
   w.matchMedia = () => ({ matches: false, addEventListener() {}, addListener() {} });

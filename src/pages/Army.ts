@@ -254,7 +254,7 @@ export class ArmyPage {
   placeAntiProbeEnough(indUnit, countTroupeDispo) {
     let securite = $("#t").attr("name") + "=" + $("#t").val();
     $.post(
-      "http://" + Utils.serveur + ".fourmizzz.fr/Armee.php?deplacement=3&" + securite,
+      "http://" + Utils.server + ".fourmizzz.fr/Armee.php?deplacement=3&" + securite,
       (data) => {
         let correspondanceUnit = [1, 2, 3, 4, 5, 6, 14, 7, 8, 9, 10, 13, 11, 12];
         // not enough troops: pick a random amount
@@ -271,7 +271,7 @@ export class ArmyPage {
         // on place l'antisonde en dome
         $.post(
           "http://" +
-            Utils.serveur +
+            Utils.server +
             ".fourmizzz.fr/Armee.php?Transferer=Envoyer&LieuOrigine=3&LieuDestination=2&ChoixUnite=unite" +
             correspondanceUnit[indUnit] +
             "&nbTroupes=" +
@@ -294,7 +294,7 @@ export class ArmyPage {
               );
             $.post(
               "http://" +
-                Utils.serveur +
+                Utils.server +
                 ".fourmizzz.fr/Armee.php?Transferer=Envoyer&LieuOrigine=3&LieuDestination=1&ChoixUnite=unite" +
                 correspondanceUnit[indUnit] +
                 "&nbTroupes=" +
@@ -317,13 +317,13 @@ export class ArmyPage {
   placeAntiProbeNotEnough(indUnit, countTroupeDispo) {
     let securite = $("#t").attr("name") + "=" + $("#t").val();
     $.post(
-      "http://" + Utils.serveur + ".fourmizzz.fr/Armee.php?deplacement=3&" + securite,
+      "http://" + Utils.server + ".fourmizzz.fr/Armee.php?deplacement=3&" + securite,
       (data) => {
         let correspondanceUnit = [1, 2, 3, 4, 5, 6, 14, 7, 8, 9, 10, 13, 11, 12];
         // on place l'antisonde en dome
         $.post(
           "http://" +
-            Utils.serveur +
+            Utils.server +
             ".fourmizzz.fr/Armee.php?Transferer=Envoyer&LieuOrigine=3&LieuDestination=2&ChoixUnite=unite" +
             correspondanceUnit[indUnit] +
             "&nbTroupes=" +
@@ -333,7 +333,7 @@ export class ArmyPage {
           (data) => {
             $.post(
               "http://" +
-                Utils.serveur +
+                Utils.server +
                 ".fourmizzz.fr/Armee.php?Transferer=Envoyer&LieuOrigine=3&LieuDestination=1&ChoixUnite=unite" +
                 correspondanceUnit[indUnit] +
                 "&nbTroupes=1&" +

@@ -85,7 +85,7 @@ export class ResourcesPage {
       let promesses = hunts
         .map((_, span) => $(span).attr("id").replace("chasse_", ""))
         .get()
-        .map((id) => $.get(`http://${Utils.serveur}.fourmizzz.fr/Ressources.php?annuler=${id}`));
+        .map((id) => $.get(`http://${Utils.server}.fourmizzz.fr/Ressources.php?annuler=${id}`));
       Promise.all(promesses).then(
         () => {
           location.reload();
@@ -248,7 +248,7 @@ export class ResourcesPage {
           countHunt = $("#o_chasseNbr").spinner("value"),
           intervalle = $("#o_chasseInt").val() * 1000;
         $.ajax({
-          url: "http://" + Utils.serveur + ".fourmizzz.fr/AcquerirTerrain.php",
+          url: "http://" + Utils.server + ".fourmizzz.fr/AcquerirTerrain.php",
         }).then((data) => {
           let parsed = Utils.parseHtml(data);
           // AcquerirTerrain.php uses id="t" both on the main <table> and on the

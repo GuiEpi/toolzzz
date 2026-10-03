@@ -13,7 +13,7 @@ import { Utils } from "~/lib/Utils";
 import { Alliance } from "~/models/Alliance";
 // Deliberate import cycle (used inside methods only, never at module level): see ~/models/Player.
 import { Player } from "~/models/Player";
-import * as storage from "~/storage";
+import { store } from "~/storage";
 
 export class RadarBox {
   // Fields declared for TypeScript (Phase 2 was a straight conversion; real
@@ -175,7 +175,7 @@ export class RadarBox {
    * @method getRadar
    */
   getData() {
-    let data = storage.getJSON("outiiil_radar") || {};
+    let data = store.radar.get();
     // Load the stored data when it is present and still fresh
     if (data.hasOwnProperty("joueurs"))
       for (let item in data.joueurs) this._players[item] = new Player(data.joueurs[item]);
@@ -209,7 +209,7 @@ export class RadarBox {
    *
    */
   save() {
-    storage.setJSON("outiiil_radar", this);
+    store.radar.set(this);
     return this;
   }
   /**
@@ -231,9 +231,8 @@ export class RadarBox {
       });
       // title events, when the radar is in use
       $("#boiteComptePlus .titre_colonne_cliquable").click((e) => {
-        if ($(e.currentTarget).next().find("table:visible").attr("id"))
-          storage.setRaw("outiiil_boiteActive", "C");
-        else storage.setRaw("outiiil_boiteActive", "R");
+        if ($(e.currentTarget).next().find("table:visible").attr("id")) store.activeBox.set("C");
+        else store.activeBox.set("R");
         $("#boiteComptePlus .contenu_boite_compte_plus table").toggle();
       });
       // fill the box
@@ -248,7 +247,7 @@ export class RadarBox {
    * @method actualiseBoite
    */
   refresh() {
-    let show = storage.getRaw("outiiil_boiteActive"),
+    let show = store.activeBox.get(),
       // On ComptePlus the game's #requete field lives in a <tr><td> of
       // table:eq(0), which radar mode hides — so it is unreachable. A twin row is
       // inserted here in #o_radar's tfoot (id `o_requete` to avoid clashing with
