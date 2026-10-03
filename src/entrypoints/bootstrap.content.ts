@@ -1,5 +1,5 @@
 /*
- * bootstrap.js
+ * bootstrap.content.ts
  *
  * Mini-script chargé au plus tôt (`run_at: document_start`) pour poser des
  * classes CSS sur <html> avant que le navigateur ne parse le body. Permet à

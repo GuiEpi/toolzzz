@@ -17,24 +17,24 @@
  * Le reste du code n'accède jamais à `window.*` : il importe `$`, `moment`,
  * `numeral`, `Highcharts`, `Clipboard` depuis ce module.
  */
-import "./lib/jquery_3.2.1.js";
-import "./lib/jquery-ui_1.12.1.js";
-import "./lib/jquery-ui-touch-punch_0.2.3.js";
-import "./lib/jquery-datetimepicker_1.6.3.js";
-import "./lib/jquery-toast_1.3.1.js";
-import "./lib/globalize_0.1.1.js";
-import "./lib/globalize-locale-fr.js";
-import "./lib/clipboard_1.7.1.js";
-import "./lib/highcharts_6.0.7.js";
-import "./lib/highcharts-more.js";
-import "./lib/highcharts-data.js";
-import "./lib/highcharts-stock.js";
-import "./lib/datatables_1.10.16.js";
-import "./lib/numeral_2.0.6.js";
-import "./lib/numeral-locale-fr.js";
-import "./lib/moment_2.19.1.js";
-import "./lib/moment-locale-fr.js";
-import "./lib/moment-duration-format.js";
+import "~/vendor/lib/jquery_3.2.1.js";
+import "~/vendor/lib/jquery-ui_1.12.1.js";
+import "~/vendor/lib/jquery-ui-touch-punch_0.2.3.js";
+import "~/vendor/lib/jquery-datetimepicker_1.6.3.js";
+import "~/vendor/lib/jquery-toast_1.3.1.js";
+import "~/vendor/lib/globalize_0.1.1.js";
+import "~/vendor/lib/globalize-locale-fr.js";
+import "~/vendor/lib/clipboard_1.7.1.js";
+import "~/vendor/lib/highcharts_6.0.7.js";
+import "~/vendor/lib/highcharts-more.js";
+import "~/vendor/lib/highcharts-data.js";
+import "~/vendor/lib/highcharts-stock.js";
+import "~/vendor/lib/datatables_1.10.16.js";
+import "~/vendor/lib/numeral_2.0.6.js";
+import "~/vendor/lib/numeral-locale-fr.js";
+import "~/vendor/lib/moment_2.19.1.js";
+import "~/vendor/lib/moment-locale-fr.js";
+import "~/vendor/lib/moment-duration-format.js";
 
 const w = window as any;
 

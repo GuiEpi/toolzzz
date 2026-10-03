@@ -1,3 +1,22 @@
 {
-  "extends": "./.wxt/tsconfig.json"
+  "extends": "./.wxt/tsconfig.json",
+  "compilerOptions": {
+    // Desserré pour la conversion JS → TS (Phase 2 de la migration WXT) : le
+    // code vient de 2017 et n'a jamais été typé. Le durcissement est une
+    // étape à part (Phase 5), pas un prérequis à la conversion.
+    "strict": false,
+    "noImplicitAny": false,
+    "noUncheckedIndexedAccess": false,
+    // Plus un seul .js dans les sources de l'extension, sauf les
+    // bibliothèques vendorisées (src/vendor/lib/) qui ne sont pas des
+    // modules et sont déclarées dans src/vendor/types.d.ts.
+    "allowJs": false,
+    // Les déclarations de champs ajoutées pour TypeScript (`_x: any;`) sont
+    // purement déclaratives : avec `useDefineForClassFields: true` (défaut en
+    // target ESNext) elles seraient émises comme de vrais champs définis à
+    // `undefined` avant le constructeur, donc visibles de `for…in` et
+    // `Object.keys` sur les instances. À false, elles disparaissent à la
+    // compilation et le bundle reste identique à celui d'avant la conversion.
+    "useDefineForClassFields": false
+  }
 }
