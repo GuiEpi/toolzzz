@@ -50,16 +50,16 @@ export default defineContentScript({
     `;
     (document.head || document.documentElement).appendChild(style);
 
-    let appliquer = () => {
+    let apply = () => {
       document.documentElement.classList.toggle("toolzzz-mode-couts", location.hash === "#cout");
       // construction.php / laboratoire.php : on cache les `<strong>` (évolutions
       // en cours) avant le parse du body, pour éviter le flash entre le rendu
       // natif et notre tableau récap (cf. Utils.tableauEvolution).
-      let evolutionPage =
+      let upgradePage =
         location.pathname === "/construction.php" || location.pathname === "/laboratoire.php";
-      document.documentElement.classList.toggle("toolzzz-mode-evolution", evolutionPage);
+      document.documentElement.classList.toggle("toolzzz-mode-evolution", upgradePage);
     };
-    appliquer();
-    ctx.addEventListener(window, "hashchange", appliquer);
+    apply();
+    ctx.addEventListener(window, "hashchange", apply);
   },
 });

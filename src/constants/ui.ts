@@ -1,5 +1,5 @@
 // Effets jQuery UI proposés dans les paramètres.
-export const EFFET = [
+export const EFFECTS = [
   "",
   "Blind",
   "Bounce",

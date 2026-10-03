@@ -5,16 +5,16 @@
 
 import { $ } from "~/vendor";
 import {
-  LISTESMILEY1,
-  LISTESMILEY2,
-  LISTESMILEY3,
-  LISTESMILEY4,
-  LISTESMILEY5,
-  LISTESMILEY6,
+  SMILEYS_1,
+  SMILEYS_2,
+  SMILEYS_3,
+  SMILEYS_4,
+  SMILEYS_5,
+  SMILEYS_6,
   TOAST_ERROR,
 } from "~/constants";
 import { Utils } from "~/lib/Utils";
-import { getProfile } from "~/models/monProfil";
+import { getProfile } from "~/models/currentPlayer";
 
 /**
  * Classe de fonction pour les chats.
@@ -22,7 +22,7 @@ import { getProfile } from "~/models/monProfil";
  * @class PageChat
  * @constructor
  */
-export class PageChat {
+export class ChatPage {
   // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
   // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
   _timeoutChat: any;
@@ -35,20 +35,20 @@ export class PageChat {
   /**
    *
    */
-  executer() {
+  run() {
     // fonction plus
     if (!Utils.comptePlus) this.plus();
     // Couleur du texte
-    this.couleur();
+    this.color();
     // Reaffichage message
-    this.afficheMessage();
+    this.showMessage();
     // Modification pour l'envoie du formulaire
     $("#message").on("keypress", (e) => {
       let code = e.keyCode || e.which;
-      if (code == 13) this.parserMessage();
+      if (code == 13) this.parseMessage();
     });
     $("input[name='Envoyer']").click((e) => {
-      this.parserMessage();
+      this.parseMessage();
     });
     return this;
   }
@@ -58,7 +58,7 @@ export class PageChat {
    * @private
    * @method afficheMessage
    */
-  afficheMessage() {
+  showMessage() {
     // ajoute du cite sur les anciens messages
     $("#anciensMessages p, #nouveauxMessages p").each((i, elt) => {
       $(elt).html((i, html) => {
@@ -73,7 +73,7 @@ export class PageChat {
     });
     // event sur les anciens message
     $("span[id^='o_cite']").click((e) => {
-      let texte = this.citerMessage(e);
+      let texte = this.quoteMessage(e);
       texte.length && $("#message").val(`[i]${texte}[/i] // `).focus();
     });
     // ajotu du cite pour les nouveaux messages
@@ -91,7 +91,7 @@ export class PageChat {
           });
         });
         $(`#o_cite${element.attr("id")}`).click((e) => {
-          let texte = this.citerMessage(e);
+          let texte = this.quoteMessage(e);
           texte.length && $("#message").val(`[i]${texte}[/i] // `).focus();
         });
       }
@@ -101,7 +101,7 @@ export class PageChat {
       $("span[id^='o_cite']")
         .off()
         .click((e) => {
-          let texte = this.citerMessage(e);
+          let texte = this.quoteMessage(e);
           texte.length && $("#message").val(`[i]${texte}[/i] // `).focus();
         });
     });
@@ -130,7 +130,7 @@ export class PageChat {
       " --- <label><input id='o_autoActualiser' type='checkbox' name='autoActualiser'/>auto</label> ",
     );
     $("#o_autoActualiser").change(() => {
-      if ($("#o_autoActualiser").prop("checked")) this.actualiserMessage();
+      if ($("#o_autoActualiser").prop("checked")) this.refreshMessage();
       else clearTimeout(this._timeoutChat);
     });
     // Ajout des fonctions de mise en forme
@@ -158,18 +158,18 @@ export class PageChat {
       e.preventDefault();
     });
     // Ajout des emoticone
-    $("#listeSmiley20").html(LISTESMILEY1);
-    $("#listeSmiley30").html(LISTESMILEY2);
-    $("#listeSmiley40").html(LISTESMILEY3);
-    $("#listeSmiley50").html(LISTESMILEY4);
-    $("#listeSmiley60").html(LISTESMILEY5);
-    $("#listeSmiley70").html(LISTESMILEY6);
+    $("#listeSmiley20").html(SMILEYS_1);
+    $("#listeSmiley30").html(SMILEYS_2);
+    $("#listeSmiley40").html(SMILEYS_3);
+    $("#listeSmiley50").html(SMILEYS_4);
+    $("#listeSmiley60").html(SMILEYS_5);
+    $("#listeSmiley70").html(SMILEYS_6);
   }
   /**
    *
    */
-  actualiserMessage(nbTour = 40) {
-    if (nbTour) {
+  refreshMessage(countTurn = 40) {
+    if (countTurn) {
       this.getMessage().then(
         (data) => {
           $("#anciensMessages").prepend($("#nouveauxMessages").html());
@@ -183,7 +183,7 @@ export class PageChat {
         },
       );
       this._timeoutChat = setTimeout(() => {
-        this.actualiserMessage(--nbTour);
+        this.refreshMessage(--countTurn);
       }, 5000);
     } else $("#o_autoActualiser").prop("checked", false);
     return this;
@@ -191,7 +191,7 @@ export class PageChat {
   /**
    *
    */
-  citerMessage(e) {
+  quoteMessage(e) {
     let clone = $(e.currentTarget).parent().clone();
     $("span", clone).remove();
     let texte = clone.text();
@@ -204,7 +204,7 @@ export class PageChat {
    * @private
    * @method parserMessage
    */
-  parserMessage() {
+  parseMessage() {
     let color = $("#inputCouleur").val();
     if (color != "000000" && color != "0000000")
       $("#message").val("[color=#" + color + "]" + $("#message").val() + "[/color]");
@@ -216,7 +216,7 @@ export class PageChat {
    * @private
    * @method couleur
    */
-  couleur() {
+  color() {
     $("#inputCouleur").val(getProfile().parametre["couleurChat"].valeur.substring(1));
     $("#boutonCouleur").remove();
     $("#smileySuivant0").after(
@@ -226,7 +226,7 @@ export class PageChat {
       let color = e.currentTarget.value;
       $("#inputCouleur").val(color.substring(1));
       getProfile().parametre["couleurChat"].valeur = color;
-      getProfile().parametre["couleurChat"].sauvegarde();
+      getProfile().parametre["couleurChat"].save();
     });
   }
   /**

@@ -1,5 +1,5 @@
 // Palettes de smileys injectées dans le chat et la messagerie (HTML du jeu).
-export const LISTESMILEY1 = `<img src='images/carte/rien.gif' width='1' height='39'>
+export const SMILEYS_1 = `<img src='images/carte/rien.gif' width='1' height='39'>
       <img src='images/smiley/ant_pouce.gif' onclick='addRaccourciSmiley("message","ant_pouce")'>
        <img src='images/smiley/ant_smile.gif' onclick='addRaccourciSmiley("message","ant_smile")'>
        <img src='images/smiley/ant_biggrin.gif' onclick='addRaccourciSmiley("message","ant_biggrin")'>
@@ -19,7 +19,7 @@ export const LISTESMILEY1 = `<img src='images/carte/rien.gif' width='1' height='
        <img src='images/smiley/ant_sad.gif' onclick='addRaccourciSmiley("message","ant_sad")'>
        <img src='images/smiley/ant_mad.gif' onclick='addRaccourciSmiley("message","ant_mad")'>
        <img src='images/smiley/ant_doctor.gif' onclick='addRaccourciSmiley("message","ant_doctor")'>`;
-export const LISTESMILEY2 = `<img src='images/carte/rien.gif' width='1' height='39'>
+export const SMILEYS_2 = `<img src='images/carte/rien.gif' width='1' height='39'>
       <img onclick='addRaccourciSmiley("message","doctor")' src='images/smiley/doctor.gif'>
        <img onclick='addRaccourciSmiley("message","borg")' src='images/smiley/borg.gif'>
        <img onclick='addRaccourciSmiley("message","pirate")' src='images/smiley/pirate.gif'>
@@ -44,7 +44,7 @@ export const LISTESMILEY2 = `<img src='images/carte/rien.gif' width='1' height='
        <img onclick='addRaccourciSmiley("message","egypt")' src='images/smiley/egypt.gif'>
        <img onclick='addRaccourciSmiley("message","fool")' src='images/smiley/fool.gif'>
        <img onclick='addRaccourciSmiley("message","hat")' src='images/smiley/hat.gif'>`;
-export const LISTESMILEY3 = `<img src='images/carte/rien.gif' width='1' height='39'>
+export const SMILEYS_3 = `<img src='images/carte/rien.gif' width='1' height='39'>
       <img onclick='addRaccourciSmiley("message","dead")' src='images/smiley/dead.gif'>
        <img onclick='addRaccourciSmiley("message","inv")' src='images/smiley/inv.gif'>
        <img onclick='addRaccourciSmiley("message","stretcher")' src='images/smiley/stretcher.gif'>
@@ -67,7 +67,7 @@ export const LISTESMILEY3 = `<img src='images/carte/rien.gif' width='1' height='
        <img onclick='addRaccourciSmiley("message","rip")' src='images/smiley/rip.gif'>
        <img onclick='addRaccourciSmiley("message","scooter")' src='images/smiley/scooter.gif'>
        <img onclick='addRaccourciSmiley("message","moto")' src='images/smiley/moto.gif'>`;
-export const LISTESMILEY4 = `<img src='images/carte/rien.gif' width='1' height='39'>
+export const SMILEYS_4 = `<img src='images/carte/rien.gif' width='1' height='39'>
       <img onclick='addRaccourciSmiley("message","whip")' src='images/smiley/whip.gif'>
       <img onclick='addRaccourciSmiley("message","shades")' src='images/smiley/shades.gif'>
       <img onclick='addRaccourciSmiley("message","kiss")' src='images/smiley/kiss.gif'>
@@ -89,7 +89,7 @@ export const LISTESMILEY4 = `<img src='images/carte/rien.gif' width='1' height='
       <img onclick='addRaccourciSmiley("message","music")' src='images/smiley/music.gif'>
       <img onclick='addRaccourciSmiley("message","prison")' src='images/smiley/prison.gif'>
       <img onclick='addRaccourciSmiley("message","piece")' src='images/smiley/piece.gif'>`;
-export const LISTESMILEY5 = `<img src='images/carte/rien.gif' width='1' height='39'>
+export const SMILEYS_5 = `<img src='images/carte/rien.gif' width='1' height='39'>
       <img onclick='addRaccourciSmiley("message","noel_etoile")' src='images/smiley/noel_etoile.gif'>
        <img onclick='addRaccourciSmiley("message","noel_snowman10")' src='images/smiley/noel_snowman10.gif'>
        <img onclick='addRaccourciSmiley("message","noel_snowman11")' src='images/smiley/noel_snowman11.gif'>
@@ -113,7 +113,7 @@ export const LISTESMILEY5 = `<img src='images/carte/rien.gif' width='1' height='
        <img onclick='addRaccourciSmiley("message","noel_bonnet")' src='images/smiley/noel_bonnet.gif'>
        <img onclick='addRaccourciSmiley("message","noel_renne")' src='images/smiley/noel_renne.gif'>
        <img onclick='addRaccourciSmiley("message","noel_renne3")' src='images/smiley/noel_renne3.gif'>`;
-export const LISTESMILEY6 = `<img src='images/carte/rien.gif' width='1' height='39'>
+export const SMILEYS_6 = `<img src='images/carte/rien.gif' width='1' height='39'>
       <img src='images/smiley/dollar.gif' onclick='addRaccourciSmiley("message","dollar")'>
        <img src='images/smiley/ninja.gif' onclick='addRaccourciSmiley("message","ninja")'>
        <img src='images/smiley/bat.gif' onclick='addRaccourciSmiley("message","bat")'>

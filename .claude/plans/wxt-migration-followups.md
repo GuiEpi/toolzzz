@@ -74,6 +74,15 @@ comportement identique, vérifié au niveau du bundle généré.
   `setRaw(CLE, echecs)` → `setRaw(CLE, String(echecs))` — `echecs` est lu en
   chaîne depuis `sessionStorage` et réécrit en nombre.
 
+### Phase 3 — doublon conservé
+
+- **`src/models/Order.ts`** déclare `_derniereMiseAJour` (utilisé) **et**
+  `_dernierMiseAJour` (lu uniquement par un couple get/set que personne
+  n'appelle — coquille masculin/féminin d'origine). Les fusionner aurait
+  changé le comportement : ils sont devenus `_lastUpdate` et
+  `_lastUpdateUnused`. À supprimer une fois la 4.0 stable, après avoir
+  vérifié que l'accesseur ne sert vraiment à personne.
+
 ### Bugs latents trouvés par tsc, **conservés tels quels**
 
 - **`src/models/Combat.ts` — `calculeUniteXP()`** : la variable déclarée est

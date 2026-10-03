@@ -1,5 +1,5 @@
 // Libellés français pour moment / Highcharts / le datepicker jQuery UI.
-export const MOIS_FR = [
+export const MONTHS_FR = [
   "Janvier",
   "Février",
   "Mars",
@@ -13,7 +13,7 @@ export const MOIS_FR = [
   "Novembre",
   "Décembre",
 ];
-export const MOIS_RAC_FR = [
+export const MONTHS_SHORT_FR = [
   "Janv.",
   "Févr.",
   "Mars",
@@ -27,15 +27,15 @@ export const MOIS_RAC_FR = [
   "Nov.",
   "Déc.",
 ];
-export const JOUR_FR = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
-export const DATEPICKER_OPTION = {
+export const DAYS_FR = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
+export const DATEPICKER_OPTIONS = {
   closeText: "Fermer",
   prevText: "Précédent",
   nextText: "Suivant",
   currentText: "Aujourd'hui",
-  monthNames: MOIS_FR,
-  monthNamesShort: MOIS_RAC_FR,
-  dayNames: JOUR_FR,
+  monthNames: MONTHS_FR,
+  monthNamesShort: MONTHS_SHORT_FR,
+  dayNames: DAYS_FR,
   dayNamesShort: ["Dim.", "Lun.", "Mar.", "Mer.", "Jeu.", "Ven.", "Sam."],
   dayNamesMin: ["D", "L", "M", "M", "J", "V", "S"],
   weekHeader: "Sem.",

@@ -5,7 +5,7 @@
 
 import { $, moment } from "~/vendor";
 import {
-  ETAT_COMMANDE,
+  ORDER_STATUS,
   IMG_CHANGE,
   IMG_TOOLZZZ,
   TOAST_ERROR,
@@ -13,9 +13,9 @@ import {
   TOAST_WARNING,
 } from "~/constants";
 import { Utils } from "~/lib/Utils";
-import { getProfile } from "~/models/monProfil";
+import { getProfile } from "~/models/currentPlayer";
 import { Alliance } from "~/models/Alliance";
-import { Commande } from "~/models/Commande";
+import { Order } from "~/models/Order";
 
 /**
  * Noms des sections cachées du forum d'alliance utilisées comme stockage
@@ -27,8 +27,8 @@ import { Commande } from "~/models/Commande";
  * nom — et seulement si aucun des deux n'existe déjà — pour éviter les
  * doublons dans une alliance qui a hérité des anciennes sections.
  */
-const FORUM_SECTION_COMMANDE = ["Toolzzz_Commande", "Outiiil_Commande"];
-const FORUM_SECTION_MEMBRE = ["Toolzzz_Membre", "Outiiil_Membre"];
+const FORUM_SECTION_ORDERS = ["Toolzzz_Commande", "Outiiil_Commande"];
+const FORUM_SECTION_MEMBERS = ["Toolzzz_Membre", "Outiiil_Membre"];
 
 /**
  * Classe de fonction pour la page /alliance.php?forum_menu.
@@ -36,16 +36,16 @@ const FORUM_SECTION_MEMBRE = ["Toolzzz_Membre", "Outiiil_Membre"];
  * @class PageForum
  * @constructor
  */
-export class PageForum {
+export class ForumPage {
   // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
   // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
-  _commande: any;
+  _order: any;
   _monAlliance: any;
   constructor() {
     /**
      * liste des commandes.
      */
-    this._commande = {};
+    this._order = {};
     /**
      * liste des joueurs.
      */
@@ -55,13 +55,13 @@ export class PageForum {
    *
    */
   get commande() {
-    return this._commande;
+    return this._order;
   }
   /*
    *
    */
-  set commande(newCommande) {
-    this._commande = newCommande;
+  set commande(newOrder) {
+    this._order = newOrder;
   }
   /*
    *
@@ -78,13 +78,13 @@ export class PageForum {
   /**
    *
    */
-  creerSection(nomSection) {
+  createSection(nameSection) {
     return $.ajax({
       type: "post",
       url: "http://" + Utils.serveur + ".fourmizzz.fr/alliance.php?forum_menu",
       data: {
         xajax: "ajoutCategorie",
-        "xajaxargs[]": `<xjxquery><q>nom=${nomSection}</q></xjxquery>`,
+        "xajaxargs[]": `<xjxquery><q>nom=${nameSection}</q></xjxquery>`,
         xajaxr: moment().valueOf(),
       },
     });
@@ -92,13 +92,13 @@ export class PageForum {
   /**
    *
    */
-  modifierSection(nomSection, id, categorie) {
+  editSection(nameSection, id, categorie) {
     return $.ajax({
       type: "post",
       url: "http://" + Utils.serveur + ".fourmizzz.fr/alliance.php?forum_menu",
       data: {
         xajax: "renommerCategorie",
-        "xajaxargs[]": `<xjxquery><q>nom=${nomSection}&type=${categorie}&ID_cat=${id}&del=Supprimer</q></xjxquery>`,
+        "xajaxargs[]": `<xjxquery><q>nom=${nameSection}&type=${categorie}&ID_cat=${id}&del=Supprimer</q></xjxquery>`,
         xajaxr: moment().valueOf(),
       },
     });
@@ -106,7 +106,7 @@ export class PageForum {
   /**
    *
    */
-  consulterSection(id) {
+  viewSection(id) {
     return $.ajax({
       type: "post",
       url: "http://" + Utils.serveur + ".fourmizzz.fr/alliance.php?forum_menu",
@@ -120,13 +120,13 @@ export class PageForum {
   /**
    *
    */
-  creerSujet(nomSujet, contenu, id, type = "normal") {
+  createTopic(nameTopic, contenu, id, type = "normal") {
     return $.ajax({
       type: "post",
       url: "http://" + Utils.serveur + ".fourmizzz.fr/alliance.php?forum_menu",
       data: {
         xajax: "envoiNouveauSujet",
-        "xajaxargs[]": `<xjxquery><q>cat=${id}&sujet=${nomSujet}&message=${encodeURIComponent(contenu)}&type=${type}&modifiable=envoyer&send=Envoyer&question=&reponse[]=&reponse[]=&reponse[]=</q></xjxquery>`,
+        "xajaxargs[]": `<xjxquery><q>cat=${id}&sujet=${nameTopic}&message=${encodeURIComponent(contenu)}&type=${type}&modifiable=envoyer&send=Envoyer&question=&reponse[]=&reponse[]=&reponse[]=</q></xjxquery>`,
         xajaxr: moment().valueOf(),
       },
     });
@@ -134,13 +134,13 @@ export class PageForum {
   /**
    *
    */
-  modifierSujet(nomSujet, contenu, id) {
+  editTopic(nameTopic, contenu, id) {
     return $.ajax({
       type: "post",
       url: "http://" + Utils.serveur + ".fourmizzz.fr/alliance.php?forum_menu",
       data: {
         xajax: "envoiEditTopic",
-        "xajaxargs[]": `<xjxquery><q>IDTopic=${id}&sujet=${nomSujet}&message=${encodeURIComponent(contenu)}&modifiable=envoyer&send=Envoyer</q></xjxquery>`,
+        "xajaxargs[]": `<xjxquery><q>IDTopic=${id}&sujet=${nameTopic}&message=${encodeURIComponent(contenu)}&modifiable=envoyer&send=Envoyer</q></xjxquery>`,
         xajaxr: moment().valueOf(),
       },
     });
@@ -148,7 +148,7 @@ export class PageForum {
   /**
    *
    */
-  consulterSujet(id) {
+  viewTopic(id) {
     return $.ajax({
       type: "post",
       url: "http://" + Utils.serveur + ".fourmizzz.fr/alliance.php?forum_menu",
@@ -162,7 +162,7 @@ export class PageForum {
   /**
    *
    */
-  envoyerMessage(id, message) {
+  sendMessage(id, message) {
     return $.ajax({
       type: "post",
       url: "http://" + Utils.serveur + ".fourmizzz.fr/alliance.php?forum_menu",
@@ -176,15 +176,15 @@ export class PageForum {
   /**
    *
    */
-  executer() {
+  run() {
     let $alliance = $("#alliance");
     if (!$alliance.length) return this;
     // si le forum est deja chargé lance le traitement
-    if ($("#cat_forum").length) this.traitementSection("#alliance");
+    if ($("#cat_forum").length) this.processSection("#alliance");
     // Récupération des données du forum pour communiquer.
     let observer = new MutationObserver((mutationsList) => {
       mutationsList.forEach((mutation) => {
-        this.traitementSection(mutation.target);
+        this.processSection(mutation.target);
       });
     });
     observer.observe($alliance[0], { childList: true });
@@ -193,25 +193,25 @@ export class PageForum {
   /**
    *
    */
-  traitementSection(element) {
+  processSection(element) {
     // ajoute les options pour outiiil
     if ($(element).find("div.simulateur").length) this.optionAdmin();
     // on enregistre les id des topic si on utilise l'utilitaire
-    let $cmdSpan = PageForum.trouverSectionForum(element, FORUM_SECTION_COMMANDE);
+    let $cmdSpan = ForumPage.findForumSection(element, FORUM_SECTION_ORDERS);
     if (!getProfile().parametre["forumCommande"].valeur && $cmdSpan.length) {
       getProfile().parametre["forumCommande"].valeur = $cmdSpan.attr("class").match(/\d+/)[0];
-      getProfile().parametre["forumCommande"].sauvegarde();
+      getProfile().parametre["forumCommande"].save();
     }
-    let $memSpan = PageForum.trouverSectionForum(element, FORUM_SECTION_MEMBRE);
+    let $memSpan = ForumPage.findForumSection(element, FORUM_SECTION_MEMBERS);
     if (!getProfile().parametre["forumMembre"].valeur && $memSpan.length) {
       getProfile().parametre["forumMembre"].valeur = $memSpan.attr("class").match(/\d+/)[0];
-      getProfile().parametre["forumMembre"].sauvegarde();
+      getProfile().parametre["forumMembre"].save();
     }
     // selon la section ACTIVE on ajoute les outils necessaires
     let actif = $(element).find("span[class^='forum'][class$='ligne_paire']").html();
-    if (FORUM_SECTION_COMMANDE.includes(actif)) {
+    if (FORUM_SECTION_ORDERS.includes(actif)) {
       // on verifie si on n'est dans un sujet mais bien sur la liste des topics
-      if ($("#form_cat").length && !$("#o_afficherEtat").length) this.optionAdminCommande();
+      if ($("#form_cat").length && !$("#o_afficherEtat").length) this.adminOrderOption();
     }
     return this;
   }
@@ -222,7 +222,7 @@ export class PageForum {
    * @static
    * @method trouverSectionForum
    */
-  static trouverSectionForum(element, noms) {
+  static findForumSection(element, noms) {
     for (let nom of noms) {
       let $span = $(element).find(`span[class^='forum']:contains('${nom}')`);
       if ($span.length) return $span;
@@ -232,27 +232,27 @@ export class PageForum {
   /**
    *
    */
-  chargerCommande(data) {
+  loadOrder(data) {
     let response = $(data).find("cmd:eq(1)").text();
     if (response.includes("Vous n'avez pas accès à ce forum."))
       $.toast({ ...TOAST_ERROR, text: "L'identifiant du sujet pour les commandes est érroné." });
     else {
-      let commande = null;
+      let order = null;
       $("<div/>")
         .append(response)
         .find("#form_cat tr:gt(0)")
         .each((i, elt) => {
-          let titreSujet = $(elt).find("td:eq(1)").text().trim(),
+          let titleTopic = $(elt).find("td:eq(1)").text().trim(),
             id = -1;
           // les lignes des commandes ont 3 td et du contenu
-          if (titreSujet) {
+          if (titleTopic) {
             id = $(elt).find("a.topic_forum").attr("onclick").match(/\d+/)[0];
-            commande = new Commande();
-            this._commande[id] = commande.parseUtilitaire(
+            order = new Order();
+            this._order[id] = order.parseToolsFormat(
               id,
               $(elt).next().find("a").text(),
-              titreSujet.split("] ")[0].split("[")[1],
-              titreSujet.split("] ")[1].split(" / "),
+              titleTopic.split("] ")[0].split("[")[1],
+              titleTopic.split("] ")[1].split(" / "),
               $(elt)
                 .find("td:last :not(a)")
                 .contents()
@@ -270,22 +270,22 @@ export class PageForum {
   /**
    *
    */
-  chargerJoueur(data) {
+  loadPlayer(data) {
     let response = $(data).find("cmd:eq(1)").text();
     if (response.includes("Vous n'avez pas accès à ce forum."))
       $.toast({ ...TOAST_ERROR, text: "L'identifiant du sujet pour les membres est érroné." });
     else {
-      let joueurs = {};
+      let players = {};
       $("<div/>")
         .append(response)
         .find("#form_cat tr:gt(0)")
         .each((i, elt) => {
-          let titreSujet = $(elt).find("td:eq(1)").text().trim(),
+          let titleTopic = $(elt).find("td:eq(1)").text().trim(),
             id = $(elt).find("input[name='topic[]']").val();
           // les lignes des commandes ont 3 td et du contenu
-          if (titreSujet) {
-            let infos = titreSujet.split(" / ");
-            joueurs[infos[0]] = {
+          if (titleTopic) {
+            let infos = titleTopic.split(" / ");
+            players[infos[0]] = {
               id: infos[1],
               pseudo: infos[0],
               x: infos[2],
@@ -293,12 +293,12 @@ export class PageForum {
               sujetForum: id,
             };
             if (infos.length > 4) {
-              joueurs[infos[0]].rang = infos[4];
-              joueurs[infos[0]].ordreRang = infos[5];
+              players[infos[0]].rang = infos[4];
+              players[infos[0]].ordreRang = infos[5];
             }
           }
         });
-      this._monAlliance = new Alliance({ tag: Utils.alliance, joueurs: joueurs });
+      this._monAlliance = new Alliance({ tag: Utils.alliance, joueurs: players });
       return true;
     }
     return false;
@@ -328,21 +328,21 @@ export class PageForum {
         // On ne crée la nouvelle section Toolzzz que si ni Toolzzz_* ni Outiiil_*
         // n'existent déjà — pour ne pas dédoubler le stockage dans une alliance
         // qui a déjà ses sections sous l'ancien nom.
-        let cmdExiste = FORUM_SECTION_COMMANDE.some(
+        let cmdExiste = FORUM_SECTION_ORDERS.some(
           (n) => $(`#cat_forum span:contains(${n})`).length,
         );
         if (!cmdExiste) {
-          let nomCmd = FORUM_SECTION_COMMANDE[0];
-          this.creerSection(nomCmd).then(
+          let nameCmd = FORUM_SECTION_ORDERS[0];
+          this.createSection(nameCmd).then(
             (data) => {
               let response = Utils.parseHtml(Utils.parseHtml(data).find("cmd:eq(1)").html() || "");
               let idCat = $(response)
-                .find(`input[value='${nomCmd}']`)
+                .find(`input[value='${nameCmd}']`)
                 .parent()
                 .attr("id")
                 .match(/\d+/)[0];
               // on ne peut pas creer directement une section caché donc on cache aprés
-              this.modifierSection(nomCmd, idCat, "cache").then(
+              this.editSection(nameCmd, idCat, "cache").then(
                 (data) => {
                   $.toast({
                     ...TOAST_SUCCESS,
@@ -366,21 +366,21 @@ export class PageForum {
           );
         } else $.toast({ ...TOAST_WARNING, text: "Section commande est déjà créée !" });
         // creation de la section membre pour les membres de l'alliance
-        let memExiste = FORUM_SECTION_MEMBRE.some(
+        let memExiste = FORUM_SECTION_MEMBERS.some(
           (n) => $(`#cat_forum span:contains(${n})`).length,
         );
         if (!memExiste) {
-          let nomMem = FORUM_SECTION_MEMBRE[0];
-          this.creerSection(nomMem).then(
+          let nameMem = FORUM_SECTION_MEMBERS[0];
+          this.createSection(nameMem).then(
             (data) => {
               let response = Utils.parseHtml(Utils.parseHtml(data).find("cmd:eq(1)").html() || "");
               let idCat = $(response)
-                .find(`input[value='${nomMem}']`)
+                .find(`input[value='${nameMem}']`)
                 .parent()
                 .attr("id")
                 .match(/\d+/)[0];
               // on ne peut pas creer directement une section caché donc on cache aprés
-              this.modifierSection(nomMem, idCat, "cache").then(
+              this.editSection(nameMem, idCat, "cache").then(
                 (data) => {
                   $.toast({
                     ...TOAST_SUCCESS,
@@ -412,8 +412,8 @@ export class PageForum {
       $("#o_tagGuerre")
         .autocomplete({
           source: (request, response) => {
-            Alliance.rechercher(request.term).then((data) => {
-              response(Utils.extraitRecherche(data, false, true));
+            Alliance.search(request.term).then((data) => {
+              response(Utils.extractResearch(data, false, true));
             });
           },
           position: { my: "left top-6", at: "left bottom" },
@@ -431,37 +431,37 @@ export class PageForum {
       // event sur le bouton guerre
       $("#o_creerSectionGuerre").click((e) => {
         let alliance = new Alliance({ tag: $("#o_tagGuerre").val() }),
-          titreSection = "Guerre " + alliance.tag;
+          titleSection = "Guerre " + alliance.tag;
         if (
           !$("#cat_forum span[class^='forum']")
             .text()
             .toUpperCase()
-            .includes(titreSection.toUpperCase())
+            .includes(titleSection.toUpperCase())
         ) {
           // on créer la section "Guerre " + tag
-          this.creerSection(titreSection).then(
+          this.createSection(titleSection).then(
             (data) => {
               // on recup la section pour ajouter les sujets des joueurs
               let response = Utils.parseHtml(Utils.parseHtml(data).find("cmd:eq(1)").html() || "");
               let idCat = $(response)
-                .find(`input[value='${titreSection}']`)
+                .find(`input[value='${titleSection}']`)
                 .parent()
                 .attr("id")
                 .match(/\d+/)[0];
               alliance.getDescription().then(
                 (data) => {
                   // on construit les appels de creation des sujets
-                  let promiseJoueur = new Array();
+                  let promisePlayer = new Array();
                   $(data)
                     .find("#tabMembresAlliance tr:gt(0)")
                     .each((i, elt) => {
                       let pseudo = $(elt).find("td:eq(2)").text();
-                      promiseJoueur.push(
-                        this.creerSujet(pseudo, `[player]${pseudo}[/player]`, idCat),
+                      promisePlayer.push(
+                        this.createTopic(pseudo, `[player]${pseudo}[/player]`, idCat),
                       );
                     });
                   // on creer les sujets
-                  Promise.all(promiseJoueur).then((values) => {
+                  Promise.all(promisePlayer).then((values) => {
                     location.reload();
                   });
                 },
@@ -489,11 +489,11 @@ export class PageForum {
   /**
    *
    */
-  optionAdminCommande() {
+  adminOrderOption() {
     if ($("img[src='images/icone/outil.gif']").length) {
       let options = "";
-      for (let etat in ETAT_COMMANDE)
-        options += `<option value="${ETAT_COMMANDE[etat]}">${etat}</option>`;
+      for (let status in ORDER_STATUS)
+        options += `<option value="${ORDER_STATUS[status]}">${status}</option>`;
       $("#form_cat td:last")
         .prepend(
           `<img class="cursor" id="o_afficherEtat" src="${IMG_CHANGE}" height="16" alt="changer" title="Changer l'etat des commandes selectionnées"/>`,
@@ -509,18 +509,18 @@ export class PageForum {
         $("#form_cat tr:gt(0)").each((i, elt) => {
           // si la commande est selectionné
           if ($(elt).find("input[name='topic[]']:checked").length) {
-            let titreSujet = $(elt).find("td:eq(1)").text().trim(),
+            let titleTopic = $(elt).find("td:eq(1)").text().trim(),
               id = $(elt).find("input[name='topic[]']").val();
-            if (titreSujet) {
-              let commande = new Commande();
-              commande.parseUtilitaire(
+            if (titleTopic) {
+              let order = new Order();
+              order.parseToolsFormat(
                 id,
                 $(elt).next().find("a").text(),
-                titreSujet.split("] ")[0].split("[")[1],
-                titreSujet.split("] ")[1].split(" / "),
+                titleTopic.split("] ")[0].split("[")[1],
+                titleTopic.split("] ")[1].split(" / "),
               );
-              commande.etat = $("#o_selectEtatCommande").val();
-              promiseCmdModif.push(this.modifierSujet(commande.toUtilitaire(), " ", id));
+              order.etat = $("#o_selectEtatCommande").val();
+              promiseCmdModif.push(this.editTopic(order.toToolsFormat(), " ", id));
             }
           }
         });

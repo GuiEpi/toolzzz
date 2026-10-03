@@ -7,21 +7,21 @@
  */
 import { $ } from "~/vendor";
 import { IMG_SPRITE_MENU } from "~/constants";
-import { getProfile } from "~/models/monProfil";
-import { BoiteChasse } from "~/boxes/Chasse";
-import { BoiteCombat } from "~/boxes/Combat";
-import { BoiteParametre } from "~/boxes/Parametres";
-import { BoitePonte } from "~/boxes/Ponte";
+import { getProfile } from "~/models/currentPlayer";
+import { HuntBox } from "~/boxes/Hunt";
+import { BattleBox } from "~/boxes/Battle";
+import { SettingsBox } from "~/boxes/Settings";
+import { SpawnBox } from "~/boxes/Spawn";
 
 export class Dock {
   // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
   // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
   static _mql: any;
   _html: any;
-  _boitePonte: any;
-  _boiteChasse: any;
-  _boiteCombat: any;
-  _boiteParametre: any;
+  _spawnBox: any;
+  _huntBox: any;
+  _battleBox: any;
+  _settingsBox: any;
   constructor() {
     /**
      *
@@ -35,19 +35,19 @@ export class Dock {
     /**
      *
      */
-    this._boitePonte = new BoitePonte();
+    this._spawnBox = new SpawnBox();
     /**
      *
      */
-    this._boiteChasse = new BoiteChasse();
+    this._huntBox = new HuntBox();
     /**
      *
      */
-    this._boiteCombat = new BoiteCombat();
+    this._battleBox = new BattleBox();
     /**
      *
      */
-    this._boiteParametre = new BoiteParametre();
+    this._settingsBox = new SettingsBox();
   }
   /**
    * Affiche la boite.
@@ -55,7 +55,7 @@ export class Dock {
    * @private
    * @method afficher
    */
-  afficher() {
+  render() {
     $("body").append(this._html);
     $("#o_toolbarOutiiil .o_toolbarItem").tooltip({
       tooltipClass: "warning-tooltip",
@@ -64,15 +64,15 @@ export class Dock {
       },
       hide: { effect: "fade", duration: 10 },
     });
-    Dock.appliquerPosition();
+    Dock.applyPosition();
     // En mobile (écran étroit), le côté droit n'a pas la place — on bascule la
     // toolbar en bas même si la pref enregistrée est "à droite". On suit la
     // mediaQuery pour réagir aussi quand on traverse le breakpoint à chaud.
-    Dock._mql.addEventListener("change", () => Dock.appliquerPosition());
+    Dock._mql.addEventListener("change", () => Dock.applyPosition());
     // selon la pref on cache l'element
     if (getProfile().parametre["dockVisible"].valeur == "0") {
       $(document).mousemove((e) => {
-        if (Dock.estEnBas()) {
+        if (Dock.isInBottom()) {
           if ($(window).height() - e.pageY < 60) $("#o_toolbarOutiiil").slideDown(500);
           else $("#o_toolbarOutiiil").slideUp(500);
         } else {
@@ -87,16 +87,16 @@ export class Dock {
       // affichage de la boite
       switch ($(e.currentTarget).find("span").attr("id")) {
         case "o_itemPonte":
-          this._boitePonte.afficher();
+          this._spawnBox.render();
           break;
         case "o_itemChasse":
-          this._boiteChasse.afficher();
+          this._huntBox.render();
           break;
         case "o_itemCombat":
-          this._boiteCombat.afficher();
+          this._battleBox.render();
           break;
         case "o_itemParametre":
-          this._boiteParametre.afficher();
+          this._settingsBox.render();
           break;
         default:
           break;
@@ -111,14 +111,14 @@ export class Dock {
    * @static
    * @method appliquerPosition
    */
-  static appliquerPosition() {
-    let isBas = Dock.estEnBas();
-    let position = isBas
+  static applyPosition() {
+    let isBottom = Dock.isInBottom();
+    let position = isBottom
       ? { my: "center top", at: "center bottom+10" }
       : { my: "left+10 center", at: "right center" };
     $("#o_toolbarOutiiil")
-      .toggleClass("o_toolbarBas", isBas)
-      .toggleClass("o_toolbarDroite", !isBas)
+      .toggleClass("o_toolbarBas", isBottom)
+      .toggleClass("o_toolbarDroite", !isBottom)
       .find(".o_toolbarItem")
       .each((i, el) => {
         if ($(el).tooltip("instance")) $(el).tooltip("option", "position", position);
@@ -132,7 +132,7 @@ export class Dock {
    * @static
    * @method estEnBas
    */
-  static estEnBas() {
+  static isInBottom() {
     return Dock._mql.matches || getProfile().parametre["dockPosition"].valeur == "1";
   }
 }

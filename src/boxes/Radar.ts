@@ -6,27 +6,27 @@
  * @extends Boite
  */
 import { $ } from "~/vendor";
-import { IMG_ACTUALISER, IMG_FLECHE, TOAST_WARNING } from "~/constants";
+import { IMG_REFRESH, IMG_ARROW, TOAST_WARNING } from "~/constants";
 import { VERSION } from "~/lib/version";
 import { Utils } from "~/lib/Utils";
 // Cycle d'import volontaire (usage dans les méthodes uniquement, jamais au niveau module) : voir ~/models/Alliance.
 import { Alliance } from "~/models/Alliance";
 // Cycle d'import volontaire (usage dans les méthodes uniquement, jamais au niveau module) : voir ~/models/Joueur.
-import { Joueur } from "~/models/Joueur";
+import { Player } from "~/models/Player";
 import * as storage from "~/storage";
 
-export class BoiteRadar {
+export class RadarBox {
   // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
   // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
-  _joueurs: any;
+  _players: any;
   _alliances: any;
-  _separateurs: any;
-  _modeEdition: any;
+  _separators: any;
+  _editMode: any;
   constructor() {
     /**
      * liste des joueurs
      */
-    this._joueurs = {};
+    this._players = {};
     /**
      * liste des alliances
      */
@@ -37,13 +37,13 @@ export class BoiteRadar {
      * (timestamp) puisqu'un séparateur n'a pas de clé naturelle comme un
      * pseudo ou un tag d'alliance.
      */
-    this._separateurs = [];
+    this._separators = [];
     /**
      * État du mode édition (toggle via ⚙ du toolbar). En mode édition :
      * un `×` apparait sur chaque ligne pour supprimer, et le texte des
      * séparateurs devient `contenteditable`. État volatile (pas persisté).
      */
-    this._modeEdition = false;
+    this._editMode = false;
     // on recupére les données
     this.getData();
   }
@@ -51,13 +51,13 @@ export class BoiteRadar {
    *
    */
   get joueurs() {
-    return this._joueurs;
+    return this._players;
   }
   /**
    *
    */
-  set joueurs(newJoueurs) {
-    this._joueurs = newJoueurs;
+  set joueurs(newPlayers) {
+    this._players = newPlayers;
   }
   /**
    *
@@ -75,99 +75,99 @@ export class BoiteRadar {
    *
    */
   get separateurs() {
-    return this._separateurs;
+    return this._separators;
   }
   /**
    *
    */
-  ajouteJoueur(joueur) {
-    this._joueurs[joueur.pseudo] = joueur;
-    this._joueurs[joueur.pseudo].ordreRadar = this.getOrdreMax() + 1;
+  addPlayer(player) {
+    this._players[player.pseudo] = player;
+    this._players[player.pseudo].ordreRadar = this.getMaxOrder() + 1;
     return this;
   }
   /**
    *
    */
-  supprimeJoueur(joueur) {
-    delete this._joueurs[joueur.pseudo];
+  removePlayer(player) {
+    delete this._players[player.pseudo];
     return this;
   }
   /**
    *
    */
-  ajouteAlliance(alliance) {
+  addAlliance(alliance) {
     this._alliances[alliance.tag] = alliance;
-    this._alliances[alliance.tag].ordreRadar = this.getOrdreMax() + 1;
+    this._alliances[alliance.tag].ordreRadar = this.getMaxOrder() + 1;
     return this;
   }
   /**
    *
    */
-  supprimeAlliance(alliance) {
+  removeAlliance(alliance) {
     delete this._alliances[alliance.tag];
     return this;
   }
   /**
    * Ajoute un séparateur à la fin de la liste.
    */
-  ajouteSeparateur(texte = "Section") {
-    this._separateurs.push({
+  addSeparator(texte = "Section") {
+    this._separators.push({
       id: "sep_" + Date.now(),
       texte: texte,
-      ordreRadar: this.getOrdreMax() + 1,
+      ordreRadar: this.getMaxOrder() + 1,
     });
     return this;
   }
   /**
    * Supprime un séparateur par son id.
    */
-  supprimeSeparateur(id) {
-    this._separateurs = this._separateurs.filter((s) => s.id !== id);
+  removeSeparator(id) {
+    this._separators = this._separators.filter((s) => s.id !== id);
     return this;
   }
   /**
    * Renomme un séparateur. Repli sur "Section" si le texte fourni est vide.
    */
-  renommeSeparateur(id, texte) {
-    let sep = this._separateurs.find((s) => s.id === id);
+  renameSeparator(id, texte) {
+    let sep = this._separators.find((s) => s.id === id);
     if (sep) sep.texte = ((texte || "").trim() || "Section").substring(0, 16);
     return this;
   }
   /**
    *
    */
-  getOrdreMax() {
+  getMaxOrder() {
     let max = 0;
-    for (let j in this._joueurs)
-      if (this._joueurs[j].ordreRadar > max) max = this._joueurs[j].ordreRadar;
+    for (let j in this._players)
+      if (this._players[j].ordreRadar > max) max = this._players[j].ordreRadar;
     for (let a in this._alliances)
       if (this._alliances[a].ordreRadar > max) max = this._alliances[a].ordreRadar;
-    for (let s of this._separateurs) if (s.ordreRadar > max) max = s.ordreRadar;
+    for (let s of this._separators) if (s.ordreRadar > max) max = s.ordreRadar;
     return max;
   }
   /**
    *
    */
-  calculeOrdre(serie) {
-    let newOrdre = serie.split("&");
-    for (let i = 0; i < newOrdre.length; i++) {
-      let item = newOrdre[i].split("=");
+  computeOrder(serie) {
+    let newOrder = serie.split("&");
+    for (let i = 0; i < newOrder.length; i++) {
+      let item = newOrder[i].split("=");
       let $row = $("#o_item_" + item[1]);
       if ($row.hasClass("o_radarSep")) {
-        let sep = this._separateurs.find((s) => s.id === $row.attr("data-id"));
+        let sep = this._separators.find((s) => s.id === $row.attr("data-id"));
         if (sep) sep.ordreRadar = i;
       } else {
-        let lien = $row.find("a:eq(1)"),
-          href = lien.attr("href") || "",
-          key = lien.text();
+        let link = $row.find("a:eq(1)"),
+          href = link.attr("href") || "",
+          key = link.text();
         if (href.includes("Membre.php")) {
-          if (this._joueurs[key]) this._joueurs[key].ordreRadar = i;
+          if (this._players[key]) this._players[key].ordreRadar = i;
         } else if (this._alliances[key]) {
           this._alliances[key].ordreRadar = i;
         }
       }
     }
-    return this.sauvegarder();
+    return this.save();
   }
   /**
    * Récupére les données sur les joueurs sous surveillance.
@@ -178,37 +178,37 @@ export class BoiteRadar {
     let data = storage.getJSON("outiiil_radar") || {};
     // Si des données sont deja presente et à jour on les charges
     if (data.hasOwnProperty("joueurs"))
-      for (let item in data.joueurs) this._joueurs[item] = new Joueur(data.joueurs[item]);
+      for (let item in data.joueurs) this._players[item] = new Player(data.joueurs[item]);
     if (data.hasOwnProperty("alliances"))
       for (let item in data.alliances) this._alliances[item] = new Alliance(data.alliances[item]);
-    if (Array.isArray(data.separateurs)) this._separateurs = data.separateurs;
+    if (Array.isArray(data.separateurs)) this._separators = data.separateurs;
   }
   /**
    *
    */
   toJSON() {
     let json: any = {},
-      joueurs = {},
+      players = {},
       alliances = {};
-    for (let j in this._joueurs)
-      joueurs[j] = JSON.parse(
-        JSON.stringify(this._joueurs[j], ["pseudo", "id", "x", "y", "mv", "terrain", "ordreRadar"]),
+    for (let j in this._players)
+      players[j] = JSON.parse(
+        JSON.stringify(this._players[j], ["pseudo", "id", "x", "y", "mv", "terrain", "ordreRadar"]),
       );
     for (let a in this._alliances)
       alliances[a] = JSON.parse(
         JSON.stringify(this._alliances[a], ["tag", "terrain", "ordreRadar"]),
       );
     // si on a des joueurs sous surveillance on ajoute à l'objet
-    if (Object.keys(joueurs).length) json["joueurs"] = joueurs;
+    if (Object.keys(players).length) json["joueurs"] = players;
     // si on a des alliances sous surveillance on ajoute à l'objet
     if (Object.keys(alliances).length) json["alliances"] = alliances;
-    if (this._separateurs.length) json["separateurs"] = this._separateurs;
+    if (this._separators.length) json["separateurs"] = this._separators;
     return json;
   }
   /**
    *
    */
-  sauvegarder() {
+  save() {
     storage.setJSON("outiiil_radar", this);
     return this;
   }
@@ -218,16 +218,16 @@ export class BoiteRadar {
    * @private
    * @method afficher
    */
-  afficher() {
+  render() {
     // si il y a des joueurs, alliances ou séparateurs surveillés on affiche la boite
     if (
-      Object.keys(this._joueurs).length ||
+      Object.keys(this._players).length ||
       Object.keys(this._alliances).length ||
-      this._separateurs.length
+      this._separators.length
     ) {
       // Modification de la boite compte plus pour faire apparaitre la boite radar
       $("#boiteComptePlus .titre_colonne_cliquable").replaceWith(() => {
-        return `<div class='titre_colonne_cliquable'>${IMG_FLECHE} <span class='titre_compte_plus'>Toolzzz ${VERSION.substring(0, 2)}<span class='reduce'>${VERSION.substring(2)}</span></span> ${IMG_FLECHE}</div>`;
+        return `<div class='titre_colonne_cliquable'>${IMG_ARROW} <span class='titre_compte_plus'>Toolzzz ${VERSION.substring(0, 2)}<span class='reduce'>${VERSION.substring(2)}</span></span> ${IMG_ARROW}</div>`;
       });
       // Event sur le titre si on utilise le radar
       $("#boiteComptePlus .titre_colonne_cliquable").click((e) => {
@@ -237,7 +237,7 @@ export class BoiteRadar {
         $("#boiteComptePlus .contenu_boite_compte_plus table").toggle();
       });
       // Remplissage de la boite
-      this.actualiser();
+      this.refresh();
     }
     return this;
   }
@@ -247,8 +247,8 @@ export class BoiteRadar {
    * @private
    * @method actualiseBoite
    */
-  actualiser() {
-    let affiche = storage.getRaw("outiiil_boiteActive"),
+  refresh() {
+    let show = storage.getRaw("outiiil_boiteActive"),
       // En Compte+, le champ #requete natif vit dans une <tr><td> du table:eq(0)
       // qui est masqué en mode radar — donc inaccessible. On insère ici une row
       // jumelle dans le tfoot d'#o_radar (id `o_requete` pour éviter le duplicate
@@ -257,7 +257,7 @@ export class BoiteRadar {
       searchRow = Utils.comptePlus
         ? `<tr id='o_radarSearchRow'><td colspan='3'><form method='post' action='classementAlliance.php' style='text-align:center;'><input type='text' name='requete' id='o_requete' placeholder='Rechercher Joueur ou Alliance' autocomplete='off' style='text-align:center;width:95%;'/></form></td></tr>`
         : "",
-      html = `<table id='o_radar' ${!affiche || affiche == "C" ? `style="display:none"` : ""}><colgroup><col><col><col></colgroup><tbody></tbody><tfoot><tr id='o_radarToolbar'><td colspan='3' class='right'><div id='o_radarToolbarInner'><a id='o_radarRefreshAll' class='o_actualiser' href='' title='Tout actualiser'><img src="${IMG_ACTUALISER}" alt="Tout actualiser" height="14"/></a><span id='o_radarAddSep' class='cursor' title='Ajouter une section'>+</span><span id='o_radarToggleEdit' class='cursor' title='Mode édition'>✎</span></div></td></tr>${searchRow}</tfoot></table>`;
+      html = `<table id='o_radar' ${!show || show == "C" ? `style="display:none"` : ""}><colgroup><col><col><col></colgroup><tbody></tbody><tfoot><tr id='o_radarToolbar'><td colspan='3' class='right'><div id='o_radarToolbarInner'><a id='o_radarRefreshAll' class='o_actualiser' href='' title='Tout actualiser'><img src="${IMG_REFRESH}" alt="Tout actualiser" height="14"/></a><span id='o_radarAddSep' class='cursor' title='Ajouter une section'>+</span><span id='o_radarToggleEdit' class='cursor' title='Mode édition'>✎</span></div></td></tr>${searchRow}</tfoot></table>`;
     // on remplace le contenu ou l'ajoute
     if ($("#o_radar").length) $("#o_radar").replaceWith(html);
     else $("#boiteComptePlus .contenu_boite_compte_plus table").after(html);
@@ -267,7 +267,7 @@ export class BoiteRadar {
     if (Utils.comptePlus)
       $("#o_requete").autocomplete({
         source: (request, response) => {
-          Joueur.rechercher(request.term).then((data) => response(Utils.extraitRecherche(data)));
+          Player.search(request.term).then((data) => response(Utils.extractResearch(data)));
         },
         position: { my: "left top-5", at: "left bottom" },
         delay: 0,
@@ -290,30 +290,30 @@ export class BoiteRadar {
       // Le drag-and-drop n'est actif qu'en mode édition (cf. UX iOS/Linear/
       // Notion : "Edit puis réordonne"). En vue normale, la liste est en
       // lecture seule pour éviter les mismanipulations.
-      disabled: !this._modeEdition,
+      disabled: !this._editMode,
       update: (e, ui) => {
-        this.calculeOrdre($("#o_radar tbody").sortable("serialize"));
+        this.computeOrder($("#o_radar tbody").sortable("serialize"));
       },
     });
     // Event pour mettre à jour les données d'un joueur ou une alliance
     $("#o_radar").off();
     // Rendu unifié des 3 collections, ordonnées par `ordreRadar` croissant.
     let entries = [];
-    for (let p in this._joueurs)
-      entries.push({ type: "joueur", obj: this._joueurs[p], ordre: this._joueurs[p].ordreRadar });
+    for (let p in this._players)
+      entries.push({ type: "joueur", obj: this._players[p], ordre: this._players[p].ordreRadar });
     for (let t in this._alliances)
       entries.push({
         type: "alliance",
         obj: this._alliances[t],
         ordre: this._alliances[t].ordreRadar,
       });
-    for (let s of this._separateurs)
+    for (let s of this._separators)
       entries.push({ type: "separateur", obj: s, ordre: s.ordreRadar });
     entries.sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0));
-    let indice = 1;
+    let index = 1;
     for (let e of entries) {
-      if (e.type === "separateur") this._renderSeparateur(e.obj, indice++);
-      else e.obj.getLigneRadar(this, "#o_radar tbody", indice++);
+      if (e.type === "separateur") this._renderSeparator(e.obj, index++);
+      else e.obj.getRadarRow(this, "#o_radar tbody", index++);
     }
     // Pour les rows joueur/alliance, on wrappe deux cellules :
     //  - 1re td dans `<div.o_radarFirstCell>` (flex) — le `≡` du mode édition
@@ -339,16 +339,16 @@ export class BoiteRadar {
     });
     // Toolbar
     $("#o_radarRefreshAll").click((e) => {
-      this._actualiserTout();
+      this._refreshAll();
       return false;
     });
     $("#o_radarAddSep").click((e) => {
       e.stopPropagation();
-      this.ajouteSeparateur().sauvegarder().actualiser();
+      this.addSeparator().save().refresh();
       // En mode édition, focus + sélection du texte du nouveau séparateur
       // pour permettre de taper son nom directement (les `Section` par défaut
       // sont remplacés par la frappe vu que la sélection est active).
-      if (this._modeEdition) {
+      if (this._editMode) {
         let nodes = $("#o_radar tbody .o_radarSep").last().find(".o_radarSepText");
         if (nodes.length) {
           let node = nodes[0];
@@ -367,7 +367,7 @@ export class BoiteRadar {
     });
     // Ré-applique le mode édition après chaque rebuild (le DOM des rows a
     // été régénéré, les × et `contenteditable` doivent être ré-attachés).
-    if (this._modeEdition) this._appliquerEdition();
+    if (this._editMode) this._applyEdit();
     return this;
   }
   /**
@@ -377,9 +377,9 @@ export class BoiteRadar {
    * d'où ce niveau d'indirection. Le `data-id` permet à calculeOrdre /
    * supprimeSeparateur / renommeSeparateur de retrouver l'entrée.
    */
-  _renderSeparateur(sep, indice) {
+  _renderSeparator(sep, index) {
     $("#o_radar tbody").append(
-      `<tr id='o_item_${indice}' class='o_radarSep' data-id='${sep.id}'><td colspan='3'><div class='o_radarSepInner'><span class='o_radarSepText'>${BoiteRadar._escapeHtml(sep.texte)}</span></div></td></tr>`,
+      `<tr id='o_item_${index}' class='o_radarSep' data-id='${sep.id}'><td colspan='3'><div class='o_radarSepInner'><span class='o_radarSepText'>${RadarBox._escapeHtml(sep.texte)}</span></div></td></tr>`,
     );
   }
   /**
@@ -402,8 +402,8 @@ export class BoiteRadar {
    * @private
    * @method _actualiserTout
    */
-  _actualiserTout() {
-    let entries = [...Object.values(this._joueurs), ...Object.values(this._alliances)];
+  _refreshAll() {
+    let entries = [...Object.values(this._players), ...Object.values(this._alliances)];
     if (!entries.length) return;
     let $btn = $("#o_radarRefreshAll");
     // Spin du bouton — même 600ms qu'une icône per-ligne. Pas de compteur ni de
@@ -417,7 +417,7 @@ export class BoiteRadar {
     );
     let refreshOne = (entry) =>
       entry
-        .refreshDansRadar(this)
+        .refreshInRadar(this)
         .then((r) => ({ entry, ...r }))
         .catch(() => ({ entry, failed: true }));
     Promise.all(entries.map(refreshOne)).then((results) => {
@@ -426,29 +426,29 @@ export class BoiteRadar {
         failed = results.filter((r) => r.failed).length;
       removed.forEach((r) => {
         $.toast({ ...TOAST_WARNING, text: `Le joueur ${r.entry._pseudo} n'existe plus.` });
-        this.supprimeJoueur(r.entry);
+        this.removePlayer(r.entry);
       });
-      if (removed.length || changed) this.sauvegarder();
+      if (removed.length || changed) this.save();
       if (failed) {
         $.toast({ ...TOAST_WARNING, text: `${failed} actualisation(s) échouée(s).` });
       }
-      if (removed.length) this.actualiser();
+      if (removed.length) this.refresh();
     });
   }
   /**
    * Toggle du mode édition.
    */
   _toggleEdit() {
-    this._modeEdition = !this._modeEdition;
-    this._appliquerEdition();
+    this._editMode = !this._editMode;
+    this._applyEdit();
   }
   /**
    * Applique (ou retire) les affordances du mode édition :
    *  - × cliquable à droite de chaque ligne (joueur, alliance ou séparateur)
    *  - séparateurs `contenteditable` pour rename inline
    */
-  _appliquerEdition() {
-    let on = this._modeEdition;
+  _applyEdit() {
+    let on = this._editMode;
     $("#o_radar").toggleClass("o_radarEditMode", on);
     // Reset des affordances avant ré-application — actualiser() peut être
     // appelée alors que _modeEdition est déjà true (cas : ajout séparateur).
@@ -494,7 +494,7 @@ export class BoiteRadar {
       .attr("contenteditable", "true")
       .on("blur.radarSep", (e) => {
         let id = $(e.currentTarget).closest("tr").attr("data-id");
-        this.renommeSeparateur(id, $(e.currentTarget).text()).sauvegarder();
+        this.renameSeparator(id, $(e.currentTarget).text()).save();
       })
       .on("keydown.radarSep", (e) => {
         if (e.key === "Enter") {
@@ -521,15 +521,15 @@ export class BoiteRadar {
       e.stopPropagation();
       let $tr = $(e.currentTarget).closest("tr");
       if ($tr.hasClass("o_radarSep")) {
-        this.supprimeSeparateur($tr.attr("data-id"));
+        this.removeSeparator($tr.attr("data-id"));
       } else {
-        let lien = $tr.find("a:eq(1)"),
-          href = lien.attr("href") || "",
-          key = lien.text();
-        if (href.includes("Membre.php")) delete this._joueurs[key];
+        let link = $tr.find("a:eq(1)"),
+          href = link.attr("href") || "",
+          key = link.text();
+        if (href.includes("Membre.php")) delete this._players[key];
         else delete this._alliances[key];
       }
-      this.sauvegarder().actualiser();
+      this.save().refresh();
     });
   }
 }

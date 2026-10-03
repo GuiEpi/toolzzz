@@ -5,12 +5,12 @@
 
 import { $, moment } from "~/vendor";
 import {
-  COUT_CONSTUCTION,
-  COUT_RECHERCHE_BOI,
-  COUT_RECHERCHE_POM,
+  BUILDING_COSTS,
+  RESEARCH_MATERIALS_COST,
+  RESEARCH_FOOD_COST,
   TOAST_WARNING,
 } from "~/constants";
-import { getProfile } from "~/models/monProfil";
+import { getProfile } from "~/models/currentPlayer";
 import * as session from "~/storage/session";
 
 /**
@@ -91,29 +91,27 @@ export class Utils {
   /**
    * Calcul des quantités de ressources commandées - fdthierry
    */
-  static calculQuantite(evo_commande) {
+  static computeQuantity(evoOrder) {
     switch (true) {
       // cas Champi
-      case evo_commande == 0:
+      case evoOrder == 0:
         return [
           0,
-          COUT_CONSTUCTION[evo_commande] *
-            Math.pow(1.85, getProfile().niveauConstruction[evo_commande]),
+          BUILDING_COSTS[evoOrder] * Math.pow(1.85, getProfile().niveauConstruction[evoOrder]),
         ];
       // cas construction
-      case evo_commande > 0 && evo_commande < 13:
+      case evoOrder > 0 && evoOrder < 13:
         return [
           0,
-          COUT_CONSTUCTION[evo_commande] *
-            Math.pow(2, getProfile().niveauConstruction[evo_commande]),
+          BUILDING_COSTS[evoOrder] * Math.pow(2, getProfile().niveauConstruction[evoOrder]),
         ];
       // cas recherche
-      case evo_commande >= 13 && evo_commande < 23:
+      case evoOrder >= 13 && evoOrder < 23:
         return [
-          COUT_RECHERCHE_POM[evo_commande - 13] *
-            Math.pow(2, getProfile().niveauRecherche[evo_commande - 13]),
-          COUT_RECHERCHE_BOI[evo_commande - 13] *
-            Math.pow(2, getProfile().niveauRecherche[evo_commande - 13]),
+          RESEARCH_FOOD_COST[evoOrder - 13] *
+            Math.pow(2, getProfile().niveauRecherche[evoOrder - 13]),
+          RESEARCH_MATERIALS_COST[evoOrder - 13] *
+            Math.pow(2, getProfile().niveauRecherche[evoOrder - 13]),
         ];
       default:
         return [0, 0];
@@ -122,7 +120,7 @@ export class Utils {
   /**
    *
    */
-  static arrondiQuantite(val) {
+  static roundQuantity(val) {
     if (val > 10000000000) return Math.floor(val / 1000000000) * 1000000000;
     if (val > 10000000) return Math.floor(val / 1000000) * 1000000;
     if (val > 1000) return Math.floor(val / 1000) * 1000;
@@ -161,12 +159,12 @@ export class Utils {
       duree = 0,
       sec,
       minute,
-      heure,
-      jour;
+      hour,
+      day;
     if ((sec = val.replace(regexp, "$8"))) duree += ~~sec;
     if ((minute = val.replace(regexp, "$6"))) duree += ~~minute * 60;
-    if ((heure = val.replace(regexp, "$4"))) duree += ~~heure * 3600;
-    if ((jour = val.replace(regexp, "$2"))) duree += ~~jour * 86400;
+    if ((hour = val.replace(regexp, "$4"))) duree += ~~hour * 3600;
+    if ((day = val.replace(regexp, "$2"))) duree += ~~day * 86400;
     return duree;
   }
   /**
@@ -197,7 +195,7 @@ export class Utils {
    * @param {String} [sectionH2] Texte du h2 affiché au-dessus du tableau
    *                             (ex. "Construction" / "Laboratoire"). Omis = pas de h2.
    */
-  static tableauEvolution(typeLabel, sectionH2) {
+  static upgradesTable(typeLabel, sectionH2) {
     let $strongs = $("#centre > strong");
     if (!$strongs.length) return;
     // `tableau_leger` = classe native Fourmizzz utilisée par le tableau des
@@ -330,17 +328,17 @@ export class Utils {
     // l'ordre DOM (jQuery `.after()` avec une collection insère en reverse).
     let $warning = $("#centre > p").has("strong");
     if ($warning.length) {
-      let $confAnnuler = $("#centre > a[href*='confAnnuler']"),
-        $retour = $confAnnuler.next("a"),
+      let $confCancel = $("#centre > a[href*='confAnnuler']"),
+        $retour = $confCancel.next("a"),
         $wrapper = $("<div class='o_annulationGroup'></div>");
       // En C+, "Je confirme" + "Retour" sont siblings du `<p>` (qui ne contient
       // que le `<strong>` + un `<br>`). On les déplace DANS le `<p>` pour
       // qu'ils restent collés au texte — sinon le `margin-bottom` natif du
       // `<p>` crée un gap entre le warning et les liens. En non-C+, les liens
       // sont déjà dans le `<p>`, donc $confAnnuler.length = 0 → no-op.
-      if ($confAnnuler.length) {
+      if ($confCancel.length) {
         $warning[0].appendChild(document.createTextNode(" "));
-        $warning[0].appendChild($confAnnuler[0]);
+        $warning[0].appendChild($confCancel[0]);
         $warning[0].appendChild(document.createTextNode(" "));
         $warning[0].appendChild($retour[0]);
       }
@@ -388,15 +386,15 @@ export class Utils {
    *
    * @static
    * @method confirmationAnnuler
-   * @param {String} retourUrl URL de retour (ex. "construction.php").
+   * @param {String} returnUrl URL de retour (ex. "construction.php").
    */
-  static confirmationAnnuler(retourUrl) {
+  static cancelConfirmation(returnUrl) {
     let $confirmer = $("a:contains('Je confirme')");
     if (!$confirmer.length) return;
     $confirmer.after(
-      ` <a href='${retourUrl}' class='o_retourAnnuler' style='margin-left:12px;'>Retour</a>`,
+      ` <a href='${returnUrl}' class='o_retourAnnuler' style='margin-left:12px;'>Retour</a>`,
     );
-    if (location.search.includes("confAnnuler")) history.replaceState({}, "", retourUrl);
+    if (location.search.includes("confAnnuler")) history.replaceState({}, "", returnUrl);
   }
   /**
    * Decremente un chrono dynamique toutes les secondes.
@@ -469,10 +467,10 @@ export class Utils {
   /**
    *
    */
-  static extraitRecherche(data, joueur = true, alliance = true) {
+  static extractResearch(data, player = true, alliance = true) {
     let element = new Array(),
       cptJ = alliance ? 3 : 6,
-      cptA = joueur ? 3 : 6;
+      cptA = player ? 3 : 6;
     // si la recherche renvoi ne renvoi qu'un resultat on tombe sur un profil de joueur
     if ($(data).find("h2").length) {
       let pseudo = $(data).find("h2").text();
@@ -487,7 +485,7 @@ export class Utils {
               lien = cellule.attr("href"),
               nom = cellule.text();
             // c'est un joueur si on trouve un lien de profil cellule 2
-            if (joueur && lien.includes("Membre.php") && cptJ) {
+            if (player && lien.includes("Membre.php") && cptJ) {
               element.push({ value: nom, value_avec_html: nom, url: "Membre.php?Pseudo=" + nom });
               cptJ--;
             }

@@ -9,14 +9,14 @@
  */
 
 import { $, Highcharts, moment, numeral } from "~/vendor";
-import { JOUR_FR, MOIS_FR, MOIS_RAC_FR } from "~/constants";
+import { DAYS_FR, MONTHS_FR, MONTHS_SHORT_FR } from "~/constants";
 import { VERSION } from "~/lib/version";
 import { Utils } from "~/lib/Utils";
-import { setProfile } from "~/models/monProfil";
-import { Joueur } from "~/models/Joueur";
+import { setProfile } from "~/models/currentPlayer";
+import { Player } from "~/models/Player";
 import { Dock } from "~/boxes/Dock";
-import { BoiteComptePlus } from "~/boxes/ComptePlus";
-import { BoiteRadar } from "~/boxes/Radar";
+import { ComptePlusBox } from "~/boxes/ComptePlus";
+import { RadarBox } from "~/boxes/Radar";
 import { router } from "~/pages";
 import * as storage from "~/storage";
 
@@ -39,9 +39,9 @@ export function main(ctx) {
     moment.locale("fr");
     Highcharts.setOptions({
       lang: {
-        months: MOIS_FR,
-        shortMonths: MOIS_RAC_FR,
-        weekdays: JOUR_FR,
+        months: MONTHS_FR,
+        shortMonths: MONTHS_SHORT_FR,
+        weekdays: DAYS_FR,
         decimalPoint: ",",
         thousandsSep: " ",
       },
@@ -58,30 +58,30 @@ export function main(ctx) {
     };
 
     // Initialisation du profil du joueur en cours
-    const monProfil = new Joueur({ pseudo: $("#pseudo").text() });
-    setProfile(monProfil);
+    const monProfile = new Player({ pseudo: $("#pseudo").text() });
+    setProfile(monProfile);
     // chargement des parametre
-    monProfil.getParametre();
+    monProfile.getSetting();
     // des qu'on les inos constructions/recherches et profil on affiches les outils
     Promise.all([
-      monProfil.getConstruction(),
-      monProfil.getLaboratoire(),
-      monProfil.getProfilCourant(),
+      monProfile.getBuildings(),
+      monProfile.getResearches(),
+      monProfile.getCurrentProfile(),
     ]).then((values) => {
       // chargement des données du joueur
-      if (values[0]) monProfil.chargerConstruction(values[0]);
-      if (values[1]) monProfil.chargerRecherche(values[1]);
-      if (values[2]) monProfil.chargerProfil(values[2]);
+      if (values[0]) monProfile.loadBuildings(values[0]);
+      if (values[1]) monProfile.loadResearches(values[1]);
+      if (values[2]) monProfile.loadProfile(values[2]);
 
       // Ajout des outils
-      let boite = new Dock();
-      boite.afficher();
+      let box = new Dock();
+      box.render();
       // boite compte plus
-      let boiteComptePlus = new BoiteComptePlus();
-      boiteComptePlus.afficher();
+      let boxComptePlus = new ComptePlusBox();
+      boxComptePlus.render();
       // Boite radar
-      let boiteRadar = new BoiteRadar();
-      boiteRadar.afficher();
+      let boxRadar = new RadarBox();
+      boxRadar.render();
 
       // Onglet "Carte" dans le menu d'alliance — injecté sur toutes les pages
       // tant que le joueur a une alliance (présence du lien Membres = preuve).
@@ -151,10 +151,10 @@ export function main(ctx) {
       // référence toolzzz.fr/couts.php). On préfère la formule au ratio
       // current/percent, qui est inutilisable à 0% affiché et imprécis à
       // bas niveau de remplissage.
-      const maxEntrepot = (niveau) => 500 + 1200 * Math.pow(2, niveau);
-      const niveauEntrepot = (type) => {
-        if (type === "Nourriture") return monProfil.niveauConstruction[1];
-        if (type === "Matériaux") return monProfil.niveauConstruction[2];
+      const maxWarehouse = (level) => 500 + 1200 * Math.pow(2, level);
+      const levelWarehouse = (type) => {
+        if (type === "Nourriture") return monProfile.niveauConstruction[1];
+        if (type === "Matériaux") return monProfile.niveauConstruction[2];
         return undefined;
       };
       $(".tooltip_boite_info").each(function () {
@@ -166,25 +166,25 @@ export function main(ctx) {
         const value = numeral($val.text().trim()).value() ?? 0;
         const match = original.match(/rempli à (\d+)\s*%/);
         if (!match) return;
-        const percentAffiche = parseInt(match[1], 10);
+        const percentShow = parseInt(match[1], 10);
         const type = /nourriture/i.test(original)
           ? "Nourriture"
           : /matériaux|materiaux/i.test(original)
             ? "Matériaux"
             : "Stock";
-        const niveau = niveauEntrepot(type);
+        const level = levelWarehouse(type);
         let html;
-        if (niveau !== undefined) {
-          const max = maxEntrepot(niveau);
+        if (level !== undefined) {
+          const max = maxWarehouse(level);
           const restant = Math.max(0, max - value);
           const percentReel = max > 0 ? Math.round((value / max) * 1000) / 10 : 0;
           html = `<b>${type}</b><br/>Actuel : ${numeral(value).format()}<br/>Maximum : ${numeral(max).format()} (${percentReel}%)<br/><b style="color:#27ae60">Place libre : ${numeral(restant).format()}</b>`;
-        } else if (percentAffiche > 0 && value > 0) {
+        } else if (percentShow > 0 && value > 0) {
           // Fallback : type non reconnu (ni Nourriture ni Matériaux) ou
           // niveauConstruction non chargé. On retombe sur l'ancien ratio.
-          const max = Math.round(value / (percentAffiche / 100));
+          const max = Math.round(value / (percentShow / 100));
           const restant = Math.max(0, max - value);
-          html = `<b>${type}</b><br/>Actuel : ${numeral(value).format()}<br/>Maximum : ${numeral(max).format()} (${percentAffiche}%)<br/><b style="color:#27ae60">Place libre : ${numeral(restant).format()}</b>`;
+          html = `<b>${type}</b><br/>Actuel : ${numeral(value).format()}<br/>Maximum : ${numeral(max).format()} (${percentShow}%)<br/><b style="color:#27ae60">Place libre : ${numeral(restant).format()}</b>`;
         } else {
           html = `<b>${type}</b><br/>Actuel : ${numeral(value).format()}`;
         }
@@ -207,7 +207,7 @@ export function main(ctx) {
           });
       });
 
-      router({ boiteComptePlus, boiteRadar });
+      router({ boxComptePlus, boxRadar });
     });
   }
 }

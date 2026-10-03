@@ -15,8 +15,8 @@ export function getJSON<T = any>(key: string): T | null {
 }
 
 /** Écrit une valeur en JSON. `replacer` est passé tel quel à `JSON.stringify`. */
-export function setJSON(key: string, value: unknown, replacer?: (string | number)[]): void {
-  localStorage.setItem(key, JSON.stringify(value, replacer));
+export function setJSON(key: string, value: unknown, reposition?: (string | number)[]): void {
+  localStorage.setItem(key, JSON.stringify(value, reposition));
 }
 
 /** Lit une chaîne brute (clés non JSON : `outiiil_boiteActive`, `outiiil_lastSeenVersion`). */

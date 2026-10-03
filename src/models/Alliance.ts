@@ -4,11 +4,11 @@
  **********************************************************************/
 
 import { $, numeral } from "~/vendor";
-import { IMG_ACTUALISER } from "~/constants";
+import { IMG_REFRESH } from "~/constants";
 import { Utils } from "~/lib/Utils";
 // Cycle d'import volontaire (usage dans les méthodes uniquement, jamais au niveau module) : Alliance ↔ BoiteRadar.
-import { BoiteRadar } from "~/boxes/Radar";
-import { Joueur } from "~/models/Joueur";
+import { RadarBox } from "~/boxes/Radar";
+import { Player } from "~/models/Player";
 
 /**
  * Classe pour creer et gérer une alliance
@@ -19,49 +19,49 @@ export class Alliance {
   // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
   // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
   _tag: any;
-  _nom: any;
+  _name: any;
   _terrain: any;
-  _fourmiliere: any;
-  _technologie: any;
-  _joueurs: any;
-  _ordreRadar: any;
-  _sujetForum: any;
-  constructor(parametres) {
+  _colony: any;
+  _technology: any;
+  _players: any;
+  _radarOrder: any;
+  _forumTopic: any;
+  constructor(settings) {
     /**
      * tag de l'alliance
      */
-    this._tag = parametres["tag"];
+    this._tag = settings["tag"];
     /**
      * nom de l'alliance
      */
-    this._nom = parametres["nom"] || "";
+    this._name = settings["nom"] || "";
     /**
      * terrain globale de l'alliance
      */
-    this._terrain = parametres["terrain"] || -1;
+    this._terrain = settings["terrain"] || -1;
     /**
      *
      */
-    this._fourmiliere = parametres["fourmiliere"] || -1;
+    this._colony = settings["fourmiliere"] || -1;
     /**
      *
      */
-    this._technologie = parametres["technologie"] || -1;
+    this._technology = settings["technologie"] || -1;
     /**
      * liste des joueurs
      */
-    this._joueurs = {};
-    if (parametres.hasOwnProperty("joueurs"))
-      for (let pseudo in parametres["joueurs"])
-        this._joueurs[pseudo] = new Joueur(parametres["joueurs"][pseudo]);
+    this._players = {};
+    if (settings.hasOwnProperty("joueurs"))
+      for (let pseudo in settings["joueurs"])
+        this._players[pseudo] = new Player(settings["joueurs"][pseudo]);
     /**
      *
      */
-    this._ordreRadar = parametres["ordreRadar"] || 0;
+    this._radarOrder = settings["ordreRadar"] || 0;
     /**
      *
      */
-    this._sujetForum = parametres["sujetForum"] || -1;
+    this._forumTopic = settings["sujetForum"] || -1;
   }
   /**
    *
@@ -79,13 +79,13 @@ export class Alliance {
    *
    */
   get nom() {
-    return this._nom;
+    return this._name;
   }
   /**
    *
    */
-  set nom(newNom) {
-    this._nom = newNom;
+  set nom(newName) {
+    this._name = newName;
   }
   /**
    *
@@ -103,64 +103,64 @@ export class Alliance {
    *
    */
   get joueurs() {
-    return this._joueurs;
+    return this._players;
   }
   /**
    *
    */
-  set joueurs(newJoueurs) {
-    this._joueurs = newJoueurs;
+  set joueurs(newPlayers) {
+    this._players = newPlayers;
   }
   /**
    *
    */
   get ordreRadar() {
-    return this._ordreRadar;
+    return this._radarOrder;
   }
   /**
    *
    */
-  set ordreRadar(newOrdre) {
-    this._ordreRadar = newOrdre;
+  set ordreRadar(newOrder) {
+    this._radarOrder = newOrder;
   }
   /**
    *
    */
   get sujetForum() {
-    return this._sujetForum;
+    return this._forumTopic;
   }
   /**
    *
    */
-  set sujetForum(newSujet) {
-    this._sujetForum = newSujet;
+  set sujetForum(newTopic) {
+    this._forumTopic = newTopic;
   }
   /**
    *
    */
-  calculTerrain() {
-    this._terrain = Object.keys(this._joueurs).reduce((acc, key) => {
-      return acc + this._joueurs[key].terrain;
+  computeTerrain() {
+    this._terrain = Object.keys(this._players).reduce((acc, key) => {
+      return acc + this._players[key].terrain;
     }, 0);
     return this._terrain;
   }
   /**
    *
    */
-  calculTechnologie() {
-    this._technologie = Object.keys(this._joueurs).reduce((acc, key) => {
-      return acc + this._joueurs[key].technologie;
+  computeTechnology() {
+    this._technology = Object.keys(this._players).reduce((acc, key) => {
+      return acc + this._players[key].technologie;
     }, 0);
-    return this._technologie;
+    return this._technology;
   }
   /**
    *
    */
-  calculFourmiliere() {
-    this._fourmiliere = Object.keys(this._joueurs).reduce((acc, key) => {
-      return acc + this._joueurs[key].fourmiliere;
+  computeColony() {
+    this._colony = Object.keys(this._players).reduce((acc, key) => {
+      return acc + this._players[key].fourmiliere;
     }, 0);
-    return this._fourmiliere;
+    return this._colony;
   }
   /**
    *
@@ -168,12 +168,12 @@ export class Alliance {
   toJSON() {
     return {
       tag: this._tag,
-      joueurs: this._joueurs,
+      joueurs: this._players,
       terrain: this._terrain,
-      technologie: this._technologie,
-      fourmiliere: this._fourmiliere,
-      ordreRadar: this._ordreRadar,
-      sujetForum: this._sujetForum,
+      technologie: this._technology,
+      fourmiliere: this._colony,
+      ordreRadar: this._radarOrder,
+      sujetForum: this._forumTopic,
     };
   }
   /**
@@ -190,14 +190,14 @@ export class Alliance {
   /**
    *
    */
-  getLigneRadar(radar, id, indice) {
+  getRadarRow(radar, id, index) {
     $(id).append(
-      `<tr id="o_item_${indice}" class="lien"><td><a id="o_maj_${this._tag}" class='o_actualiser' href=""><img src="${IMG_ACTUALISER}" alt="rang" height="20"/></a></td><td class="left"><a class="gras" href="classementAlliance.php?alliance=${this._tag}">${this._tag}</a><sup style="font-size:0.65em;margin-left:3px;opacity:0.7;">ALI</sup></td><td id="o_terrain_${this._tag}" class="right reduce" title="">${numeral(this._terrain).format()}</td></tr>`,
+      `<tr id="o_item_${index}" class="lien"><td><a id="o_maj_${this._tag}" class='o_actualiser' href=""><img src="${IMG_REFRESH}" alt="rang" height="20"/></a></td><td class="left"><a class="gras" href="classementAlliance.php?alliance=${this._tag}">${this._tag}</a><sup style="font-size:0.65em;margin-left:3px;opacity:0.7;">ALI</sup></td><td id="o_terrain_${this._tag}" class="right reduce" title="">${numeral(this._terrain).format()}</td></tr>`,
     );
     // event
     $("#o_maj_" + this._tag).click((e) => {
-      this.refreshDansRadar(radar).then((res) => {
-        if (res.changed) radar.sauvegarder();
+      this.refreshInRadar(radar).then((res) => {
+        if (res.changed) radar.save();
       });
       return false;
     });
@@ -213,7 +213,7 @@ export class Alliance {
    * @param {BoiteRadar} radar
    * @return {Promise<{ removed: boolean, changed: boolean }>}
    */
-  refreshDansRadar(radar) {
+  refreshInRadar(radar) {
     let oldTerrain = numeral($("#o_terrain_" + this._tag).text()).value(),
       $icon = $("#o_maj_" + this._tag);
     $({ deg: 0 }).animate(
@@ -249,7 +249,7 @@ export class Alliance {
   /**
    *
    */
-  static rechercher(elt) {
+  static search(elt) {
     return $.ajax({
       type: "post",
       url: "http://" + Utils.serveur + ".fourmizzz.fr/classementAlliance.php",
