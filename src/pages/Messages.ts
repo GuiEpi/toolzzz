@@ -1,5 +1,5 @@
 /*
- * Messagerie.ts
+ * Messages.ts
  * Hraesvelg
  **********************************************************************/
 
@@ -23,23 +23,23 @@ import { Battle } from "~/models/Battle";
 import { ForumPage } from "~/pages/Forum";
 
 /**
- * Classe de fonction pour la page /messagerie.php.
+ * Enriches the /messagerie.php page.
  *
- * @class PageMessagerie
+ * @class MessagesPage
  * @constructor
  */
 export class MessagesPage {
-  // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
+  // Fields declared for TypeScript (Phase 2 was a straight conversion; real
+  // typing is deferred — see .claude/plans/wxt-migration-followups.md).
   _messagesOuvert: any;
   _tools: any;
   constructor() {
     /**
-     * Liste des messages analysés.
+     * the analysed messages
      */
     this._messagesOuvert = {};
     /**
-     * Connexion à l'utilitaire.
+     * connection to the alliance tools
      */
     this._tools = new ForumPage();
   }
@@ -47,11 +47,11 @@ export class MessagesPage {
    *
    */
   run() {
-    // ajout des boutons pour les nouveaux messages
+    // add the buttons to the new messages
     if (!Utils.comptePlus) this.plus(0);
-    // recupération des joueurs de l'utilitaire
+    // read the players from the alliance tools
     if (getProfile().parametre["forumMembre"].valeur) {
-      // recuperation des commandes sur l'utilitaire
+      // read the orders from the alliance tools
       this._tools.viewSection(getProfile().parametre["forumMembre"].valeur).then(
         (data) => {
           if (this._tools.loadPlayer(data)) this.toolsMessageColor();
@@ -64,7 +64,7 @@ export class MessagesPage {
         },
       );
     } else this.messageColor();
-    // Evenement lorsque de nouveaux elements sont affiches
+    // event fired when new elements are displayed
     this.analyzeMessage();
     return this;
   }
@@ -72,14 +72,14 @@ export class MessagesPage {
    *
    */
   analyzeMessage() {
-    // Listener pour l'ouverture des rapports de combat ou de chasse.
+    // listener for opening battle or hunt reports
     $("#corps_messagerie").on("DOMNodeInserted", (e) => {
-      // Si on ouvre le message pour la première fois
+      // opening the message for the first time
       if ($(e.target).hasClass("contenu_conversation")) {
-        // correction pour chrome
+        // Chrome fix
         $(".message").removeAttr("colspan");
         let titleMess = $(e.target).prev().prev().find(".td_objet").text();
-        // Si on est sur des rapports des chasses
+        // hunt reports
         if (titleMess.includes("chasseuses ont conquis")) {
           let conv = $(e.target).prev().prev().attr("id").split("_")[1];
           $(e.target)
@@ -87,9 +87,9 @@ export class MessagesPage {
             .each((i, elt) => {
               this.analyzeHunt(conv, $(elt).parent().attr("id"), $(elt).text());
             });
-          // on affiche un bilan que lorsqu'il y a plus d'une chasse
+          // a summary is only shown for more than one hunt
           if ($(e.target).find(".message").length > 1) this.analyzeHunts(conv);
-          // Si on est sur des rapports de combat
+          // battle reports
         } else if (
           titleMess.includes("Attaque réussie") ||
           titleMess.includes("Attaque échouée") ||
@@ -103,13 +103,13 @@ export class MessagesPage {
             });
           this.optionMessage($(e.target).find(".message:first").parent().attr("id"));
         }
-        // Ajout des balises de mise en forme pour envoyer des messages
+        // add the formatting tags for writing messages
         if ($(e.target).find("div[id^='champ_bbcode_']").length && !Utils.comptePlus)
           this.plus($(e.target).find("div[id^='champ_bbcode_']").attr("id").match(/\d+$/));
       }
-      // Si on affiche plus de message
+      // showing more messages
       else if ($(e.target).attr("id") && $(e.target).attr("id").includes("message_")) {
-        // Si on affiche plus de message d'un rapport de chasse
+        // showing more messages d'un rapport de chasse
         if (
           $(e.target)
             .closest(".contenu_conversation")
@@ -146,7 +146,7 @@ export class MessagesPage {
             <img onclick='miseEnForme("${champsReponse}","player");' title='Pseudo' src='images/BBCode/membre.gif' height='15'>
             <img onclick='miseEnForme("${champsReponse}","ally");' title='Alliance' src='images/BBCode/groupe.gif' height='15'>
             </span>`);
-    // event sur le changement de couleur
+    // colour-change events
     $("#o_colorMess" + champsReponse).change((e) => {
       let color = e.currentTarget.value;
       $(this).val(color.substring(1));
@@ -159,14 +159,14 @@ export class MessagesPage {
       if (color != "#000000")
         $(idChamps).val("[color=" + color + "]" + $(idChamps).val() + "[/color]");
     });
-    // Ajoute des emoticones
+    // add the smileys
     $("#listeSmiley2" + id).html(SMILEYS_1.replace(/message/g, champsReponse));
     $("#listeSmiley3" + id).html(SMILEYS_2.replace(/message/g, champsReponse));
     $("#listeSmiley4" + id).html(SMILEYS_3.replace(/message/g, champsReponse));
     $("#listeSmiley5" + id).html(SMILEYS_4.replace(/message/g, champsReponse));
     $("#listeSmiley6" + id).html(SMILEYS_5.replace(/message/g, champsReponse));
     $("#listeSmiley7" + id).html(SMILEYS_6.replace(/message/g, champsReponse));
-    // event pour selectionner les listes de smiley
+    // events to pick a smiley list
     if (id != 0) {
       if ($("#tousLesSmiley" + id).find("div:visible").length)
         $("#smileySuivant" + id + ", #smileyPrecedent" + id).toggle();
@@ -176,7 +176,7 @@ export class MessagesPage {
           $("#smileySuivant" + id + ", #smileyPrecedent" + id).toggle();
         });
     }
-    // event pour selectionner la liste precedante
+    // event for the previous list
     $("#smileyPrecedent" + id)
       .html(`<img title='Précédent' class='cursor' src='images/bouton/fleche-champs-gauche.gif'/>`)
       .removeAttr("onclick")
@@ -185,7 +185,7 @@ export class MessagesPage {
         div.hide();
         div.prev().length ? div.prev().show() : $("#tousLesSmiley" + id + " div:last").show();
       });
-    // event pour selectionner la liste suivante
+    // event for the next list
     $("#smileySuivant" + id)
       .html(`<img title='Suivant' class='cursor' src='images/bouton/fleche-champs-droite.gif'/>`)
       .removeAttr("onclick")
@@ -207,7 +207,7 @@ export class MessagesPage {
       : "";
     // preparation de l'analyse
     battle.analyze();
-    // affichage des optiosn
+    // show the options
     $("#" + id + " td:eq(1)").append(
       `<p class="o_optionMessage gras cursor"><span id="show_info_${id_mess}">+</span>${simulation}</p><div id="o_analyse_${id_mess}" class="info_supp separateur_messages_meme_expe" style="display:none">${battle.toMessagesHtml()}</div>`,
     );
@@ -219,13 +219,13 @@ export class MessagesPage {
         .toggle("blind", 400);
     });
     $("#o_simuler_" + id_mess).click((e) => {
-      // ouverture de la boite combat sur l'onglet de simulation
+      // open the battle box on the simulation tab
       $("#o_itemCombat").parent().click();
       $("#o_tabsCombat").tabs("option", "active", 1);
-      // autocomplete des unites ennemies
+      // autocomplete the enemy units
       for (let i = 0; i < 14; i++)
         $("input[name='o_unite2_" + (i + 1) + "']").spinner("value", battle.armee2Ap.unite[i]);
-      // si je suis en defense dans le rc j'autocomplete les donnes de l'attaquant sinon l'inverse
+      // defending in the report autocompletes the attacker's data, and vice versa
       if (battle.position == 1) {
         $("#o_armes2").spinner("value", battle.attaquant.niveauRecherche[2]);
         $("#o_bouclier2").spinner(
@@ -276,9 +276,9 @@ export class MessagesPage {
           .next()
           .toggle("blind", 400);
       });
-      // ajout de la chasse dans les chasses analysés
+      // add the hunt to the analysed ones
       this._messagesOuvert[id_mess] = hunt;
-      // ajoute de la chasse au bilan
+      // add the hunt to the summary
       this._messagesOuvert["conv_" + id_conv] = this._messagesOuvert.hasOwnProperty(
         "conv_" + id_conv,
       )
@@ -322,7 +322,7 @@ export class MessagesPage {
                     <span class="intitule_choix">Copier avec Temps HOF + Bonus</span>
                 </div>
 			</div></div>`);
-    // action menu plus
+    // extra menu actions
     $("#copier_plus_" + id_conv).click((e) => {
       $("#choix_supp_" + id_conv).toggle();
     });
@@ -386,7 +386,7 @@ export class MessagesPage {
     });
   }
   /**
-   * Ajout d'un code couleur sur les messages par defaut
+   * Colour-codes the messages by default.
    */
   messageColor() {
     $("tr[id^='conversation_']").each((i, elt) => {
@@ -417,8 +417,8 @@ export class MessagesPage {
     $("tr[id^='conversation_']").each((i, elt) => {
       let titre = $(elt).find("td:eq(3) .intitule_message").text(),
         color = "";
-      // une colonie perdue est toujours rouge
-      // Attaque échouée contre xXx : votre armée...
+      // a lost colony is always red
+      // game text: "Attaque échouée contre xXx : votre armée..."
       if (
         titre.includes("Colonie perdue") ||
         titre.includes("conquis par") ||
@@ -426,9 +426,9 @@ export class MessagesPage {
         titre.includes("Rebellion échouée")
       )
         color = "red";
-      // Colonie conquise est toujours verte
+      // a conquered colony is always green
       // Butin chez Verratti : ...
-      // Attaque réussie contre xXx : votre armée...
+      // game text: "Attaque réussie contre xXx : votre armée..."
       else if (
         titre.includes("Colonie conquise") ||
         titre.includes("Butin chez") ||
@@ -437,7 +437,7 @@ export class MessagesPage {
       )
         color = "green";
       // Vol par XxX : .
-      // Invasion de xXx: votre armée
+      // game text: "Invasion de xXx: votre armée"
       else if (titre.includes("Vol par") || titre.includes("Invasion"))
         color = this._tools.alliance.joueurs.hasOwnProperty(titre.split(" ")[2]) ? "green" : "red";
       if (color) $(elt).find("td:eq(3)").children().addClass(color);
@@ -449,7 +449,7 @@ export class MessagesPage {
    */
   formatMessage(id_conv, hof = false, bonus = false) {
     let html = ``;
-    // pour chaque message de la conversation (attaque terrain + dome + loge par exemple)
+    // for every message of the conversation (terrain + dome + lodge attacks, say)
     $("#" + id_conv)
       .parent()
       .find("tr[id^='message_']")
@@ -458,38 +458,38 @@ export class MessagesPage {
           pseudo = "",
           army = "",
           id = $(elt).attr("id").split("_")[1];
-        // on remplace les br par des retours à la ligne
+        // turn the <br> into line breaks
         message.find("br").replaceWith("\n");
-        // on supprime le plus/moins
+        // drop the plus/minus
         let detail = $("div[id^='o_analyse']", message).remove();
-        // on supprimer l'analyse
+        // drop the analysis
         $(".o_optionMessage", message).remove();
-        // en fonction du rc on on met en evidence l'ennemie
+        // highlight the enemy according to the report
         let texte = message.text();
         if (texte.includes("Vous attaquez")) {
           pseudo = texte.split("e de ")[1].split("\nTroupes")[0].split(",")[0];
-          // on met en gras l'armée
+          // bold the army
           texte = texte.replace("Troupes en défense : ", "Troupes en défense : [b]");
           texte = texte.replace("Vous infligez", "[/b]Vous infligez");
         } else {
           pseudo = texte.split(" attaque")[0];
-          // on met en gras l'armée
+          // bold the army
           texte = texte.replace("Troupes en attaque : ", "Troupes en attaque : [b]");
           texte = texte.replace("Troupes en défense : ", "[/b]Troupes en défense : ");
         }
-        // on met le lien sur le joueur
+        // link the player
         texte = texte.replace(pseudo, "[player]" + pseudo + "[/player]");
-        // on met en gras le lieu
+        // bold the place
         texte = texte
           .replace(/Terrain de Chasse/gi, "[b]Terrain de Chasse[/b]")
           .replace(/fourmilière/gi, "[b]fourmilière[/b]")
           .replace(/Loge Impériale/gi, "[b]Loge Impériale[/b]");
-        // on ajoute l'heure du RC
+        // add the report's time
         html += "[b]" + $(elt).find(".expe span > span").text() + "[/b] " + texte + "\n";
-        // si on veut le temps HOF
+        // when the HOF time is wanted
         if (hof)
           html += `Perte ${getProfile().pseudo} : ${detail.find("#temps_hof_vous_" + id).text()}\nPerte ${pseudo} : ${detail.find("#temps_hof_ennemie_" + id).text()}\nPerte totale : ${detail.find("#temps_hof_total_" + id).text()}\n\n`;
-        // si on veut les bonus
+        // when the bonuses are wanted
         if (bonus) html += `${detail.find("#bonus_ennemie_" + id).text()}\n`;
       });
     return html;

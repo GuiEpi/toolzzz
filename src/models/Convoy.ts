@@ -1,5 +1,5 @@
 /*
- * Convoi.ts
+ * Convoy.ts
  * Hraesvelg
  **********************************************************************/
 
@@ -9,13 +9,13 @@ import { Utils } from "~/lib/Utils";
 import { getProfile } from "~/models/currentPlayer";
 
 /**
- * Classe pour creer et gérer un convoi
+ * Creates and manages a convoy.
  *
- * @class Convoi
+ * @class Convoy
  */
 export class Convoy {
-  // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
+  // Fields declared for TypeScript (Phase 2 was a straight conversion; real
+  // typing is deferred — see .claude/plans/wxt-migration-followups.md).
   _id: any;
   _sender: any;
   _recipient: any;
@@ -25,31 +25,31 @@ export class Convoy {
   _arrivalDate: any;
   constructor(settings) {
     /**
-     * id du convoi
+     * convoy id
      */
     this._id = settings["id"] || moment().valueOf();
     /**
-     * qui envoie le convoi
+     * who sends the convoy
      */
     this._sender = settings["expediteur"];
     /**
-     * qui recoit les ressources
+     * who receives the resources
      */
     this._recipient = settings["destinataire"];
     /**
-     * quantité livrée
+     * delivered quantity
      */
     this._food = settings["nourriture"] || 0;
     /**
-     * quantité livrée
+     * delivered quantity
      */
     this._materials = settings["materiaux"] || 0;
     /**
-     * id de la commande pour le convoi
+     * id of the order this convoy fulfils
      */
     this._orderId = settings["idCommande"] || -1;
     /**
-     * date d'arrivée du convoi
+     * convoy arrival date
      */
     this._arrivalDate = settings["dateArrivee"];
   }
@@ -160,7 +160,7 @@ export class Convoy {
    *
    */
   toHtml(id) {
-    // Si le convoi m'est destiné et que le datetime d'arrivée n'est pas dépassé
+    // Convoy addressed to me whose arrival time has not passed yet
     let timeRestant = moment(this._arrivalDate).diff(moment()) / 1000;
     $(id).after(
       `<strong>- Vous allez recevoir ${numeral(this._food).format()} ${IMG_FOOD} et ${numeral(this._materials).format()} ${IMG_MATERIALS} de <a href="Membre.php?Pseudo=${this._sender}">${this._sender}</a> dans <span id='convoi_${this._id}'>${Utils.intToTime(timeRestant)}</span></strong> - <small>Retour le ${Utils.roundMinute(timeRestant).format("D MMM YYYY à HH[h]mm")}</small><br/>`,

@@ -1,5 +1,5 @@
 /*
- * Joueur.ts
+ * Player.ts
  * Hraesvelg
  **********************************************************************/
 
@@ -7,19 +7,19 @@ import { $, moment, numeral } from "~/vendor";
 import { EFFECTS, IMG_REFRESH, FLOOD_METHODS, TOAST_WARNING } from "~/constants";
 import { Utils } from "~/lib/Utils";
 import { getProfile } from "~/models/currentPlayer";
-// Cycle d'import volontaire (usage dans les méthodes uniquement, jamais au niveau module) : Joueur ↔ BoiteRadar.
+// Deliberate import cycle (used inside methods only, never at module level): Player ↔ RadarBox.
 import { RadarBox } from "~/boxes/Radar";
 import { Setting } from "~/models/Setting";
 import * as storage from "~/storage";
 
 /**
- * Classe pour creer et gérer un joueur
+ * Creates and manages a player.
  *
- * @class Joueur
+ * @class Player
  */
 export class Player {
-  // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
+  // Fields declared for TypeScript (Phase 2 was a straight conversion; real
+  // typing is deferred — see .claude/plans/wxt-migration-followups.md).
   _id: any;
   _pseudo: any;
   _x: any;
@@ -37,19 +37,19 @@ export class Player {
   _setting: any;
   constructor(settings) {
     /**
-     * id du joueur
+     * player id
      */
     this._id = settings["id"] || -1;
     /**
-     * pseudo du joueur
+     * player nickname
      */
     this._pseudo = settings["pseudo"];
     /**
-     * abscisse du joueur
+     * player x coordinate
      */
     this._x = settings["x"] || -1;
     /**
-     * ordonnée du joueur
+     * player y coordinate
      */
     this._y = settings["y"] || -1;
     /**
@@ -93,14 +93,14 @@ export class Player {
      */
     this._rankOrder = settings["ordreRang"] || 0;
     /**
-     * Préférence du joueur.
+     * Player preferences.
      *
      * @private
-     * @property _parametre
+     * @property _setting
      * @type Object
      */
     this._setting = {};
-    // parametres style des boites
+    // box styling settings
     this._setting["couleur1"] = new Setting("couleur1", "Couleur de fond", "color", "#d7c384");
     this._setting["couleur2"] = new Setting("couleur2", "Couleur secondaire", "color", "#c9ad63");
     this._setting["couleur3"] = new Setting("couleur3", "Couleur bordure", "color", "#bd8d46");
@@ -143,10 +143,10 @@ export class Player {
       0,
       EFFECTS,
     );
-    // parametres utilitaires
+    // alliance tools settings
     this._setting["forumCommande"] = new Setting("forumCommande", "Commande", "input");
     this._setting["forumMembre"] = new Setting("forumMembre", "Membre", "input");
-    // parametres armée
+    // army settings
     this._setting["methodeFlood"] = new Setting(
       "methodeFlood",
       "Méthode de flood",
@@ -185,7 +185,7 @@ export class Player {
       "checkbox",
       false,
     );
-    // parametre divers
+    // misc settings
     this._setting["couleurChat"] = new Setting("couleurChat", "Couleur chat", "color", "#000000");
     this._setting["couleurMessagerie"] = new Setting(
       "couleurMessagerie",
@@ -200,8 +200,8 @@ export class Player {
       0,
       ["Non", "Materiaux", "Nourriture", "Ratio"],
     );
-    // part des ouvrières affectée à la nourriture en mode Ratio (le reste va
-    // aux matériaux) : curseur de 10 en 10, champ au pourcent près
+    // share of the workers assigned to food in Ratio mode (the rest goes to
+    // materials): slider in steps of 10, field accurate to the percent
     this._setting["ratioRecolte"] = new Setting(
       "ratioRecolte",
       "Part en nourriture",
@@ -385,7 +385,7 @@ export class Player {
     this._rankOrder = newOrder;
   }
   /**
-   * Renvoie les joueurs et les alliances sous surveillance.
+   * Returns the watched players and alliances.
    *
    * @method Radar
    * @return {Object} les joueurs et alliances format JSON.
@@ -491,7 +491,7 @@ export class Player {
    */
   getSetting() {
     let data = storage.getJSON("outiiil_parametre") || {};
-    // Si des données sont deja presente et à jour on les charges
+    // Load the stored data when it is present and still fresh
     for (let key in data) if (this._setting[key]) this._setting[key].valeur = data[key];
     return this;
   }
@@ -519,18 +519,18 @@ export class Player {
    *
    */
   getCurrentProfile() {
-    // si on est le joueur courant on a peut etre les infos dans le storage
+    // for the current player the data may already be in storage
     if (getProfile().pseudo == this._pseudo) {
-      // si on est le joueur courant on regarde dans le localstorage
+      // for the current player, try localStorage first
       let data = storage.getJSON("outiiil_joueur") || {};
-      // Si des données sont deja presente et à jour on les charges
+      // Load the stored data when it is present and still fresh
       if (data.hasOwnProperty("id") && data.hasOwnProperty("x") && data.hasOwnProperty("y")) {
         this._id = data.id;
         this._x = data.x;
         this._y = data.y;
       }
     }
-    // sinon
+    // otherwise
     if (this._x == -1 || this._y == -1 || this._id == -1) return this.getProfile();
     return null;
   }
@@ -540,11 +540,11 @@ export class Player {
   loadProfile(html) {
     if (html.includes("Aucun joueurs avec le pseudo")) return false;
     else {
-      // Strip `<img>` avant le parseHTML de jQuery — sinon `$(html)` crée un
-      // fragment où le navigateur tente de charger toutes les images du profil
-      // (avatars, signatures), dont des hôtes morts type skyrock.net qui
-      // spamment `ERR_NAME_NOT_RESOLVED` dans la console. On lit que du texte
-      // et de la structure ici, jamais les images.
+      // Strip `<img>` before jQuery's parseHTML — otherwise `$(html)` builds a
+      // fragment and the browser tries to load every image of the profile
+      // (avatars, signatures), including dead hosts such as skyrock.net that
+      // flood the console with `ERR_NAME_NOT_RESOLVED`. Only text and structure
+      // are read here, never the images.
       let stripped = html.replace(/<img\b[^>]*>/gi, ""),
         regexp = new RegExp("x=(\\d*) et y=(\\d*)"),
         row = $(stripped).find(".boite_membre a[href^='carte2.php?']").text();
@@ -561,16 +561,16 @@ export class Player {
     return true;
   }
   /**
-   * Récupére les niveaux des constructions du joueur ainsi que la construction en cours.
+   * Reads the player's building levels and the building currently running.
    *
-   * @method getConstruction
+   * @method getBuildings
    */
   getBuildings() {
-    // si on est le joueur courant on regarde dans le localstorage
+    // for the current player, try localStorage first
     let data = storage.getJSON("outiiil_joueur") || {};
-    // Si des données sont deja presente et à jour on les charges
+    // Load the stored data when it is present and still fresh
     if (data.hasOwnProperty("niveauConstruction")) this._buildingLevels = data.niveauConstruction;
-    // si on pas les infos en localstorage
+    // nothing in localStorage
     if (
       this._buildingLevels.every((elt) => {
         return elt == -1;
@@ -584,20 +584,20 @@ export class Player {
    */
   loadBuildings(html) {
     let parsed = Utils.parseHtml(html);
-    // Niveau des batiments
+    // Building levels
     parsed.find(".ligneAmelioration").each((i, elt) => {
       this._buildingLevels[i] = parseInt($(elt).find(".niveau_amelioration").text().split(" ")[1]);
     });
-    // Construction en cours ?!
+    // Any building running?
     let row = parsed.find("#centre strong").text(),
       building = row.substring(2, row.indexOf("se termine") - 1),
       time = parseInt(row.split(",")[0].split("(")[1]);
-    // si il y a une construction en cours les données expirent à la fin de cette construction
+    // with a building running, the data expires when that building completes
     if (building) {
       let dataEvo = storage.getJSON("outiiil_evolution") || {};
-      // si on a pas de donné ou que la consutrction n'est pas deja enregistré
+      // nothing stored yet, or this building is not recorded
       if (!dataEvo.hasOwnProperty("construction")) {
-        // si on pas les infos en localstorage
+        // nothing in localStorage
         dataEvo.construction = building.substr(0, 1).toUpperCase() + building.substr(1);
         dataEvo.expConstruction = moment().add(time, "s");
         dataEvo.startConstruction = moment();
@@ -608,16 +608,16 @@ export class Player {
     return this;
   }
   /**
-   * Récupére les niveaux des recherches du joueur ainsi que la recherche en cours.
+   * Reads the player's research levels and the research currently running.
    *
-   * @method getLaboratoire
+   * @method getResearches
    */
   getResearches() {
-    // si on est le joueur courant on regarde dans le localstorage
+    // for the current player, try localStorage first
     let data = storage.getJSON("outiiil_joueur") || {};
-    // Si des données sont deja presente et à jour on les charges
+    // Load the stored data when it is present and still fresh
     if (data.hasOwnProperty("niveauRecherche")) this._researchLevels = data.niveauRecherche;
-    // si on pas les infos en localstorage
+    // nothing in localStorage
     if (
       this._researchLevels.every((elt) => {
         return elt == -1;
@@ -631,20 +631,20 @@ export class Player {
    */
   loadResearches(html) {
     let parsed = Utils.parseHtml(html);
-    // Niveau des recherches
+    // Research levels
     parsed.find(".ligneAmelioration").each((i, elt) => {
       this._researchLevels[i] = parseInt($(elt).find(".niveau_amelioration").text().split(" ")[1]);
     });
-    // Recherche en cours ?!
+    // Any research running?
     let row = parsed.find("#centre strong").text();
     let research = row.substring(2, row.indexOf("termin") - 1),
       time = parseInt(row.split(",")[0].split("(")[1]);
-    // si il y a une recherche en cours les données expirent à la fin de cette construction
+    // with a research running, the data expires when that research completes
     if (research) {
       let dataEvo = storage.getJSON("outiiil_evolution") || {};
-      // si on a pas de donné ou que la recherche n'est pas deja enregistré
+      // nothing stored yet, or this research is not recorded
       if (!dataEvo.hasOwnProperty("recherche")) {
-        // si on pas les infos en localstorage
+        // nothing in localStorage
         dataEvo.recherche = research;
         dataEvo.expRecherche = moment().add(time, "s");
         dataEvo.startRecherche = moment();
@@ -664,7 +664,7 @@ export class Player {
     $(id).append(
       `<tr id="o_item_${index}" class="lien"><td><a id="o_maj_${this._id}" class='o_actualiser' href=""><img src="${IMG_REFRESH}" alt="rang" height="20"/></a></td><td id="o_nom_${this._id}" class="left" title=""><a class="gras ${this._mv ? "blue_light" : ""}" href="Membre.php?Pseudo=${this._pseudo}">${this._pseudo}</a></td><td id="o_terrain_${this._id}" class="right reduce" title="">${cellTerrain}</td></tr>`,
     );
-    // event
+    // events
     $("#o_maj_" + this._id).click((e) => {
       this.refreshInRadar(radar).then((res) => {
         if (res.removed) {
@@ -676,12 +676,12 @@ export class Player {
       });
       return false;
     });
-    // tooltip vacance...
+    // holiday-mode tooltip
     $("#o_terrain_" + this._id).tooltip({
       position: { my: "left+10 center", at: "right center" },
       tooltipClass: "warning-tooltip",
     });
-    // creation du tooltip sur les joueurs pour avoir le temps de trajet
+    // build the per-player tooltip showing the travel time
     $("#o_nom_" + this._id).tooltip({
       position: { my: "left+10 bottom", at: "right center" },
       content: "NC",
@@ -700,13 +700,13 @@ export class Player {
     });
   }
   /**
-   * Rafraîchit le joueur dans le contexte de la boite radar : spin de l'icône,
-   * fetch du profil, mise à jour du terrain et de l'état MV, highlight du diff.
-   * Ne sauvegarde pas et ne touche pas la collection du radar — c'est au caller
-   * (click single, ou batch "Tout actualiser") de décider quoi faire selon le
-   * résultat ({ removed, changed }).
+   * Refreshes the player inside the radar box: spins the icon, fetches the
+   * profile, updates the terrain and the holiday flag, highlights the diff.
+   * It neither saves nor touches the radar collection — the caller (single
+   * click, or the "Tout actualiser" batch) decides what to do from the result
+   * ({ removed, changed }).
    *
-   * @method refreshDansRadar
+   * @method refreshInRadar
    * @param {BoiteRadar} radar
    * @return {Promise<{ removed: boolean, changed: boolean }>}
    */

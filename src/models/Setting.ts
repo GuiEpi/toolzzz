@@ -1,5 +1,5 @@
 /*
- * Parametre.ts
+ * Setting.ts
  * Hraesvelg
  **********************************************************************/
 
@@ -8,13 +8,13 @@ import { getProfile } from "~/models/currentPlayer";
 import * as storage from "~/storage";
 
 /**
- * Classe permettant la gestion de parametre
+ * Holds a single user setting.
  *
  * @class Page
  */
 export class Setting {
-  // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
+  // Fields declared for TypeScript (Phase 2 was a straight conversion; real
+  // typing is deferred — see .claude/plans/wxt-migration-followups.md).
   _id: any;
   _label: any;
   _type: any;
@@ -22,23 +22,23 @@ export class Setting {
   _allowedValues: any;
   constructor(id, label, type = "", valeur: any = "", valueAllowed: any = []) {
     /**
-     * id du parametre
+     * setting id
      */
     this._id = id;
     /**
-     * nom du parametre
+     * setting name
      */
     this._label = label;
     /**
-     * type du parametre : input ou select
+     * setting kind: input or select
      */
     this._type = type;
     /**
-     * valeur du parametre
+     * setting value
      */
     this._value = valeur;
     /**
-     * dans le cas d'un select les valeurs possibles
+     * for a select, the allowed values
      */
     this._allowedValues = valueAllowed;
   }
@@ -97,7 +97,7 @@ export class Setting {
     this._allowedValues = newAllowed;
   }
   /**
-   * override JSON
+   * JSON override
    */
   toJSON() {
     return this._value;
@@ -128,9 +128,9 @@ export class Setting {
         return `<div class="group left"><label for="${this._id}">${this._label}</label><input id="${this._id}" class="o_checkbox" type="checkbox" ${this._value ? "checked" : ""}/></div>`;
         break;
       case "slider":
-        // valeurPossible = { min, max, step, unite } ; la valeur courante est
-        // aussi saisissable au clavier dans un champ synchronisé avec le
-        // curseur, posé dans ajouterEvent
+        // allowedValues = { min, max, step, unite }; the current value can also
+        // be typed into a field kept in sync with the slider, wired up in
+        // addEvent
         return `<div id="${this._id}Groupe" class="group left"><label for="${this._id}Valeur">${this._label} : <input id="${this._id}Valeur" class="o_sliderValeur" type="text" value="${this._value}"/>${this._allowedValues.unite || ""}</label><div id="${this._id}" class="slider" style="margin:6px 12px 0 3px;"></div></div>`;
       case "select":
         html += `<select id="${this._id}" class="o_input" required>`;
@@ -189,10 +189,10 @@ export class Setting {
             champ.spinner("value", v);
             this.save();
           };
-        // Le pas jQuery UI reste à 1 : avec un pas de `pas`, une valeur fine
-        // posée depuis le champ serait arrondie. Le glissement à la souris
-        // est filtré sur les multiples de `pas` pour garder un curseur rapide ;
-        // le clavier sur la poignée garde la précision.
+        // The jQuery UI step stays at 1: with a step of `step`, a precise value
+        // typed into the field would be rounded. Mouse dragging is filtered to
+        // multiples of `step` to keep the slider snappy, while the keyboard on
+        // the handle keeps full precision.
         $("#" + this._id).slider({
           min: min,
           max: max,
@@ -203,8 +203,8 @@ export class Setting {
               return false;
             champ.spinner("value", ui.value);
           },
-          // seulement sur action de l'utilisateur : une valeur posée depuis le
-          // champ est enregistrée par le champ
+          // only on user action: a value set from the field is saved by the
+          // field itself
           change: (e, ui) => {
             if (e.originalEvent) record(ui.value);
           },

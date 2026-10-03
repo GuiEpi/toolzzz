@@ -1,16 +1,16 @@
 /*
- * couts.ts
+ * costs.ts
  *
- * Coûts / temps / effets des constructions et recherches Fourmizzz.
+ * Costs, times and effects of the Fourmizzz buildings and researches.
  *
- * Approche formulaire : seules les valeurs de **niveau 1** sont stockées,
- * les autres niveaux sont déduits via des ratios géométriques constants —
- * vérifié sur s1/s2/s3/test (game balance identique sur tous les serveurs).
+ * Formula-based: only the **level 1** values are stored and every other level
+ * is derived through constant geometric ratios — checked on s1/s2/s3/test (the
+ * balance is identical on every server).
  *
  * Bonus utilisateur :
  * - Architecture (labo3) niveau N → temps construction × 0.9^N
  * - Salle d'analyse (cons8) niveau N → temps recherche × 0.9^N
- * - Aucun bonus n'affecte le coût (vérifié contre toolzzz.fr/couts.php).
+ * - No bonus affects the cost (checked against toolzzz.fr/couts.php).
  *
  * Source : extraction depuis https://www.toolzzz.fr/couts.php — 2026-05-07.
  **********************************************************************/
@@ -22,12 +22,12 @@ const COSTS_RATIO_MUSHROOM_PRODUCTION = 1.7;
 const COSTS_RATIO_BONUS = 0.9;
 
 /**
- * Constructions. `id` = clé Fourmizzz (consN).
+ * Buildings. `id` is the Fourmizzz key (consN).
  * - `t` : temps niveau 1 (s)
- * - `m` : coût matériaux niveau 1
+ * - `m`: materials cost at level 1
  * - `max` : niveau max accessible
- * - `prod` : production niveau 1 (Champignonnière uniquement)
- * - `mR` : ratio coût matériaux personnalisé (Champi a 1.85 au lieu de 2.0)
+ * - `prod`: production at level 1 (mushroom farm only)
+ * - `mR`: custom materials cost ratio (the mushroom farm uses 1.85, not 2.0)
  */
 export const COSTS_BUILDINGS = {
   cons5: { nom: "Champignonnière", t: 120, m: 90, max: 50, prod: 122, mR: 1.85 },
@@ -46,12 +46,12 @@ export const COSTS_BUILDINGS = {
 };
 
 /**
- * Recherches. `id` = clé Fourmizzz (laboN).
+ * Researches. `id` is the Fourmizzz key (laboN).
  * - `t` : temps niveau 1 (s)
- * - `o` : coût ouvrières niveau 1 (absent pour les recherches sans coût en
+ * - `o`: workers cost at level 1 (absent for researches with no cost in
  *        fourmis — TDP, Architecture, Vitesse d'attaque)
  * - `p` : coût pommes niveau 1
- * - `m` : coût matériaux niveau 1
+ * - `m`: materials cost at level 1
  * - `max` : niveau max
  */
 export const COSTS_RESEARCHES = {
@@ -68,21 +68,21 @@ export const COSTS_RESEARCHES = {
 };
 
 /**
- * Calcule le temps de construction (s) pour un niveau, en appliquant
- * éventuellement le bonus Architecture.
+ * Computes the build time (s) for a level, optionally applying the
+ * Architecture bonus.
  */
 export function buildingTime(item, level, archi = 0) {
   let base = item.t * Math.pow(COSTS_RATIO_BUILDING_TIME, level - 1);
   return Math.round(base * Math.pow(COSTS_RATIO_BONUS, archi));
 }
 
-/** Temps de recherche (s), bonus Salle d'analyse appliqué si fourni. */
+/** Research time (s), with the Salle d'analyse bonus applied when given. */
 export function researchTime(item, level, sa = 0) {
   let base = item.t * Math.pow(COSTS_RATIO_RESEARCH_TIME, level - 1);
   return Math.round(base * Math.pow(COSTS_RATIO_BONUS, sa));
 }
 
-/** Coût matériaux (par niveau). Ratio par défaut 2.0, surchargé pour Champi. */
+/** Materials cost per level. Default ratio 2.0, overridden for the mushroom farm. */
 export function materialsCost(item, level) {
   let ratio = item.mR || COSTS_RATIO_COST;
   return Math.round(item.m * Math.pow(ratio, level - 1));
@@ -93,18 +93,18 @@ export function foodCost(item, level) {
   return Math.round(item.p * Math.pow(COSTS_RATIO_COST, level - 1));
 }
 
-/** Coût ouvrières (recherches qui en demandent). Renvoie 0 si pas de coût en fourmis. */
+/** Workers cost, for the researches that need some. Returns 0 when there is none. */
 export function workersCost(item, level) {
   if (!item.o) return 0;
   return Math.round(item.o * Math.pow(COSTS_RATIO_COST, level - 1));
 }
 
-/** Capacité d'un entrepôt au niveau N (Nourriture et Matériaux, formule identique). */
+/** Warehouse capacity at level N (same formula for food and materials). */
 export function warehouseCapacity(level) {
   return 500 + 1200 * Math.pow(2, level);
 }
 
-/** Production de la Champignonnière au niveau N (nourriture/jour). */
+/** Mushroom farm production at level N (food per day). */
 export function mushroomProduction(item, level) {
   return Math.round(item.prod * Math.pow(COSTS_RATIO_MUSHROOM_PRODUCTION, level - 1));
 }

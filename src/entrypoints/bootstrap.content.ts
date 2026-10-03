@@ -1,13 +1,13 @@
 /*
  * bootstrap.content.ts
  *
- * Mini-script chargé au plus tôt (`run_at: document_start`) pour poser des
- * classes CSS sur <html> avant que le navigateur ne parse le body. Permet à
- * outiiil.css d'appliquer des règles d'affichage conditionnelles (hide de la
- * simulation native quand on arrive sur construction.php#cout par exemple)
+ * A tiny script loaded as early as possible (`run_at: document_start`) to put
+ * CSS classes on <html> before the browser parses the body. It lets outiiil.css
+ * apply conditional display rules (hiding the game's own simulation when
+ * arriving on construction.php#cout, for instance)
  * sans flash.
  *
- * Aucune dépendance, aucun accès jQuery — le DOM est encore vide à cet instant.
+ * No dependency and no jQuery: the DOM is still empty at this point.
  **********************************************************************/
 
 import { defineContentScript } from "#imports";
@@ -16,11 +16,11 @@ export default defineContentScript({
   matches: ["http://*.fourmizzz.fr/*"],
   runAt: "document_start",
   main(ctx) {
-    // Injection inline du CSS de masquage : le manifest content_scripts.css
-    // suit le run_at du script (idle par défaut), Chrome est assez rapide pour
-    // que le natif ne flashe pas mais Firefox laisse passer un coup d'œil.
-    // L'injection inline depuis ce script document_start garantit que la
-    // règle est posée avant le parse du body, sur les deux navigateurs.
+    // The hiding CSS is injected inline: the manifest's content_scripts.css
+    // follows the script's run_at (idle by default); Chrome is fast enough that
+    // the game's own markup does not flash, but Firefox lets a glimpse through.
+    // Injecting inline from this document_start script guarantees the rule is in
+    // place before the body is parsed, on both browsers.
     let style = document.createElement("style");
     style.textContent = `
       .toolzzz-mode-couts table:has(> tbody > tr.ligneAmelioration),
@@ -29,19 +29,19 @@ export default defineContentScript({
       .toolzzz-mode-couts #centre > br,
       .toolzzz-mode-couts #centre > small,
       .toolzzz-mode-couts #centre > span.small,
-      /* En mode #cout on n'affiche que le widget Coûts ; le récap des évolutions
-       * en cours (tableauEvolution) est planqué pour ne pas polluer la vue. */
+      /* In #cout mode only the Coûts widget is shown; the running-upgrades
+       * summary (upgradesTable) is hidden to keep the view clean. */
       .toolzzz-mode-couts #o_evolutionEnCours,
       .toolzzz-mode-couts .o_evolutionH2,
       .toolzzz-mode-couts .o_annulationGroup,
       .toolzzz-mode-evolution #centre > strong,
       .toolzzz-mode-evolution #centre > br,
       .toolzzz-mode-evolution #centre > small,
-      /* Page de confirmation d'annulation : hide aussi le <p> warning + le
-       * <a>Je confirme</a> natif (C+ uniquement, où il est sibling direct)
-       * + notre <a class='o_retourAnnuler'>Retour</a> (idem). Sinon ils
-       * clignotent à leur position d'origine avant que tableauEvolution
-       * les déplace sous le tableau récap. */
+      /* Cancellation confirmation page: also hides the warning <p>, the game's
+       * <a>Je confirme</a> (ComptePlus only, where it is a direct sibling) and
+       * our own <a class='o_retourAnnuler'>Retour</a>. Otherwise they flash at
+       * their original position before upgradesTable moves them under the
+       * summary table. */
       .toolzzz-mode-evolution #centre > p:has(strong),
       .toolzzz-mode-evolution #centre > a[href*='confAnnuler'],
       .toolzzz-mode-evolution #centre > a.o_retourAnnuler {
@@ -52,9 +52,9 @@ export default defineContentScript({
 
     let apply = () => {
       document.documentElement.classList.toggle("toolzzz-mode-couts", location.hash === "#cout");
-      // construction.php / laboratoire.php : on cache les `<strong>` (évolutions
-      // en cours) avant le parse du body, pour éviter le flash entre le rendu
-      // natif et notre tableau récap (cf. Utils.tableauEvolution).
+      // construction.php / laboratoire.php: the `<strong>` elements (running
+      // upgrades) are hidden before the body is parsed, to avoid a flash between
+      // the game's render and our summary table (see Utils.upgradesTable).
       let upgradePage =
         location.pathname === "/construction.php" || location.pathname === "/laboratoire.php";
       document.documentElement.classList.toggle("toolzzz-mode-evolution", upgradePage);

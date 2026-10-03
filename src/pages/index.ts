@@ -1,9 +1,9 @@
 /*
- * Table de routage : associe une URL du jeu à la Page Toolzzz qui l'enrichit.
+ * Route table: maps a game URL to the Toolzzz page that enriches it.
  *
- * C'est le seul endroit où les URLs de Fourmizzz rencontrent des noms de
- * modules. Transcription fidèle du `switch (true)` de l'ancien content.js :
- * même ordre, mêmes conditions, première route qui matche gagne.
+ * This is the only place where Fourmizzz URLs meet module names. A faithful
+ * transcription of the old content.js `switch (true)`: same order, same
+ * conditions, first matching route wins.
  */
 
 import { $ } from "~/vendor";
@@ -99,7 +99,7 @@ export const routes = [
   {
     test: (uri) => uri == "/ennemie.php" && location.search == "",
     run: () => {
-      // Affichage des temps de trajet
+      // show the travel times
       $("#tabEnnemie tr:eq(0) th:eq(5)").after("<th class='centre'>Temps</th>");
       $("#tabEnnemie tr:gt(0)").each((i, elt) => {
         let distance = parseInt($(elt).find("td:eq(5)").text());
@@ -114,7 +114,7 @@ export const routes = [
 ];
 
 /**
- * Exécute la première route qui correspond à l'URL courante (aucune → rien).
+ * Runs the first route matching the current URL (none → nothing happens).
  *
  * @param {Boites} boites
  */

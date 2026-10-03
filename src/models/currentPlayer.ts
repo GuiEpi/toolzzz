@@ -1,11 +1,11 @@
 /*
- * Profil du joueur connecté (instance de `Joueur`).
+ * The signed-in player's profile (a `Player` instance).
  *
- * Avant la migration WXT c'était la seule variable globale implicite du
- * projet (`monProfil = new Joueur(...)` dans content.js, lue par 29 fichiers).
- * Elle est posée une fois au démarrage (`setProfile`, dans le `main()` du
- * content script) et lue via `getProfile()` — jamais exportée directement,
- * un `let` exporté serait de nouveau un état global mutable.
+ * Before the WXT migration this was the project's only implicit global
+ * (`monProfil = new Joueur(...)` in content.js, read by 29 files). It is set
+ * once at start-up (`setProfile`, from the content script's `main()`) and read
+ * through `getProfile()` — never exported directly, since an exported `let`
+ * would just be mutable global state again.
  */
 let profile = null;
 

@@ -14,10 +14,11 @@ export const HUNT_LOSS_MAX = [
 ];
 export const HUNT_UNIT_ORDER = [10, 3, 4, 1, 12, 7, 5, 13, 11, 9, 8, 6, 2];
 export const HUNT_XP_ORDER = [10, 3, 4, 1, 12, 7, 5];
-// Faune (cibles de chasse) — stats par espèce, source : http://alliancead2.free.fr/Bestiaire.html (2017).
-// `slug` = nom de fichier image dans public/images/faune/, `fdf` = force de frappe (= attaque),
-// `vie` = points de vie, `diff` = points de difficulté (cumul utilisé par le serveur pour
-// composer la rencontre lors d'une chasse).
+// Wildlife (hunt targets) — per-species stats, source:
+// http://alliancead2.free.fr/Bestiaire.html (2017). `slug` is the image file
+// name in public/images/faune/, `fdf` the striking power (i.e. attack), `vie`
+// the hit points and `diff` the difficulty points the server adds up to build
+// the encounter for a hunt.
 export const WILDLIFE = [
   { nom: "Petite araignée", slug: "petite_araignee", fdf: 13, vie: 50, diff: 23.2 },
   { nom: "Araignée", slug: "araignee", fdf: 19, vie: 75, diff: 34.3 },

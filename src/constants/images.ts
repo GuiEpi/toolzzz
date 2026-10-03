@@ -1,4 +1,4 @@
-// Images : celles du jeu (balises HTML prêtes à insérer) et celles de l'extension (URLs).
+// Images: the game's own (ready-to-insert HTML tags) and the extension's (URLs).
 import { browser } from "#imports";
 
 // Image diverses de fourmizzz
@@ -19,7 +19,7 @@ export const IMG_RIGHT =
   "<img src='images/bouton/fleche-champs-droite.gif' width='9' height='15' class='o_vAlign'/>";
 export const IMG_COPY_ARMY =
   "<img src='images/icone/feuille.gif' class='cliquable' title='Copier/Coller une armée' style='position:relative;top:3px' width='14' height='17'>";
-// Image pour l'extension
+// The extension's own images
 export const IMG_CHANGE = browser.runtime.getURL("/images/change.png");
 export const IMG_REFRESH = browser.runtime.getURL("/images/actualize_on_01.png");
 export const IMG_PENCIL = browser.runtime.getURL("/images/crayon.gif");

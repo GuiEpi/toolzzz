@@ -1,4 +1,4 @@
-// Palettes de smileys injectées dans le chat et la messagerie (HTML du jeu).
+// Smiley palettes injected into the chat and the mailbox (the game's own HTML).
 export const SMILEYS_1 = `<img src='images/carte/rien.gif' width='1' height='39'>
       <img src='images/smiley/ant_pouce.gif' onclick='addRaccourciSmiley("message","ant_pouce")'>
        <img src='images/smiley/ant_smile.gif' onclick='addRaccourciSmiley("message","ant_smile")'>

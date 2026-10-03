@@ -1,5 +1,5 @@
 /*
- * Chasse.ts
+ * Hunt.ts
  * Hraesvelg
  **********************************************************************/
 
@@ -10,15 +10,15 @@ import { getProfile } from "~/models/currentPlayer";
 import { Army } from "~/models/Army";
 
 /**
- * Classe de fonction pour l'analyse d'un rapport de chasse, herite des fonctions de la classe Rapport.
+ * Parses a hunt report; shares the behaviour of the Report class.
  *
- * @class Chasse
+ * @class Hunt
  * @constructor
  * @extends Rapport
  */
 export class Hunt {
-  // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
+  // Fields declared for TypeScript (Phase 2 was a straight conversion; real
+  // typing is deferred — see .claude/plans/wxt-migration-followups.md).
   _battleReport: any;
   _armyBefore: any;
   _armyLost: any;
@@ -60,7 +60,7 @@ export class Hunt {
     return this._armyAfter;
   }
   /**
-   * Calcule le niveau d'armes en fonction des degats.
+   * Computes the weapons level from the damage dealt.
    *
    * @private
    * @method getArmes
@@ -72,7 +72,7 @@ export class Hunt {
     return Math.round((bonus / base) * 10);
   }
   /**
-   * Calcule le niveau du bouclier.
+   * Computes the shield level.
    *
    * @private
    * @method getBouclier
@@ -86,10 +86,10 @@ export class Hunt {
     return Math.round(((degat - hpPerdue) / hpPerdue) * 10);
   }
   /**
-   * Retourne l'armée en retirant d'aprés le rapport les unités perdues suivant le texte.
+   * Returns the army with the units lost, as listed in the report, removed.
    *
    * @private
-   * @method retirePerte
+   * @method removeLoss
    * @param {Object} army
    * @return {Object} armee perdue
    */
@@ -98,9 +98,9 @@ export class Hunt {
       tmp = this._battleReport.split("et en tue"),
       total = 0;
     res.unite = army.unite.slice(0);
-    // Si le rc à plusieurs tours on additionne d'abords les pertes.
+    // A battle report can span several rounds: sum the losses first.
     for (let i = 1; i < tmp.length; total += parseInt(tmp[i++].split(".")[0].replace(/ /g, "")));
-    // Tant que le total n'est pas 0 on retire les unités
+    // Remove units until the total reaches 0
     for (let i = 0; i < 14; i++) {
       if (res.unite[i] >= total) {
         res.unite[i] -= total;
@@ -113,10 +113,10 @@ export class Hunt {
     return res;
   }
   /**
-   * Retourne l'armée en ajoutant l'xp.
+   * Returns the army with the XP gained added.
    *
    * @private
-   * @method ajouteXP
+   * @method addXp
    * @param {Object} army
    * @return {Object} armee avec XP
    */
@@ -125,7 +125,7 @@ export class Hunt {
       tmp = this._battleReport.split("- "),
       tableXp = [-1, 1, 2, -1, 4, 9, 6, -1, 8, -1, -1, 11, -1, 13, -1];
     res.unite = army.unite.slice(0);
-    // Pour chaques types d'unitées qui ont XP.
+    // For every unit type that earns XP.
     for (let i = 1, l = tmp.length; i < l; i++) {
       let unitXp = UNIT_NAMES.indexOf(
           tmp[i].replace(/[0-9]/g, "").split("sont")[0].replace(/s /g, " ").trim(),
@@ -137,10 +137,10 @@ export class Hunt {
     return res;
   }
   /**
-   * Récupére l'armée, les pertes et l'xp d'un rapport de chasse.
+   * Reads the army, the losses and the XP out of a hunt report.
    *
    * @private
-   * @method analyse
+   * @method analyze
    */
   analyze() {
     let motKey = new Array("Troupes en attaque : ", "et en tue");
@@ -159,10 +159,10 @@ export class Hunt {
     return false;
   }
   /**
-   * Ajoute les données des chasses pour faire un bilan.
+   * Adds up several hunts into a single summary.
    *
    * @private
-   * @method ajoute
+   * @method add
    * @param {Object} hunt
    */
   add(hunt) {

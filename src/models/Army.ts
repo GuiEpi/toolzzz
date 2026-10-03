@@ -1,5 +1,5 @@
 /*
- * Armee.ts
+ * Army.ts
  * Hraesvelg
  **********************************************************************/
 
@@ -22,26 +22,26 @@ import {
 } from "~/constants";
 import { Utils } from "~/lib/Utils";
 import { getProfile } from "~/models/currentPlayer";
-// Cycle d'import volontaire (usage dans les méthodes uniquement, jamais au niveau module) : Armee ↔ AttaqueLancee.
+// Deliberate import cycle (used inside methods only, never at module level): Army ↔ SentAttack.
 import { SentAttack } from "~/models/SentAttack";
 import * as session from "~/storage/session";
 
 /**
- * Classe de gestion de l'armée.
+ * Holds and manipulates an army.
  *
- * @class Armee
+ * @class Army
  * @constructor
  */
 export class Army {
-  // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
+  // Fields declared for TypeScript (Phase 2 was a straight conversion; real
+  // typing is deferred — see .claude/plans/wxt-migration-followups.md).
   _unit: any;
   _jsnCount: any;
   _floods: any;
   _distribution: any;
   constructor(settings: any = {}) {
     /**
-     * Tableau du nombre des unités.
+     * Unit counts, indexed by unit type.
      *
      * @private
      * @property unite
@@ -53,7 +53,7 @@ export class Army {
         if (settings.unite.hasOwnProperty(UNIT_NAMES[i + 1]))
           this._unit[i] = settings.unite[UNIT_NAMES[i + 1]];
     /**
-     * Sauvegarde du nombre de JSN pour le lancement des chasses.
+     * Saved JSN count, used when launching hunts.
      *
      * @private
      * @property nbrJSN
@@ -61,7 +61,7 @@ export class Army {
      */
     this._jsnCount = 0;
     /**
-     * tableau de la repartition des floods.
+     * per-flood distribution table.
      *
      * @private
      * @property floods
@@ -69,7 +69,7 @@ export class Army {
      */
     this._floods = new Array();
     /**
-     * Repartition de l'armée en fonction des floods ou des chasses.
+     * Army split across the floods or the hunts.
      *
      * @private
      * @property repartition
@@ -120,10 +120,10 @@ export class Army {
     return this._distribution;
   }
   /**
-   * Récupére l'armée du joueur via un appel ajax.
+   * Fetches the player's army with an ajax call.
    *
    * @private
-   * @method getArmee
+   * @method getArmy
    */
   getArmy() {
     return $.ajax({ url: "http://" + Utils.serveur + ".fourmizzz.fr/Armee.php" });
@@ -151,10 +151,10 @@ export class Army {
     return this;
   }
   /**
-   * Donne le compte rendu de l'armée.
+   * Returns a summary of the army.
    *
    * @private
-   * @method toString
+   * @method function toString() { [native code] }
    * @return {String} description
    */
   toString() {
@@ -170,10 +170,10 @@ export class Army {
     return s.slice(0, -2) + ".";
   }
   /**
-   * Convertie une armée sous forme de chaine de caractére en l'objet Armee.
+   * Parses an army written as text into an Army.
    *
    * @private
-   * @method toString
+   * @method function toString() { [native code] }
    * @param {String} armee au format string.
    */
   parseArmy(texte) {
@@ -243,11 +243,11 @@ export class Army {
     let mega = new RegExp("([0-9]+)m\\b|(megas?)", "gi");
     let giga = new RegExp("([0-9]+)g\\b|(gigas?)", "gi");
     let tera = new RegExp("([0-9]+)t\\b|(teras?)", "gi");
-    // L'ordre est important car sans lui �a va remplacer Top soldiers par Top unite5 qui est le soldier.
+    // Order matters: without it, Top soldiers gets replaced by Top unite5, which is the soldier.
     let ordre = new Array(0, 2, 1, 3, 9, 4, 8, 7, 6, 5, 11, 10, 13, 12);
-    // initialistion du nombre d'unité
+    // initialise the unit counts
     this._unit = new Array(14).fill(0);
-    // on match le texte d'entrée
+    // match the incoming text
     texte = texte.replace(interdit, "");
     for (let i = 0; i < unite.length; i++)
       texte = texte.replace(unite[ordre[i]], "{separateur}unite" + ordre[i] + "{separateur}");
@@ -257,7 +257,7 @@ export class Army {
     texte = texte.replace(tera, "$1 000 000 000 000");
 
     let textSplit = texte.split("{separateur}");
-    // On regarde si il y a des chiffres dans le premier split
+    // check whether the first split holds digits
     let decalage = textSplit[0].replace(RegExpiryAllSaufChiffre, "").length > 0 ? -1 : 1;
 
     let temp: any = "";
@@ -283,10 +283,10 @@ export class Army {
     return this;
   }
   /**
-   * calcul le nombre d'unité de l'armee.
+   * Computes the army's total unit count.
    *
    * @private
-   * @method getSommeUnite
+   * @method getTotalUnits
    * @return {Integer} la somme des unités
    */
   getTotalUnits() {
@@ -295,10 +295,10 @@ export class Army {
     }, 0);
   }
   /**
-   * calcul le temps de ponte de l'armée en fonction de la vitesse de ponte.
+   * Computes the army's spawn time from the spawn speed.
    *
    * @private
-   * @method getTemps
+   * @method getTime
    * @param {Integer} vitesse de ponte
    * @return {Integer} nombre de secondes
    */
@@ -308,10 +308,10 @@ export class Army {
     }, 0);
   }
   /**
-   * calcul le nombre de point de vie de base.
+   * Computes the base hit points.
    *
    * @private
-   * @method getBaseVie
+   * @method getBaseHp
    * @return {Integer} Points de vie hors bonus.
    */
   getBaseHp() {
@@ -320,10 +320,10 @@ export class Army {
     }, 0);
   }
   /**
-   * calcul le nombre de point de vie bonus.
+   * Computes the bonus hit points.
    *
    * @private
-   * @method getBonusVie
+   * @method getHpBonus
    * @param {Integer} bonus
    * @return {Integer} Points de vie avec bonus bouclier
    */
@@ -331,10 +331,10 @@ export class Army {
     return Math.round((this.getBaseHp() * bonus) / 10);
   }
   /**
-   * calcul le nombre de point de vie bonus du lieu.
+   * Computes the hit points bonus granted by the place.
    *
    * @private
-   * @method getBonusLieuVie
+   * @method getPlaceHpBonus
    * @param {Integer} bonus
    * @param {Integer} lieu
    * @return {Integer} Points de vie avec bonus bouclier et dome ou loge.
@@ -345,10 +345,10 @@ export class Army {
     else return 0;
   }
   /**
-   * calcul le nombre de point de vie total de l'armée.
+   * Computes the army's total hit points.
    *
    * @private
-   * @method getTotalVie
+   * @method getTotalHp
    * @param {Integer} bonus
    * @param {Integer} lieu
    * @param {Integer} bonusPlace
@@ -379,7 +379,7 @@ export class Army {
     return this.getNonXpBaseHp() + this.getNonXpHpBonus(bonus);
   }
   /**
-   * calcul le nombre de point d'attaque de base.
+   * Computes the base attack points.
    *
    * @private
    * @method getBaseAtt
@@ -391,10 +391,10 @@ export class Army {
     }, 0);
   }
   /**
-   * calcul le nombre de point d'attaque avec bonus.
+   * Computes the attack points including the bonus.
    *
    * @private
-   * @method getBonusAtt
+   * @method getAttackBonus
    * @param {Integer} bonus
    * @return {Integer} Points de combat avec bonus.
    */
@@ -402,7 +402,7 @@ export class Army {
     return Math.round((this.getBaseAtt() * bonus) / 10);
   }
   /**
-   * calcul le nombre de point d'attaque total de l'armée.
+   * Computes the army's total attack points.
    *
    * @private
    * @method getTotalAtt
@@ -434,7 +434,7 @@ export class Army {
     return this.getNonXpBaseAtt() + this.getNonXpAttackBonus(bonus);
   }
   /**
-   * calcul le nombre de point en défense de base.
+   * Computes the base defense points.
    *
    * @private
    * @method getBaseDef
@@ -446,10 +446,10 @@ export class Army {
     }, 0);
   }
   /**
-   * calcul le nombre de point en défense avec bonus.
+   * Computes the defense points including the bonus.
    *
    * @private
-   * @method getBonusDef
+   * @method getDefenseBonus
    * @param {Integer} bonus
    * @return {Integer} Points de défense avec bonus.
    */
@@ -457,7 +457,7 @@ export class Army {
     return Math.round((this.getBaseDef() * bonus) / 10);
   }
   /**
-   * calcul le nombre de point en défense total de l'armée.
+   * Computes the army's total defense points.
    *
    * @private
    * @method getTotalDef
@@ -489,10 +489,10 @@ export class Army {
     return this.getNonXpBaseDef() + this.getNonXpDefenseBonus(bonus);
   }
   /**
-   * calcul la consommation en nourriture de l'armée.
+   * Computes the army's food consumption.
    *
    * @private
-   * @method getConsommation
+   * @method getConsumption
    * @param {Integer} lieu
    * @return {Integer} Consommation de l'armée.
    */
@@ -502,10 +502,10 @@ export class Army {
     }, 0);
   }
   /**
-   * Modifier le nombre de JSN de l'armée.
+   * Sets the army's JSN count.
    *
    * @private
-   * @method setJSN
+   * @method setJsn
    * @param {Integer} count
    * @return
    */
@@ -514,14 +514,14 @@ export class Army {
   }
 
   /* ------------------------------------------------------------------ */
-  /* ---- Méthode pour chasser ---------------------------------------- */
+  /* ---- Hunting ----------------------------------------------------- */
   /* ------------------------------------------------------------------ */
 
   /**
-   * calcul le nombre de chasse et le terrain par chasse en fonction de la difficulté du terrain de depart et du nombre de chasse restante.
+   * Computes how many hunts to run and how much terrain each takes, from the difficulty of the starting terrain and the number of hunts left.
    *
    * @private
-   * @method calculChasse
+   * @method computeHunt
    * @param {Integer} huntingGroundDep
    * @param {Float} diffHunt
    * @param {Integer} fixCount
@@ -579,10 +579,10 @@ export class Army {
     return { NB: iHuntCount, HF: iHuntCm2 };
   }
   /**
-   * calcul le rapport entre la force de frappe et la difficulté
+   * Computes the ratio between striking power and difficulty.
    *
    * @private
-   * @method calculRatio
+   * @method computeRatio
    * @param {Integer} huntingGroundDep
    * @param {Integer} countHunt
    * @param {Integer} terrainHunt
@@ -595,10 +595,10 @@ export class Army {
     );
   }
   /**
-   * calcul la référence du ratio donné en paramétre si la chasse est paramétre manuellement.
+   * Computes the reference for the given ratio when the hunt is set up by hand.
    *
    * @private
-   * @method calculRefRatio
+   * @method computeRatioRef
    * @param {Float} ratio
    * @return {Float} indice du ratio
    */
@@ -608,10 +608,10 @@ export class Army {
     });
   }
   /**
-   * calcul la difficulté de la chasse.
+   * Computes the hunt's difficulty.
    *
    * @private
-   * @method calculDifficulte
+   * @method computeDifficulty
    * @param {Integer} huntingGroundDep
    * @param {Integer} countHunt
    * @param {Integer} terrainHunt
@@ -630,10 +630,10 @@ export class Army {
     return dDiff;
   }
   /**
-   * calcul la difficulté par chasse.
+   * Computes the difficulty of each hunt.
    *
    * @private
-   * @method calculDifficultes
+   * @method computeDifficulties
    * @param {Integer} huntingGroundDep
    * @param {Integer} countHunt
    * @param {Integer} terrainHunt
@@ -652,10 +652,10 @@ export class Army {
     return dTabDiff;
   }
   /**
-   * calcul les pertes minimales, maximales et moyennes en fonction de la difficulté de la chasse.
+   * Computes the minimum, maximum and average losses for the hunt's difficulty.
    *
    * @private
-   * @method calculPerte
+   * @method computeLoss
    * @param {Float} ratioIndex
    * @param {Float} diff
    * @return {Object} les pertes MIN, MAX et AVG
@@ -668,10 +668,10 @@ export class Army {
     };
   }
   /**
-   * Répartie l'armée sur les chasses souhaitées.
+   * Spreads the army across the requested hunts.
    *
    * @private
-   * @method repartirUniteChasse
+   * @method distributeHuntUnits
    * @param {Integer} countHunt
    * @param {Float} diff
    * @param {Array} tabDiff
@@ -742,7 +742,7 @@ export class Army {
           iHuntBaseAtt -= this._distribution[iHuntNum][u] * UNIT_ATTACK[u + 1];
         }
       }
-      // Si il maque de la force de frappe, malgré le placement des unités on utilise des JSN
+      // If striking power is still short after placing the units, fall back to JSN
       //			if(iHuntBaseAtt > 0){
       //				this._repartition[iHuntNum][0] += Math.round(iHuntBaseAtt / ATT_UNITE[1]);
       //                if(!iHuntNum || this._repartition[iHuntNum][0] > iTabAvailableUnits[0] || this._repartition[iHuntNum][0] < 0)
@@ -752,10 +752,10 @@ export class Army {
     }
   }
   /**
-   * Retourne la repartition des unités pour la chasse demandée.
+   * Returns the unit split for the requested hunt.
    *
    * @private
-   * @method simulerChasse
+   * @method simulateHunt
    * @param {Integer} huntingGroundDep
    * @param {Integer} countHunt
    * @param {Integer} terrainHunt
@@ -795,10 +795,10 @@ export class Army {
     };
   }
   /**
-   * Envoie une chasse.
+   * Sends a hunt.
    *
    * @private
-   * @method envoyerChasse
+   * @method sendHunt
    * @param {Integer} indice
    * @param {String} securite
    */
@@ -841,7 +841,7 @@ export class Army {
   }
 
   /* ------------------------------------------------------------------ */
-  /* ---- Méthode pour Flooder ---------------------------------------- */
+  /* ---- Flooding ---------------------------------------------------- */
   /* ------------------------------------------------------------------ */
 
   /**
@@ -856,7 +856,7 @@ export class Army {
       dataFlood.unite -= dataFlood.attaques[0];
       dataFlood.reste--;
     }
-    // on place l'antisonde quand même pour garder l'ordre
+    // the anti-probe is still placed, to keep the order
     this._floods.push(dataFlood.attaques[0]);
   }
   /**
@@ -878,10 +878,10 @@ export class Army {
     }
   }
   /**
-   * Optimisation de la prise de terrain sur une cible en fonction du nombre d'unité et du nombre d'attaque.
+   * Maximises the terrain captured from a target, given the unit count and the number of attacks.
    *
    * @private
-   * @method optimiserFlood
+   * @method optimizeFlood
    * @param {Integer} tdcAtt
    * @param {Integer} tdcCible
    * @param {Integer} unite
@@ -959,10 +959,10 @@ export class Army {
     }
   }
   /**
-   * Répartie l'armée sur les floods souhaitées.
+   * Spreads the army across the requested floods.
    *
    * @private
-   * @method repartirUniteFlood
+   * @method distributeFloodUnits
    */
   distributeFloodUnits() {
     this._distribution = new Array();
@@ -982,7 +982,7 @@ export class Army {
     });
   }
   /**
-   * Simule le placement des unités pour une methode de flood choisie.
+   * Simulates how units are placed for the chosen flood method.
    *
    * @private
    * @method calculeFlood
@@ -997,15 +997,15 @@ export class Army {
     indSupp,
   ) {
     this._floods = new Array();
-    // Réserve : on retire ces unités du pool dispo avant simulation.
-    // repartirUniteFlood() les laissera intactes dans this._unite.
-    // Si « Suivre antisondes » est coché, la réserve s'aligne dynamiquement sur les antisondes
-    // (terrain + dôme) — sinon on prend la valeur saisie par l'utilisateur.
+    // Reserve: these units are taken out of the available pool before simulating.
+    // distributeFloodUnits() leaves them untouched in this._unit.
+    // When "Suivre antisondes" is ticked, the reserve follows the anti-probes
+    // (ground + dome); otherwise the value entered by the player is used.
     let reserve = getProfile().parametre["reserveFloodAuto"].valeur
       ? getProfile().parametre["uniteAntisondeTerrain"].valeur +
         getProfile().parametre["uniteAntisondeDome"].valeur
       : getProfile().parametre["reserveFlood"].valeur;
-    // on a besoin d'un objet pour le passer au différentes fonctions
+    // an object is needed to pass this around the various functions
     let data = {
       attaques: attacks,
       tdcUniforme: huntingGroundUniform,
@@ -1017,7 +1017,7 @@ export class Army {
     // Placement de l'antisonde
     this.placeAntiProbe(data);
     if (data.unite <= 0) return this._floods;
-    // Placement selon la méthode
+    // Place according to the chosen method
     switch (methode) {
       case "0": // defini manuellement
         this.standardFlood(data);
@@ -1034,24 +1034,24 @@ export class Army {
       default:
         break;
     }
-    // Placement de toute les unités si il en reste
+    // Place every remaining unit
     if (indSupp != -1 && data.unite > 0) this._floods[indSupp] += data.unite;
-    // des qu'on simule on prepare la repartition des unités pour le lancement
+    // simulating also prepares the unit split used at launch
     this.distributeFloodUnits();
     return this._floods;
   }
   /**
-   * Envoie un flood.
+   * Sends a flood.
    *
    * @private
-   * @method envoyerFlood
+   * @method sendFlood
    * @param {Integer} indice
    * @param {String} securite
    */
   sendFlood(idTarget, indice, securite) {
-    // si on a encore des attaques à lancer
+    // more attacks left to send
     if (indice < this._floods.length) {
-      // si l'attaque est différente de 0
+      // attack is not empty
       if (this._floods[indice]) {
         let donnees = {};
         donnees["" + securite.split("=")[0]] = securite.split("=")[1];
@@ -1081,8 +1081,8 @@ export class Army {
             $("#o_simulationFlood tr:eq(" + (indice + 2) + ")").addClass(
               res.indexOf("Vos troupes sont en marche") == -1 ? "red" : "green",
             );
-            // capture de l'attaque confirmée pour le récapitulatif par cible
-            // (lieu toujours le terrain : le flood envoie lieu=1)
+            // record the confirmed attack for the per-target summary
+            // (the place is always the ground: a flood sends lieu=1)
             if (res.indexOf("Vos troupes sont en marche") != -1 && SentAttack.contexteFlood) {
               let unite = {};
               this._distribution[indice].forEach((count, ind) => {
@@ -1098,25 +1098,25 @@ export class Army {
             }, 1000);
           },
         );
-      } else // on passe à l'attaque suivante
+      } else // move on to the next attack
       this.sendFlood(idTarget, ++indice, securite);
     } else {
-      // Fin du flood : on enchaîne sur Armee.php pour replacer l'antisonde
-      // (PageArmee détecte ce flag et appelle replacerArmee() automatiquement).
+      // End of the flood: go to Armee.php to put the anti-probe back
+      // (ArmyPage picks this flag up and calls repositionArmy() by itself).
       session.setRaw("outiiil_floodPuisReplacer", "1");
       window.location.href = "/Armee.php";
     }
   }
 
   /* ------------------------------------------------------------------ */
-  /* ---- Méthode pour les combats ------------------------------------ */
+  /* ---- Battles ----------------------------------------------------- */
   /* ------------------------------------------------------------------ */
 
   /**
    *
    */
   removeLoss(countUnit) {
-    // Tant que le total n'est pas 0 on retire les unites
+    // Remove units until the total reaches 0
     this._unit.every((elt, ind) => {
       if (elt >= countUnit) {
         this._unit[ind] -= countUnit;

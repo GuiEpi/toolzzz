@@ -1,23 +1,23 @@
 /*
- * menuRapide.ts
+ * quickMenu.ts
  *
- * Liste des entrées du « menu rapide » Compte+ (configurable via compte.php),
- * répliquée pour les non-C+ : `PageCompte` capture les checkboxes côté form
- * (ou injecte sa propre copie pour les non-C+ qui n'ont pas le natif),
- * `BoiteComptePlus` rend les <a> raccourcis dans la boîte flottante en bas.
+ * The entries of the ComptePlus "menu rapide" (configured on compte.php),
+ * replicated for free accounts: `AccountPage` captures the checkboxes on the
+ * form (or injects its own copy for free accounts, which do not get the game's
+ * one) and `ComptePlusBox` renders the shortcut <a> elements in the floating box
+ * at the bottom.
  *
- * Section "Compte+" volontairement omise — les fonctions concernées
- * (simulateurs, bloc note, etc.) ne sont accessibles qu'aux Compte+.
+ * The "Compte+" section is deliberately left out — the features it points at
+ * (simulators, notepad, …) are only reachable with a ComptePlus account.
  *
- * URLs et labels alignés sur le rendu natif Compte+ (extraction faite à
- * partir d'une boîte C+ avec toutes les cases cochées). Quelques URLs ont
- * des bizarreries dans le HTML natif (`invitation.php.php`, suffixes `.php`
- * après `?`) qu'on conserve à l'identique pour rester compatibles avec le
- * routeur Fourmizzz qui les accepte.
+ * URLs and labels match the game's own ComptePlus rendering (extracted from a
+ * ComptePlus box with every option ticked). A few URLs are odd in the game's
+ * HTML (`invitation.php.php`, `.php` suffixes after `?`) and are kept exactly as
+ * they are, since the Fourmizzz router accepts them.
  **********************************************************************/
 
 export const QUICK_MENU = [
-  // Fourmilière.
+  // Colony.
   { section: "Fourmilière", name: "menuRapideReine", label: "Reine", url: "Reine.php" },
   {
     section: "Fourmilière",
@@ -100,7 +100,7 @@ export const QUICK_MENU = [
     label: "Options",
     url: "alliance.php?Options",
   },
-  // Communauté.
+  // Community.
   { section: "Communauté", name: "menuRapideChat", label: "Chat", url: "chat.php" },
   { section: "Communauté", name: "menuRapideEchange", label: "Echange", url: "echange.php" },
   {
@@ -133,7 +133,7 @@ export const QUICK_MENU = [
     section: "Communauté",
     name: "menuRapideInviterAmis",
     label: "Inviter mes Amis",
-    // typo dans le natif, conservée à l'identique pour matcher.
+    // typo in the game's own markup, kept as is so it matches.
     url: "invitation.php.php",
   },
   {

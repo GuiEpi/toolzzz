@@ -1,5 +1,5 @@
 import { browser } from "#imports";
 
-// Version affichée dans l'UI (boîte Toolzzz, À propos, toast de mise à jour).
-// Lue dans le manifest : package.json reste la source unique du numéro.
+// Version shown in the UI (Toolzzz box, À propos tab, update toast). Read from
+// the manifest, so package.json stays the single source for the number.
 export const VERSION = browser.runtime.getManifest().version;

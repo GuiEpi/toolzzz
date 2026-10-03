@@ -1,5 +1,5 @@
 /*
- * Combat.ts
+ * Battle.ts
  * Hraesvelg
  **********************************************************************/
 
@@ -12,15 +12,15 @@ import { Army } from "~/models/Army";
 import { Player } from "~/models/Player";
 
 /**
- * Classe de fonction pour l'analyse d'un rapport de combat, herite des fonctions de la classe Rapport.
+ * Parses a battle report; shares the behaviour of the Report class.
  *
- * @class Combat
+ * @class Battle
  * @constructor
  * @extends Rapport
  */
 export class Battle {
-  // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
+  // Fields declared for TypeScript (Phase 2 was a straight conversion; real
+  // typing is deferred — see .claude/plans/wxt-migration-followups.md).
   _id: any;
   _battleReport: any;
   _place: any;
@@ -39,53 +39,53 @@ export class Battle {
   _turn: any;
   constructor(settings: any = {}) {
     /**
-     * id du RC dans la messagerie sinon un datetime pour l'analyse dans la boite ou la simulation
+     * id of the report in the mailbox, otherwise a datetime for analysis in the box or the simulator
      */
     this._id = settings["id"] || -1;
     /**
-     * texte correspondant au RC pour l'analyse
+     * the report's text, as analysed
      */
     this._battleReport = settings["RC"] || "";
     /**
-     * lieu du combat
+     * where the battle took place
      */
     this._place = settings["lieu"] || 0;
     /**
-     * dateheure du RC seulement pour l'analyse dans la messagerie
+     * report datetime, only for analysis in the mailbox
      */
     this._dateTime = settings["dateHeure"] || -1;
     /**
-     * si on est attaquant ou defenseur
-     * 0 : attaquant
-     * 1 : defenseur
+     * whether we are the attacker or the defender
+     * 0: attacker
+     * 1: defender
      */
     this._pointOfView = settings["pointDeVue"] || 0;
     /**
-     * attaquant dans le combat
+     * the attacker in the battle
      */
     this._attacker = new Player({ pseudo: "Attaquant" });
     /*
-     * pour l'analyse on peut calculer plusieurs solutions de bonus
+     * analysis can yield several possible bonus combinations
      */
     this._attackerPlaceBonus = new Array();
     /**
-     * armée du joueur 1 correspondant au vous
+     * player 1's army, i.e. « vous »
      */
     this._armyBefore = settings["attaquant"] || new Army();
     /**
-     * armee du joueur 1 aprés combat
+     * player 1's army after the battle
      */
     this._armyLost = null;
     /**
-     * armée du joueur 1 aprés combat avec xp
+     * player 1's army after the battle, with XP
      */
     this._armyAfter = null;
     /**
-     * defenseur dans le combat
+     * the defender in the battle
      */
     this._defender = new Player({ pseudo: "Défenseur" });
     /*
-     * pour l'analyse on peut calculer plusieurs solutions de bonus
+     * analysis can yield several possible bonus combinations
      */
     this._defenderPlaceBonus = new Array();
     /**
@@ -93,11 +93,11 @@ export class Battle {
      */
     this._defenderSpawnTech = new Array();
     /**
-     * arméee du joueur 2 avant combat
+     * player 2's army before the battle
      */
     this._enemyArmyBefore = settings["defenseur"] || new Army();
     /**
-     * armée du joueur 2 aprés combat
+     * player 2's army after the battle
      */
     this._enemyArmyAfter = null;
     /**
@@ -226,7 +226,7 @@ export class Battle {
     this._defenderPlaceBonus = newBonus;
   }
   /**
-   * Calcule le niveau d'armes en fonction des degats.
+   * Computes the weapons level from the damage dealt.
    *
    * @private
    * @method getArmes
@@ -238,7 +238,7 @@ export class Battle {
     return Math.round((bonus / base) * 10);
   }
   /**
-   * Calcule le niveau du bouclier.
+   * Computes the shield level.
    *
    * @private
    * @method getBouclier
@@ -252,7 +252,7 @@ export class Battle {
     return hpPerdue ? Math.round(((degat - hpPerdue) / hpPerdue) * 10) : -1;
   }
   /**
-   * Calcule le bonus vie selon le lieu.
+   * Computes the hit points bonus granted by the place.
    *
    * @private
    * @method getBouclierLieu
@@ -292,16 +292,16 @@ export class Battle {
     let tmpSpawnTech = new Array();
     for (let i = 0; i < 140; i++) {
       let timeSpawn = army.getTime(i) % 60;
-      // si le nombre est trés proche de 60 ou de 0
+      // when the number sits very close to 60 or to 0
       if (Math.abs(timeSpawn - 60) < 0.01 || timeSpawn < 0.01) tmpSpawnTech.push(i);
     }
     return tmpSpawnTech;
   }
   /**
-   * Analyse un rapport sous forme de string.
+   * Parses a report given as a string.
    *
    * @private
-   * @method analyse
+   * @method analyze
    */
   analyze() {
     let motKey = new Array(
@@ -313,21 +313,21 @@ export class Battle {
       "et tuez",
       "dégâts",
     );
-    // si le RC contient bien les mots clés
+    // the report does contain the expected keywords
     if (
       motKey.some((substring) => {
         return this._battleReport.includes(substring);
       })
     ) {
       let tmpPseudo = new Array();
-      // recup du lieu
+      // read the place
       this._place = this._battleReport.includes("Loge")
         ? 2
         : this._battleReport.includes("fourmilière")
           ? 1
           : 0;
       this._attacker.pseudo = "Vous";
-      // Récuperation des armées si on nous attaque on est en défense
+      // read the armies; being attacked means we are defending
       if (
         this._battleReport.includes("attaque votre") ||
         this._battleReport.includes("attaque une de vos colonies")
@@ -343,17 +343,17 @@ export class Battle {
         this._defender.pseudo =
           tmpPseudo.length > 1 ? tmpPseudo[tmpPseudo.length - 1] : tmpPseudo[0];
       } else {
-        // sinon en attaque
+        // otherwise we are attacking
         this._armyBefore.parseArmy(
           this._battleReport.split("Troupes en attaque : ")[1].split(".")[0],
         );
         this._enemyArmyBefore.parseArmy(
           this._battleReport.split("Troupes en défense : ")[1].split(".")[0],
         );
-        // attaque attaque sur colonisateur
+        // attack on a coloniser
         if (this._battleReport.includes("mais une armée d'occupation est déjà présente")) {
           this._defender.pseudo = this._battleReport.split("e de ")[1].split(",")[0];
-          // attaque normale
+          // regular attack
         } else if (this._battleReport.includes("Vous attaquez l")) {
           this._defender.pseudo = this._battleReport.split("e de ")[1].split("\nTroupes")[0];
           this._defenderSpawnTech = this.computeSpawnTech(this._enemyArmyBefore);
@@ -362,23 +362,23 @@ export class Battle {
           this._defender.pseudo = this._battleReport.split("contre ")[1].split("\nTroupes")[0];
         }
       }
-      // On calcule l'armée du joueur 1 en sortie
+      // compute player 1's resulting army
       this._armyLost = this.removeLoss(this._armyBefore, "et en tue");
       this._armyAfter = this.addXp(this._armyLost);
-      // On calcule l'armée du joueur 2 en sortie
+      // compute player 2's resulting army
       this._enemyArmyAfter = this.removeLoss(this._enemyArmyBefore, "et tuez");
-      // Calcule du niveau d'arme du "Vous"
+      // weapons level of « Vous »
       if (this._pointOfView == 1) {
         let tmp1 = this._battleReport.split("Vous infligez")[1].split("dégâts")[0],
           base1 = parseInt(tmp1.split("(")[0].replace(/ /g, "")),
           bonus1 = parseInt(tmp1.split("+")[1].split(")")[0].replace(/ /g, ""));
         this._defender.niveauRecherche[2] = this.computeWeapons(base1, bonus1);
-        // Calcule du niveau d'arme de "l'ennemie"
+        // weapons level of the enemy
         let tmp2 = this._battleReport.split("ennemie inflige")[1].split("dégâts")[0],
           base2 = parseInt(tmp2.split("(")[0].replace(/ /g, "")),
           bonus2 = parseInt(tmp2.split("+")[1].split(")")[0].replace(/ /g, ""));
         this._attacker.niveauRecherche[2] = this.computeWeapons(base2, bonus2);
-        // On peut calculer le bouclier du joueur 2 ("ennemie") si on n'est pas en OS ou qu'on à perdu
+        // player 2's shield (the enemy) can be computed unless it was a one-shot, or we lost
         if (
           this._battleReport.split("et tuez").length > 2 ||
           this._battleReport.indexOf("Vous avez gagné") == -1
@@ -398,7 +398,7 @@ export class Battle {
               this._defender.niveauRecherche[2],
             );
         }
-        // On peut calculer le bouclier du joueur 1 ("vous") si on n'est pas en OS ou qu'on à gagner
+        // player 1's shield (« vous ») can be computed unless it was a one-shot, or we won
         if (
           this._battleReport.split("et en tue").length > 2 ||
           this._battleReport.includes("Vous avez gagné")
@@ -423,12 +423,12 @@ export class Battle {
           base1 = parseInt(tmp1.split("(")[0].replace(/ /g, "")),
           bonus1 = parseInt(tmp1.split("+")[1].split(")")[0].replace(/ /g, ""));
         this._attacker.niveauRecherche[2] = this.computeWeapons(base1, bonus1);
-        // Calcule du niveau d'arme de "l'ennemie"
+        // weapons level of the enemy
         let tmp2 = this._battleReport.split("ennemie inflige")[1].split("dégâts")[0],
           base2 = parseInt(tmp2.split("(")[0].replace(/ /g, "")),
           bonus2 = parseInt(tmp2.split("+")[1].split(")")[0].replace(/ /g, ""));
         this._defender.niveauRecherche[2] = this.computeWeapons(base2, bonus2);
-        // On peut calculer le bouclier du joueur 2 ("ennemie") si on n'est pas en OS ou qu'on à perdu
+        // player 2's shield (the enemy) can be computed unless it was a one-shot, or we lost
         if (
           this._battleReport.split("et tuez").length > 2 ||
           this._battleReport.indexOf("Vous avez gagné") == -1
@@ -448,7 +448,7 @@ export class Battle {
               this._defender.niveauRecherche[2],
             );
         }
-        // On peut calculer le bouclier du joueur 1 ("vous") si on n'est pas en OS ou qu'on à gagner
+        // player 1's shield (« vous ») can be computed unless it was a one-shot, or we won
         if (
           this._battleReport.split("et en tue").length > 2 ||
           this._battleReport.includes("Vous avez gagné")
@@ -474,15 +474,15 @@ export class Battle {
     return false;
   }
   /**
-   * Analyse un RC d'attaque pour en déduire le multiplicateur de vie effectif
-   * du défenseur (lieu + bouclier combinés) et la FdF nécessaire pour one-shot
-   * en encaissant la réplique 10%. Inspiré du tableur Calystene XP v1.04
-   * (feuille "Auto sur sonde", zone B26-K31).
+   * Reads an attack report to derive the defender's effective hit points
+   * multiplier (place and shield combined) and the striking power needed to
+   * one-shot while absorbing the 10% retaliation. Modelled on Calystene's
+   * XP v1.04 spreadsheet (sheet "Auto sur sonde", range B26-K31).
    *
    * @private
-   * @method analyseSonde
+   * @method analyzeProbe
    * @return {Object|null} { multiplicateur, vieHB, vieHBx3, vieAB, fdfNecessaire,
-   *                         armesEnnemi, defenseAB, repliqueDef10 } ou null si non applicable
+   *                         armesEnnemi, defenseAB, repliqueDef10 }, or null when not applicable
    */
   analyzeProbe() {
     if (this._pointOfView !== 0) return null;
@@ -525,10 +525,10 @@ export class Battle {
     };
   }
   /**
-   * Retourne l'armée en retirant d'aprés le rapport les unités perdues suivant le texte.
+   * Returns the army with the units lost, as listed in the report, removed.
    *
    * @private
-   * @method retirerPerte
+   * @method removeLoss
    * @param {Object} army
    * @param {String} separator
    * @param {String} countTurn on peut choisir de retirer les pertes sur 1 tour ou plusieurs
@@ -538,27 +538,27 @@ export class Battle {
     let res = new Army(),
       total = 0;
     res.unite = army.unite.slice(0);
-    // Si le rc à plusieurs tours on additionne d'abords les pertes.
+    // A battle report can span several rounds: sum the losses first.
     for (
       let i = 1, tmp = this._battleReport.split(separator);
       i < Math.min(tmp.length, countTurn);
       total += parseInt(tmp[i++].split(".")[0].replace(/ /g, ""))
     );
-    // Tant que le total n'est pas 0 on retire les unités
+    // Remove units until the total reaches 0
     return res.removeLoss(total);
   }
   /**
-   * Retourne l'armée en ajoutant l'xp.
+   * Returns the army with the XP gained added.
    *
    * @private
-   * @method ajouterXP
+   * @method addXp
    * @param {Object} army
    * @return {Object} armee avec XP
    */
   addXp(army) {
     let res = new Army();
     res.unite = army.unite.slice(0);
-    // Pour chaques types d'unitées qui ont XP.
+    // For every unit type that earns XP.
     for (
       let i = 1,
         tmp = this._battleReport.split("- "),
@@ -590,7 +590,7 @@ export class Battle {
     if (this._armyBefore.getTotalUnits() < 1000 || this._enemyArmyBefore.getTotalUnits() < 1000)
       html += ` <img src='images/attention.gif' alt='attention' title='les unitées sont peut être insuffisantes pour être sur' class='o_vAlign'/> `;
     html += `</p>`;
-    // Affichage des TDP possibles
+    // Show the possible spawn techs
     if (this._defenderSpawnTech.length) {
       html += `<table class='o_tabTDP centre' cellspacing="0"><tr class="gras"><td>TDP</td><td>Temps ponte</td><td>Heure de départ</td></tr>`;
       for (let i = 0; i < this._defenderSpawnTech.length; i++) {
@@ -599,7 +599,7 @@ export class Battle {
       }
       html += `</table><br/>`;
     }
-    // Affichage des infos sur l'armée restante de l'ennemie
+    // Show what is left of the enemy's army
     if (this._enemyArmyAfter.getTotalUnits()) {
       html += `<span style='text-decoration:underline;' class='gras'>Armee (après combat, sans XP)</span><br/><table class='o_tabAnalyse' cellspacing='0'>
 				<tr><td><img width='35' src='images/icone/icone_ouvriere.png' alt='nb_unite' class='o_vAlign'/></td><td class='right'>${numeral(this._enemyArmyAfter.getTotalUnits()).format()}</td>
@@ -615,7 +615,7 @@ export class Battle {
 				<td class='right' style='width:30px;'>${IMG_DEF}</td><td class='right'>${numeral(this._enemyArmyAfter.getBaseDef()).format()} (HB)</td><td class='right'>${numeral(this._enemyArmyAfter.getTotalDef(this._defender.niveauRecherche[2])).format()} (AB)</td></tr>
 				</table><br/>`;
     }
-    // Affichage des infos sur "votre" armée avec l'XP
+    // Show your own army, with XP
     if (this._armyLost.getTotalUnits()) {
       let countUnit = this._armyAfter.getTotalUnits() - this._armyBefore.getTotalUnits(),
         attHB = this._armyAfter.getBaseAtt() - this._armyBefore.getBaseAtt(),
@@ -673,10 +673,10 @@ export class Battle {
     return html;
   }
   /**
-   * Simule un combat
+   * Simulates a battle.
    *
    * @private
-   * @method simuler
+   * @method simulate
    */
   simulate() {
     let baseDegatAtt = 0,
@@ -686,12 +686,12 @@ export class Battle {
       returnHpTmp = null,
       armyAttTmp = null,
       armyDefTmp = null;
-    // initialisation des armées pour le combat
+    // set up the armies for the battle
     this._armyAfter = new Army();
     this._armyAfter.unite = this._armyBefore.unite.slice(0);
     this._enemyArmyAfter = new Army();
     this._enemyArmyAfter.unite = this._enemyArmyBefore.unite.slice(0);
-    // variable de vie du combat
+    // hit points tracked during the battle
     let hpAttacker = new Array().fill(0),
       hpDefender = new Array().fill(0);
     this._armyBefore.unite.forEach((elt, i) => {
@@ -710,12 +710,12 @@ export class Battle {
             : this._defender.niveauConstruction[10],
       );
     });
-    // on repique à 10% si l'attaque est strictement supérieur à la vie en def
+    // 10% retaliation applies when the attack strictly exceeds the defending hit points
     let retaliation = this.computeRetaliation(
       this._armyBefore.getTotalAtt(this._attacker.niveauRecherche[2]),
       hpDefender,
     );
-    // tant qu'il rete de la vie sur la defense ou l'attaque on enchaine les tours
+    // keep playing rounds while either side still has hit points
     while (
       hpAttacker.reduce((acc, val) => {
         return acc + val;
@@ -728,20 +728,20 @@ export class Battle {
         ? this._armyAfter.getBaseAtt()
         : Math.ceil(this._armyAfter.getBaseAtt());
       bonusDegatAtt = (baseDegatAtt * this._attacker.niveauRecherche[2]) / 10;
-      // le defenseur replique à 10% si l'attauant inglige suffisament de degat
+      // the defender retaliates at 10% when the attacker deals enough damage
       baseDegatDef = this._defender.niveauRecherche[2]
         ? this._enemyArmyAfter.getBaseDef() * retaliation
         : Math.ceil(this._enemyArmyAfter.getBaseDef() * retaliation);
       bonusDegatDef = (baseDegatDef * this._defender.niveauRecherche[2]) / 10;
-      // l'attaquant inflige les degats en premier, on calcule l'armée aprés les degats et on met à jour la vie restante
+      // the attacker strikes first: recompute their army after the damage and update the remaining hit points
       returnHpTmp = this.removeHp(this._enemyArmyAfter, hpDefender, baseDegatAtt + bonusDegatAtt);
       armyDefTmp = returnHpTmp.armeeFinale;
       hpDefender = returnHpTmp.vieFinale;
-      // le defenseur inflige les degats on calcule l'armée de l'attaquant puis on met a jour sa vie restante
+      // the defender strikes back: recompute the attacker's army and update their remaining hit points
       returnHpTmp = this.removeHp(this._armyAfter, hpAttacker, baseDegatDef + bonusDegatDef);
       armyAttTmp = returnHpTmp.armeeFinale;
       hpAttacker = returnHpTmp.vieFinale;
-      // ajoute des infos sur le tour pour le rapport
+      // record this round for the report
       this._turn.push([
         Math.ceil(baseDegatAtt),
         Math.ceil(bonusDegatAtt),
@@ -750,11 +750,11 @@ export class Battle {
         Math.ceil(bonusDegatDef),
         this._armyAfter.getTotalUnits() - armyAttTmp.getTotalUnits(),
       ]);
-      // mise à jour des armées finales
+      // update the final armies
       this._armyAfter = armyAttTmp;
       this._enemyArmyAfter = armyDefTmp;
     }
-    // le combat est terminé on remet le nombre d'unité sous forme d'entier
+    // the battle is over: round the unit counts back to integers
     for (let i = 0; i < 14; i++) {
       this._armyAfter.unite[i] = Math.ceil(this._armyAfter.unite[i]);
       this._enemyArmyAfter.unite[i] = Math.ceil(this._enemyArmyAfter.unite[i]);
@@ -777,9 +777,9 @@ export class Battle {
     armyPerdu.unite = army.unite.slice(0);
     for (let i = 0; i < armyPerdu.unite.length; i++) {
       if (armyPerdu.unite[i]) {
-        // si on a des unités
+        // when units are present
         if (hpUnit[i] >= degatInflige) {
-          // est ce que la vie de cette unité suffit pour couvrir les degat
+          // are this unit's hit points enough to absorb the damage
           armyPerdu.unite[i] = (army.unite[i] * (hpUnit[i] - degatInflige)) / hpUnit[i];
           hpUnit[i] -= degatInflige;
           break;
@@ -861,14 +861,14 @@ export class Battle {
     this._battleReport = `<span class="gras">Vous attaquez ${this._place ? "la " + PLACE_LABELS[this._place] : "le " + PLACE_LABELS[this._place]} de Inconnu :</span><br/><br/>`;
     // troupe en attaques
     this._battleReport += `Troupes en attaque : ${this._armyBefore.toString()}<br/>`;
-    // troupe en défenses
+    // defending troops
     this._battleReport += `Troupes en défense : ${this._enemyArmyBefore.toString()}<br/><br/>`;
-    // on affiche les tours
+    // render the rounds
     for (let i = 0; i < this._turn.length; i++) {
       this._battleReport += `Vous infligez <span class="gras">${numeral(this._turn[i][0]).format()} (+${numeral(this._turn[i][1]).format()})</span> dégats et tuez <span class="gras">${numeral(this._turn[i][2]).format()}</span> ennemies.<br/>`;
       this._battleReport += `L'ennemie inflige <span class="gras">${numeral(this._turn[i][3]).format()} (+${numeral(this._turn[i][4]).format()})</span> dégats à vos fourmis et en tue <span class="gras">${numeral(this._turn[i][5]).format()}</span>.<br/><br/>`;
     }
-    // j'ai gagné
+    // I won
     if (this._armyAfter.getBaseHp()) {
       if (this._turn.length > 1)
         this._battleReport += `L’adversaire y a cru, mais vous sortez victorieux de ce combat acharné.<br/>Vous avez gagné cette bataille !<br/>`;
@@ -890,9 +890,9 @@ export class Battle {
     this._battleReport = `<span class="gras">Inconnu attaque votre ${PLACE_LABELS[this._place]} :</span><br/><br/>`;
     // troupe en attaques
     this._battleReport += `Troupes en attaque : ${this._armyBefore.toString()}<br/>`;
-    // troupe en défenses
+    // defending troops
     this._battleReport += `Troupes en défense : ${this._enemyArmyBefore.toString()}<br/><br/>`;
-    // on affiche les tours
+    // render the rounds
     for (let i = 0; i < this._turn.length; i++) {
       this._battleReport += `L'ennemie inflige <span class="gras">${numeral(this._turn[i][0]).format()} (+${numeral(this._turn[i][1]).format()})</span> dégats à vos fourmis et en tue <span class="gras">${numeral(this._turn[i][2]).format()}</span>.<br/><br/>`;
       this._battleReport += `Vous infligez <span class="gras">${numeral(this._turn[i][3]).format()} (+${numeral(this._turn[i][4]).format()})</span> dégats et tuez <span class="gras">${numeral(this._turn[i][5]).format()}</span> ennemies.<br/>`;
@@ -903,7 +903,7 @@ export class Battle {
         this._battleReport += `Les troupes étaient de force égale, cependant il manqua aux nôtres ce petit plus qui fait gagner la bataille.<br/>Vos troupes ont échoué, l’ennemi pénètre vos défenses.<br/>`;
       else
         this._battleReport += `Vous venez de subir une cuisante défaite.<br/>Vos troupes ont échoué, l’ennemi pénètre vos défenses.<br/>`;
-      // j'ai gagné
+      // I won
     } else {
       if (this._turn.length > 1)
         this._battleReport += `Le combat était difficile, l’ennemi était résistant, mais votre stratégie l’a emporté.<br/>Vous avez gagné cette bataille ! L’ennemie est repoussé.<br/>`;

@@ -1,4 +1,4 @@
-// Fourmilière : bâtiments, recherches et leurs coûts de base.
+// Colony: buildings, researches and their base costs.
 export const BUILDINGS = [
   "Champignonnière",
   "Entrepôt de Nourriture",

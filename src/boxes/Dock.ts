@@ -1,9 +1,9 @@
 /**
- * Classe pour la gestion des différents outils globals à fourmizzz.
+ * Manages the toolbar shared by every Fourmizzz page.
  *
  * @class Outil
  * @constructor
- * @extends Boite
+ * @extends Box
  */
 import { $ } from "~/vendor";
 import { IMG_SPRITE_MENU } from "~/constants";
@@ -14,8 +14,8 @@ import { SettingsBox } from "~/boxes/Settings";
 import { SpawnBox } from "~/boxes/Spawn";
 
 export class Dock {
-  // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
+  // Fields declared for TypeScript (Phase 2 was a straight conversion; real
+  // typing is deferred — see .claude/plans/wxt-migration-followups.md).
   static _mql: any;
   _html: any;
   _spawnBox: any;
@@ -50,10 +50,10 @@ export class Dock {
     this._settingsBox = new SettingsBox();
   }
   /**
-   * Affiche la boite.
+   * Renders the box.
    *
    * @private
-   * @method afficher
+   * @method render
    */
   render() {
     $("body").append(this._html);
@@ -65,11 +65,11 @@ export class Dock {
       hide: { effect: "fade", duration: 10 },
     });
     Dock.applyPosition();
-    // En mobile (écran étroit), le côté droit n'a pas la place — on bascule la
-    // toolbar en bas même si la pref enregistrée est "à droite". On suit la
-    // mediaQuery pour réagir aussi quand on traverse le breakpoint à chaud.
+    // On mobile (narrow screen) there is no room on the right, so the toolbar
+    // moves to the bottom even when the saved preference says "right". The
+    // media query is watched so crossing the breakpoint live is handled too.
     Dock._mql.addEventListener("change", () => Dock.applyPosition());
-    // selon la pref on cache l'element
+    // hide the element according to the preference
     if (getProfile().parametre["dockVisible"].valeur == "0") {
       $(document).mousemove((e) => {
         if (Dock.isInBottom()) {
@@ -82,9 +82,9 @@ export class Dock {
         }
       });
     }
-    // evenement sur le clic d'un item de la boite d'outil
+    // click handler for a toolbar item
     $(".o_toolbarItem").click((e) => {
-      // affichage de la boite
+      // show the box
       switch ($(e.currentTarget).find("span").attr("id")) {
         case "o_itemPonte":
           this._spawnBox.render();
@@ -104,12 +104,12 @@ export class Dock {
     });
   }
   /**
-   * Applique la position du dock (classe + position des tooltips) selon
-   * la préférence "dockPosition". Appelable à chaud quand l'utilisateur
-   * change le paramètre depuis la BoiteParametre.
+   * Applies the dock position (class plus tooltip placement) from the
+   * "dockPosition" preference. Can be called live when the player changes the
+   * setting from the SettingsBox.
    *
    * @static
-   * @method appliquerPosition
+   * @method applyPosition
    */
   static applyPosition() {
     let isBottom = Dock.isInBottom();
@@ -125,12 +125,12 @@ export class Dock {
       });
   }
   /**
-   * Position effective du dock = pref de l'utilisateur, sauf en mobile
-   * où on force "bas" car la rangée verticale à droite n'est pas viable
-   * sur écran étroit. Ne modifie pas la pref enregistrée.
+   * The dock's effective position is the player's preference, except on mobile
+   * where "bottom" is forced because the vertical row on the right is not usable
+   * on a narrow screen. The saved preference is left untouched.
    *
    * @static
-   * @method estEnBas
+   * @method isInBottom
    */
   static isInBottom() {
     return Dock._mql.matches || getProfile().parametre["dockPosition"].valeur == "1";

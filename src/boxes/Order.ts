@@ -1,5 +1,5 @@
 /*
- * Commande.ts
+ * Order.ts
  * Hraesvelg
  **********************************************************************/
 
@@ -17,15 +17,15 @@ import { getProfile } from "~/models/currentPlayer";
 import { Box } from "~/boxes/Box";
 
 /**
- * Classe permettant d'ajouter et modifier une commande.
+ * Adds and edits a resource order.
  *
- * @class BoiteCommande
+ * @class OrderBox
  * @constructor
- * @extends Boite
+ * @extends Box
  */
 export class OrderBox extends Box {
-  // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
+  // Fields declared for TypeScript (Phase 2 was a straight conversion; real
+  // typing is deferred — see .claude/plans/wxt-migration-followups.md).
   _order: any;
   _tools: any;
   _page: any;
@@ -46,17 +46,17 @@ export class OrderBox extends Box {
     this._page = page;
   }
   /**
-   * Affiche la boite.
+   * Renders the box.
    *
    * @private
-   * @method afficher
+   * @method render
    */
   override render() {
     if (super.render()) this.getForm().css().event();
     return this;
   }
   /**
-   * Applique le style propre à la boite.
+   * Applies the box's own styling.
    *
    * @private
    * @method css
@@ -66,7 +66,7 @@ export class OrderBox extends Box {
     return this;
   }
   /**
-   * Ajoute les evenements propres à la boite.
+   * Wires up the box's own events.
    *
    * @private
    * @method event
@@ -78,7 +78,7 @@ export class OrderBox extends Box {
       minDate: new Date(),
       dateFormat: "dd-mm-yy",
     });
-    // si la commande est en ajout on autocomplete les champs en fonction de l'evo
+    // when adding an order, prefill the fields from the current upgrade
     if (!this._tools.commande.hasOwnProperty(this._order.id))
       $("#o_form" + this._order.id + " select[name='o_evolution']").change((e) => {
         let qte = Utils.computeQuantity(parseInt(e.currentTarget.value));
@@ -111,9 +111,9 @@ export class OrderBox extends Box {
         : null;
       let message = this._order.isValid();
       if (!message) {
-        // si la commande n'est pas dans l'utilitaire on est en ajout
+        // an order missing from the alliance tools is a new one
         if (!this._tools.commande.hasOwnProperty(this._order.id)) {
-          // si la commande n'est pas dans l'utilitaire c'est un ajout
+          // an order missing from the alliance tools is a new one
           this._tools
             .createTopic(
               this._order.toToolsFormat(),
@@ -142,7 +142,7 @@ export class OrderBox extends Box {
               },
             );
         } else {
-          // si la commande est deja dans l'utilitaire c'est qu'on la modifie sinon c'est un ajout
+          // an order already in the alliance tools is being edited, otherwise added
           this._tools.editTopic(this._order.toToolsFormat(), " ", this._order.id).then(
             (data) => {
               $.toast({ ...TOAST_INFO, text: "Commande mise à jour avec succès." });

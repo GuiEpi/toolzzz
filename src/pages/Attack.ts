@@ -1,5 +1,5 @@
 /*
- * Attaquer.ts
+ * Attack.ts
  * Hraesvelg
  **********************************************************************/
 
@@ -13,21 +13,21 @@ import { Player } from "~/models/Player";
 import * as storage from "~/storage";
 
 /**
- * Classe de fonction pour les pages d'attaques.
+ * Enriches the attack pages.
  *
- * @class PageAttaquer
+ * @class AttackPage
  * @constructor
  */
 export class AttackPage {
-  // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
+  // Fields declared for TypeScript (Phase 2 was a straight conversion; real
+  // typing is deferred — see .claude/plans/wxt-migration-followups.md).
   _comptePlusBox: any;
   _attackCount: any;
   _target: any;
   _army: any;
   constructor(boxComptePlus) {
     /**
-     * Accés à la boite compte+
+     * access to the ComptePlus box
      */
     this._comptePlusBox = boxComptePlus;
     /**
@@ -53,19 +53,19 @@ export class AttackPage {
    */
   run() {
     if ($("#tabChoixArmee").length) {
-      // récupération de l'armée
+      // fetch the army
       this._army = new Army({ unite: this.extractArmy() });
       this.updateStats(this._army);
       // ajoute event
       $("input[id^=unite]").on("input", (e) => {
         this.updateStats();
       });
-      // on recupére le profil du joueur pour les coordonnées
+      // fetch the player's profile for the coordinates
       this._target.getProfile().then((data) => {
         this._target.loadProfile(data);
-        // affichage des options avancées de lancement de l'armée
+        // show the advanced launch options
         this.addOption();
-        // ajoute des outils de floods
+        // add the flood tools
         this.floodForm();
       });
     }
@@ -84,10 +84,10 @@ export class AttackPage {
     return units;
   }
   /**
-   * Affiche les données de l'armée selectionné.
+   * Renders the selected army's figures.
    *
    * @private
-   * @method majStatistique
+   * @method updateStats
    */
   updateStats(army = null) {
     let tmp = army ? army : new Army({ unite: this.extractArmy() }),
@@ -115,11 +115,11 @@ export class AttackPage {
    *
    */
   addOption() {
-    // on deplace le bouton standarf à droite
+    // move the standard button to the right
     $("input[name='ChoixArmee']").unwrap().wrap("<div id='o_btnLancer' class='right'></div>");
-    // Capture de l'attaque au moment de l'envoi pour le récapitulatif par
-    // cible. Hook sur le submit du formulaire : couvre le clic sur le bouton,
-    // la touche Entrée, et les lancements programmés (Synchroniser / Sonder).
+    // Record the attack as it is sent, for the per-target summary. Hooked on the
+    // form's submit, which covers clicking the button, pressing Enter, and the
+    // scheduled launches (Synchroniser / Sonder).
     $("input[name='ChoixArmee']")
       .closest("form")
       .on("submit", () => {
@@ -130,8 +130,8 @@ export class AttackPage {
           { terrain: this._target.terrain },
         );
       });
-    // Ajout du bouton pour la synchro simple
-    // Ajout du temps de trajet
+    // add the simple sync button
+    // add the travel time
     const countProbe = getProfile().parametre["uniteSonde"].valeur;
     const titleSync = `Attend automatiquement le temps nécessaire pour que l'attaque arrive sur une minute pleine (utile pour synchroniser plusieurs attaques avec des alliés).`;
     const titleProbe = `Envoie ${countProbe} unité${countProbe > 1 ? "s" : ""} de la première espèce disponible (configurable dans Paramètres → Général) en attaque synchronisée — révèle le nombre de défenseurs ennemis sans engager toute l'armée.`;
@@ -148,7 +148,7 @@ export class AttackPage {
       this.launchSync(this._target.waitSync());
       return false;
     });
-    // Remplit le formulaire avec une sonde (1ʳᵉ espèce dispo × paramètre uniteSonde)
+    // fill the form with a probe (first available species × the uniteSonde setting)
     const remplirFormProbe = () => {
       let firstUnit = true;
       $("#lieu").val(3);
@@ -158,14 +158,14 @@ export class AttackPage {
           firstUnit = false;
         }
     };
-    // Sonde synchronisée (arrive sur la minute pleine)
+    // synchronised probe (lands on the exact minute)
     $("#o_sonder").click((e) => {
       e.preventDefault();
       remplirFormProbe();
       this.launchSync(this._target.waitSync());
       return false;
     });
-    // Sonde directe (envoi immédiat, pas de synchro)
+    // direct probe (sent at once, no sync)
     $("#o_sonderDirect").click((e) => {
       e.preventDefault();
       remplirFormProbe();
@@ -182,7 +182,7 @@ export class AttackPage {
    *
    */
   launchSync(wait) {
-    // Affichage du compte à rebours
+    // show the countdown
     $("#formulaireChoixArmee fieldset:eq(1)").append(
       `<p class="centre">Synchronisation en cours, veuillez attendre : <span id='o_decSyncA'></span>.</p>`,
     );
@@ -195,11 +195,11 @@ export class AttackPage {
    * Formulaire de lancemenet de flood.
    *
    * @private
-   * @method formulaireFlood
+   * @method floodForm
    */
   floodForm() {
     let methode = getProfile().parametre["methodeFlood"].valeur,
-      // créneaux d'attaques simultanées encore libres (VA + 1 au total)
+      // simultaneous attack slots still free (VA + 1 in total)
       creneaux = Math.max(0, this._attackCount);
     $(".simulateur:eq(0)")
       .append(`<fieldset id='o_prepaFlood' class='centre'><legend><span class='titre'>Lanceur de Flood</span> <span class='reduce'>(${creneaux} créneau${creneaux > 1 ? "x" : ""} libre${creneaux > 1 ? "s" : ""} sur ${getProfile().niveauRecherche[6] + 1})</span></legend>
@@ -218,14 +218,14 @@ export class AttackPage {
     });
     $("#o_simulationFlood tr:even").addClass("ligne_paire");
     for (let i = 1; i < Math.min(4, this._attackCount); i++) this.addAttack();
-    // Si la methode par defaut est par standard on prepare
+    // prepare when the default method is standard
     if (methode)
       this.prepareFlood($("#o_floodTDCA").spinner("value"), $("#o_floodTDCB").spinner("value"));
-    // event
+    // events
     $("#o_methodeFlood").change((e) => {
       this.prepareFlood($("#o_floodTDCA").spinner("value"), $("#o_floodTDCB").spinner("value"));
       if (e.currentTarget.value == "1")
-        // en optimisee on peut ni ajouter ni supprimer d'attaques
+        // in optimised mode attacks can be neither added nor removed
         $("#o_ajouteAttaque, #o_supprimeAttaque").hide();
       else $("#o_ajouteAttaque, #o_supprimeAttaque").show();
     });
@@ -251,9 +251,9 @@ export class AttackPage {
       this.prepareFlood($("#o_floodTDCA").spinner("value"), $("#o_floodTDCB").spinner("value"));
     });
     $("#o_lanceFlood").click((e) => {
-      // contexte pour que envoyerFlood capture chaque attaque confirmée. Le
-      // terrain de départ est celui saisi dans la simulation (par défaut celui
-      // du profil, modifiable si on connaît une valeur plus fraîche)
+      // context so sendFlood records every confirmed attack. The starting
+      // terrain is the one entered in the simulation (the profile's by default,
+      // editable when a fresher value is known)
       SentAttack.contexteFlood = {
         cible: this._target.pseudo,
         terrain: $("#o_floodTDCB").spinner("value"),
@@ -272,28 +272,28 @@ export class AttackPage {
     });
   }
   /**
-   * Lance une simulation si les données saisies sont correctes.
+   * Runs a simulation when the entered data is valid.
    *
    * @private
    * @method compileDataFlood
    */
   prepareFlood(huntingGroundAtt, huntingGroundTarget, bRecup = false) {
-    // Si la cible est à porter
+    // the target is in range
     if (
       huntingGroundTarget >= huntingGroundAtt * 0.5 &&
       huntingGroundTarget <= huntingGroundAtt * 3
     ) {
       let methode = $("#o_methodeFlood").val();
-      // on recup les attaques manuellement
+      // read the attacks entered by hand
       let attacks = new Array();
-      // on push au moins l'antisonde quelque soit le cas !
+      // always push at least the anti-probe
       attacks.push($("#o_floodAntiSonde").spinner("value"));
       if (bRecup || methode == "0") {
         for (let i = 1; i < this._attackCount; i++)
           if ($("#o_attaque" + i).length) attacks.push($("#o_attaque" + i).spinner("value"));
       }
-      // si attaques n'est pas vide c'est qu'on parametre soit meme les floods
-      // si la methode est uniforme ou degressive on utilise que le nbAttaque dans le tableau
+      // a non-empty list means the floods are configured by hand; with the
+      // uniform or decreasing method only the attack count in the table is used
       let indSupp = $("input[name='o_suppAttaque']:checked").length
         ? $("input[name='o_suppAttaque']:checked").attr("id").replace("o_suppAttaque", "")
         : -1;
@@ -320,11 +320,11 @@ export class AttackPage {
         $("#o_simulationFlood tr:eq(2) td:eq(3)").text(numeral(huntingGroundAtt).format());
         $("#o_simulationFlood tr:eq(2) td:eq(4)").text(numeral(huntingGroundTarget).format());
       }
-      // mise à jour des attaques
+      // update the attacks
       for (let i = 1; i < simulation.length; i++) {
         if (!$("#o_attaque" + i).length) this.addAttack(true);
         $("#o_attaque" + i).spinner("value", simulation[i]);
-        // Calcule des terrains
+        // compute the terrains
         if (huntingGroundTarget >= huntingGroundAtt * 0.5) {
           captureMax = Math.floor(huntingGroundTarget * 0.2);
           captureMax = simulation[i] > captureMax ? captureMax : simulation[i];
@@ -340,7 +340,7 @@ export class AttackPage {
           numeral(huntingGroundTarget).format(),
         );
       }
-      // supprime les attaques en trop si besoin
+      // drop the extra attacks when needed
       for (let i = simulation.length; i < $("#o_simulationFlood tr").length - 3; i++)
         this.deleteAttack();
     }
@@ -350,14 +350,14 @@ export class AttackPage {
    */
   addAttack(silencieux = false) {
     let countAttack = $("input[id^='o_attaque']").length + 1,
-      // l'antisonde occupe un créneau d'attaque seulement si elle est envoyée :
-      // à 0 la simulation place une attaque de plus, la ligne doit exister
-      // sinon elle est envoyée sans être affichée
+      // the anti-probe only takes an attack slot when it is actually sent: at 0
+      // the simulation places one more attack, and the row has to exist or it
+      // would be sent without being displayed
       creneaux = this._attackCount - ($("#o_floodAntiSonde").spinner("value") ? 1 : 0);
-    // si le nombre d'attaque depasse la VA
+    // the attack count exceeds the attack speed
     if (countAttack > creneaux) {
-      // Toast seulement sur clic manuel : en pré-remplissage auto (preparerFlood),
-      // l'utilisateur n'a rien fait, l'avertissement est trompeur.
+      // Toast only on a manual click: during the automatic prefill (prepareFlood)
+      // the player has done nothing, so the warning would be misleading.
       if (!silencieux)
         $.toast({
           ...TOAST_WARNING,
@@ -379,11 +379,11 @@ export class AttackPage {
         );
       });
       $("input[name='o_suppAttaque']").on("change", (e) => {
-        // une seule checkbox peut etre cocher
+        // only one checkbox may be ticked
         $("input[name='o_suppAttaque']").not(e.currentTarget).prop("checked", false);
         this.prepareFlood($("#o_floodTDCA").spinner("value"), $("#o_floodTDCB").spinner("value"));
       });
-      // si la methode est uniforme ou degressive on utilise autocomplete la valeur de l'attaque
+      // the uniform and decreasing methods autocomplete the attack value
       let methode = $("#o_methodeFlood").val();
       if (methode == "2" || methode == "3")
         this.prepareFlood($("#o_floodTDCA").spinner("value"), $("#o_floodTDCB").spinner("value"));
@@ -393,7 +393,7 @@ export class AttackPage {
    *
    */
   deleteAttack() {
-    // si le nombre d'attaque est de 0
+    // the attack count is 0
     let countAttack = $("input[id^='o_attaque']").length + 1;
     if (countAttack == 1)
       $.toast({ ...TOAST_WARNING, text: "Vous ne pouvez plus supprimer d'attaque" });
@@ -405,22 +405,22 @@ export class AttackPage {
     }
   }
   /**
-   * Ajoute les fonctionnalités du compte+. Affiche les infos sur l'armée et les fléches dans le tableau des unités.
+   * Adds the ComptePlus features: army figures and the arrows in the unit table.
    *
    * @private
    * @method plus
    */
   plus() {
-    // Affichage de l'arrivée + sauvegarde des attaques en cours
+    // show the arrival and save the running attacks
     let listAttack = SentAttack.enrichRows();
-    // Verification si les données sont deja enregistré
+    // check whether the data is already recorded
     this.saveAttacks(listAttack);
   }
   /**
-   * Verifie les attaques en cours avec ce qui est sauvegarder.
+   * Checks the running attacks against what was saved.
    *
    * @private
-   * @method saveAttaque
+   * @method saveAttacks
    */
   saveAttacks(listAttack) {
     let dataEvo = storage.getJSON("outiiil_evolution") || {};

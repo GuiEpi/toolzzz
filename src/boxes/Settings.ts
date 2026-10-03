@@ -1,5 +1,5 @@
 /*
- * Parametres.ts
+ * Settings.ts
  * Hraesvelg
  **********************************************************************/
 
@@ -12,15 +12,15 @@ import { Dock } from "~/boxes/Dock";
 import * as storage from "~/storage";
 
 /**
- * Classe permettant de choisir ses préférences.
+ * Lets the player pick their preferences.
  *
- * @class BoiteParametre
+ * @class SettingsBox
  * @constructor
- * @extends Boite
+ * @extends Box
  */
 export class SettingsBox extends Box {
-  // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
+  // Fields declared for TypeScript (Phase 2 was a straight conversion; real
+  // typing is deferred — see .claude/plans/wxt-migration-followups.md).
   _styleTab: any;
   _toolsTab: any;
   _generalTab: any;
@@ -67,10 +67,10 @@ export class SettingsBox extends Box {
     ];
   }
   /**
-   * Affiche la boite.
+   * Renders the box.
    *
    * @private
-   * @method afficher
+   * @method render
    */
   override render() {
     if (super.render()) {
@@ -85,7 +85,7 @@ export class SettingsBox extends Box {
     }
   }
   /**
-   * Applique le style propre à la boite.
+   * Applies the box's own styling.
    *
    * @private
    * @method css
@@ -125,7 +125,7 @@ export class SettingsBox extends Box {
     return this;
   }
   /**
-   * Ajoute les evenements propres à la boite.
+   * Wires up the box's own events.
    *
    * @private
    * @method event
@@ -135,15 +135,15 @@ export class SettingsBox extends Box {
     for (let param of this._styleTab) getProfile().parametre[param].addEvent();
     for (let param of this._toolsTab) getProfile().parametre[param].addEvent();
     for (let param of this._generalTab) getProfile().parametre[param].addEvent();
-    // le curseur de ratio n'a de sens qu'en mode Ratio
+    // the ratio slider only makes sense in Ratio mode
     $("#affectationRessource")
       .on("change", (e) => {
         $("#ratioRecolteGroupe").toggle(e.currentTarget.value == "3");
       })
       .trigger("change");
     $("#dockPosition").on("change", () => Dock.applyPosition());
-    // Sync de la réserve avec les antisondes quand « Suivre antisondes » est coché.
-    // Quand actif : on désactive le spinner et on le force à la somme antisondeTerrain + antisondeDome.
+    // Keep the reserve in sync with the anti-probes when "Suivre antisondes" is
+    // ticked: the spinner is disabled and forced to antisondeTerrain + antisondeDome.
     let syncReserveFlood = () => {
       if ($("#reserveFloodAuto").prop("checked")) {
         let sum =
@@ -155,8 +155,8 @@ export class SettingsBox extends Box {
     syncReserveFlood();
     $("#reserveFloodAuto").on("change", syncReserveFlood);
     $("#uniteAntisondeTerrain, #uniteAntisondeDome").on("spinchange spinstop", syncReserveFlood);
-    // Reset complet des paramètres (À propos) — efface le localStorage et recharge la page,
-    // ce qui reconstruit le profil (getProfile()) avec les valeurs par défaut.
+    // Full settings reset (À propos tab) — clears localStorage and reloads the
+    // page, which rebuilds the profile (getProfile()) with the defaults.
     $("#o_resetParametres").click(() => {
       if (confirm("Réinitialiser tous les paramètres aux valeurs par défaut ?")) {
         storage.remove("outiiil_parametre");
@@ -193,9 +193,9 @@ export class SettingsBox extends Box {
   toolsTab() {
     let content = ``;
     for (let param of this._toolsTab) content += getProfile().parametre[param].getForm();
-    // max-width sur le bloc texte : sans ça, le long paragraphe pousse la boîte à grandir
-    // pendant le drag (la boîte n'a pas de max-width et son layout est recalculé en
-    // continu, ce qui déclenche un effet "s'agrandit sans cesse").
+    // max-width on the text block: without it the long paragraph makes the box
+    // grow while dragging (the box has no max-width and its layout is recomputed
+    // continuously, which makes it creep wider and wider).
     $("#o_tabsParametre2").append(`
       <p class='left reduce gras' style='margin-left:10px;'>Saisissez les identifiants des sujets de votre utilitaire<span class="cliquable2" style="font-size:0.8em; font-weight:normal;" onclick="spoilerId('o_paramUtilitaireInfo');"> En savoir plus ?</span></p>
       <div id='o_paramUtilitaireInfo' class='o_marginT15 left reduce' style='display:none; max-width:500px; word-wrap:break-word; margin-left:auto; margin-right:auto;'>
@@ -211,9 +211,9 @@ export class SettingsBox extends Box {
    *
    */
   generalTab() {
-    // L'affectation auto Toolzzz vit dans PageRessource.affectation(), pour
-    // tous les comptes : en C+ le jeu propose nativement Matériaux /
-    // Nourriture, le mode Ratio reste un apport de l'extension.
+    // Toolzzz's automatic assignment lives in ResourcesPage.assignment(), for
+    // every account: on ComptePlus the game offers Matériaux / Nourriture
+    // natively, while Ratio mode remains the extension's own addition.
     let blocAssignment = `<p class='left reduce gras'>L'affectation sera automatique lors de la consultation de la page ressource</p>
          <p class='left small'><em>Ratio : les ouvrières suivent la part choisie, même après une chasse ou un flood.${Utils.comptePlus ? " En Compte+, l'activer sur la page Ressources coupe l'affectation automatique du jeu." : ""}</em></p>
          ${getProfile().parametre[this._generalTab[0]].getForm()}

@@ -1,5 +1,5 @@
 /*
- * Profil.ts
+ * PlayerProfile.ts
  * Hraesvelg
  **********************************************************************/
 
@@ -9,14 +9,14 @@ import { getProfile } from "~/models/currentPlayer";
 import { Player } from "~/models/Player";
 
 /**
- * Classe de fonction pour la page /Membre.php?Pseudo=?.
+ * Enriches the /Membre.php?Pseudo= page.
  *
- * @class PageProfil
+ * @class PlayerProfilePage
  * @constructor
  */
 export class PlayerProfilePage {
-  // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
+  // Fields declared for TypeScript (Phase 2 was a straight conversion; real
+  // typing is deferred — see .claude/plans/wxt-migration-followups.md).
   _profile: any;
   _radarBox: any;
   /**
@@ -24,11 +24,11 @@ export class PlayerProfilePage {
    */
   constructor(boxRadar) {
     /**
-     * Creation du modele profil
+     * builds the profile model
      */
     this._profile = null;
     /**
-     * Acces à la boite radar
+     * access to the radar box
      */
     this._radarBox = boxRadar;
   }
@@ -36,10 +36,10 @@ export class PlayerProfilePage {
    *
    */
   run() {
-    // Sélecteur scopé `center > h2` : la toast "Toolzzz mis à jour" utilise
-    // aussi un <h2> (cf. jquery-toast `.jq-toast-heading`) qu'un `$("h2")` global
-    // concaténerait avec le pseudo de la page et corromprait la clé de
-    // surveillance dans `_joueurs`.
+    // The selector is scoped to `center > h2` because the "Toolzzz mis à jour"
+    // toast also uses an <h2> (jquery-toast's `.jq-toast-heading`); a global
+    // `$("h2")` would concatenate it with the page's nickname and corrupt the
+    // watch key in `_players`.
     this._profile = new Player({ pseudo: $("center > h2").text() });
     let regexp = new RegExp("x=(\\d*) et y=(\\d*)"),
       row = $(".boite_membre").find("a[href^='carte2.php?']").text();
@@ -50,11 +50,11 @@ export class PlayerProfilePage {
       .includes("Joueur en vacances");
     this._profile.id = $("a[href^='commerce.php?ID=']").attr("href").match(/\d+/g)[0];
     this._profile.terrain = numeral($(".tableau_score tr:eq(1) td:eq(1)").text()).value();
-    // si on consulte un profil différent du sien
+    // looking at someone else's profile
     if (!this._profile.isCurrentPlayer()) {
-      // si on a pas de compte+ on affiche le temps de trajet
+      // without ComptePlus, show the travel time
       !Utils.comptePlus && this.plus();
-      // Affichage du retour dynamique
+      // show the live return time
       $(".boite_membre:first div:first table").append(
         `<tr><td class='right'>Retour le :</td><td id='o_tempsRetour'>${moment().add(getProfile().getTravelTimeTo(this._profile), "s").format("D MMM à HH[h]mm[m]ss[s]")}</td></tr><tr><td class='right'>Rapport :</td><td id='o_tempsRetourRapport'>${Utils.roundMinute(getProfile().getTravelTimeTo(this._profile)).format("D MMM à HH[h]mm")}</td></tr>`,
       );
@@ -65,9 +65,9 @@ export class PlayerProfilePage {
       );
     }
 
-    // Ajout de l'option pour ajouter au radar + un lien vers AntLeaks
-    // (https://antleaks.guics.st) avec le pseudo dans le chemin — outil community
-    // pour consulter l'historique public d'un joueur Fourmizzz.
+    // Adds the "watch on the radar" option plus a link to AntLeaks
+    // (https://antleaks.guics.st) with the nickname in the path — a community
+    // tool for browsing a Fourmizzz player's public history.
     let antleaksUrl = `https://antleaks.guics.st/player/${encodeURIComponent(this._profile.pseudo)}`;
     $(".boite_membre:eq(1) table tr td:eq(0)").append(
       `${Utils.comptePlus ? "<br/>" : ""}- <span id='o_surveiller' class='cursor gras'>${this._radarBox.joueurs.hasOwnProperty(this._profile.pseudo) ? "Supprimer la surveillance" : "Surveiller ce joueur"}</span><br/>- <a class='gras' href='${antleaksUrl}' target='_blank' rel='noopener'>Voir sur AntLeaks</a>`,
@@ -89,7 +89,7 @@ export class PlayerProfilePage {
    *
    */
   plus() {
-    // Affichage du temps de trajet
+    // show the travel time
     $(".boite_membre:first div:first table").append(
       `<tr><td style='text-align:right'>Temps de trajet :</td><td>${Utils.intToTime(getProfile().getTravelTimeTo(this._profile))}</td></tr>`,
     );

@@ -1,4 +1,4 @@
-// Unités : noms, temps de ponte, coûts et caractéristiques de combat (index = type d'unité).
+// Units: names, spawn times, costs and battle characteristics (index = unit type).
 export const UNIT_NAMES = [
   "Ouvrière",
   "Jeune Soldate Naine",

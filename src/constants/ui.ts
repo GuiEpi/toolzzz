@@ -1,4 +1,4 @@
-// Effets jQuery UI proposés dans les paramètres.
+// jQuery UI effects offered in the settings.
 export const EFFECTS = [
   "",
   "Blind",

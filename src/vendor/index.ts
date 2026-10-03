@@ -1,20 +1,20 @@
 /*
- * Bundle des bibliothèques tierces.
+ * Third-party library bundle.
  *
- * Les 18 fichiers de `lib/` sont exactement ceux que l'extension chargeait
- * comme content scripts séparés avant la migration WXT (mêmes versions, mêmes
- * octets, même ordre). Aucun n'est un module ES : ce sont des scripts UMD ou
- * des IIFE qui se posent sur `window` (jQuery, moment, numeral, Highcharts…)
- * ou étendent `jQuery.fn`. Le plugin Vite `toolzzz:vendor-scripts`
- * (wxt.config.ts) enveloppe chacun d'eux pour qu'il s'exécute comme un script
- * classique : `module` / `exports` / `require` / `define` masqués, `this`
- * = `window`. Sans cela rolldown les traite comme du CommonJS — et le combo
- * DataTables (6 wrappers UMD dans un seul fichier) ne s'exécuterait jamais.
+ * The 18 files in `lib/` are exactly the ones the extension used to load as
+ * separate content scripts before the WXT migration (same versions, same bytes,
+ * same order). None of them is an ES module: they are UMD scripts or IIFEs that
+ * put themselves on `window` (jQuery, moment, numeral, Highcharts…) or extend
+ * `jQuery.fn`. The `toolzzz:vendor-scripts` Vite plugin (wxt.config.ts) wraps
+ * each one so it runs like a plain script: `module` / `exports` / `require` /
+ * `define` shadowed, `this` = `window`. Without it rolldown treats them as
+ * CommonJS — and the DataTables combo (six UMD wrappers in one file) would never
+ * run at all.
  *
- * L'ordre des imports EST l'ordre de chargement : jQuery avant ses plugins,
- * moment avant sa locale, etc. Ne pas trier.
+ * The import order IS the load order: jQuery before its plugins, moment before
+ * its locale, and so on. Do not sort them.
  *
- * Le reste du code n'accède jamais à `window.*` : il importe `$`, `moment`,
+ * The rest of the code never touches `window.*`: it imports `$`, `moment`,
  * `numeral`, `Highcharts`, `Clipboard` depuis ce module.
  */
 import "~/vendor/lib/jquery_3.2.1.js";

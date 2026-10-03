@@ -1,5 +1,5 @@
 /*
- * Chasse.ts
+ * Hunt.ts
  * Hraesvelg
  **********************************************************************/
 
@@ -13,11 +13,11 @@ import { Box } from "~/boxes/Box";
 import { Hunt } from "~/models/Hunt";
 
 /**
- * Classe permettant d'analyser simuler et lancer des chasses.
+ * Analyses, simulates and launches hunts.
  *
- * @class BoiteChasse
+ * @class HuntBox
  * @constructor
- * @extends Boite
+ * @extends Box
  */
 export class HuntBox extends Box {
   constructor() {
@@ -28,10 +28,10 @@ export class HuntBox extends Box {
     );
   }
   /**
-   * Affiche la boite.
+   * Renders the box.
    *
    * @private
-   * @method afficher
+   * @method render
    */
   override render() {
     if (super.render()) {
@@ -46,7 +46,7 @@ export class HuntBox extends Box {
     }
   }
   /**
-   * Applique le style propre à la boite.
+   * Applies the box's own styling.
    *
    * @private
    * @method css
@@ -89,7 +89,7 @@ export class HuntBox extends Box {
     return this;
   }
   /**
-   * Ajoute les evenements propres à la boite.
+   * Wires up the box's own events.
    *
    * @private
    * @method event
@@ -99,10 +99,10 @@ export class HuntBox extends Box {
     return this;
   }
   /**
-   * Formulaire pour analyser une ou plusieurs chasse(s).
+   * Form to analyse one or more hunts.
    *
    * @private
-   * @method analyse
+   * @method analyze
    */
   analyze() {
     $("#o_tabsChasse1").append(
@@ -110,14 +110,14 @@ export class HuntBox extends Box {
     );
 
     $("#o_rcChasse").on("input", (e) => {
-      // on recup les chasses à analyser
+      // collect the hunts to analyse
       let hunts = e.currentTarget.value.split("nourriture"),
         summary = new Hunt(""),
         hunt = null,
         erreur = false,
         html =
           "<tr class='gras'><td colspan='2'>Avant</td><td colspan='2'>Evolution</td><td colspan='2'>Résultat</td></tr>";
-      // on nettoie l'ancien affichage
+      // clear the previous output
       $("#o_resultatChasse").html("");
       for (let i = 0; i < hunts.length; i++) {
         if (hunts[i]) {
@@ -139,7 +139,7 @@ export class HuntBox extends Box {
     return this;
   }
   /**
-   * Affiche les données issue d'un rapport de chasse.
+   * Renders the data read from a hunt report.
    *
    * @private
    * @method afficherAnalyse
@@ -156,7 +156,7 @@ export class HuntBox extends Box {
     );
     html += "<option value='" + i + "' selected>Bilan</option></select></td></tr>";
     $("#o_resultatChasse").append(hunt.toBoxHtml(true) + html);
-    // Style
+    // Styling
     $("#o_resultatChasse tr:even").css(
       "background-color",
       getProfile().parametre["couleur2"].valeur,
@@ -178,12 +178,12 @@ export class HuntBox extends Box {
     });
   }
   /**
-   * Onglet "Bestiaire" — liste des 17 espèces de faune avec image et stats.
-   * Source de la table : http://alliancead2.free.fr/Bestiaire.html (constants
-   * FAUNE dans content.js, images bundlées dans public/images/faune/).
+   * "Bestiaire" tab — the 17 wildlife species with their image and stats.
+   * Table source: http://alliancead2.free.fr/Bestiaire.html (the WILDLIFE
+   * constant, images bundled in public/images/faune/).
    *
    * @private
-   * @method bestiaire
+   * @method bestiary
    */
   bestiary() {
     let rows = WILDLIFE.map(

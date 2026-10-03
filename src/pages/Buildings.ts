@@ -1,5 +1,5 @@
 /*
- * Construction.ts
+ * Buildings.ts
  * Hraesvelg
  **********************************************************************/
 
@@ -19,18 +19,18 @@ import {
 } from "~/data/costs";
 
 /**
- * Classe de fonction pour la page /construction.php.
+ * Enriches the /construction.php page.
  *
- * @class PageConstruction
+ * @class BuildingsPage
  * @constructor
  */
 export class BuildingsPage {
-  // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
+  // Fields declared for TypeScript (Phase 2 was a straight conversion; real
+  // typing is deferred — see .claude/plans/wxt-migration-followups.md).
   _comptePlusBox: any;
   constructor(boxComptePlus) {
     /**
-     * Accés à la boite compte+
+     * access to the ComptePlus box
      */
     this._comptePlusBox = boxComptePlus;
   }
@@ -38,10 +38,10 @@ export class BuildingsPage {
    *
    */
   run() {
-    // Préservation du scroll à travers les redirects "Construire prereq invalide"
-    // — la restauration se fait à la fin d'executer() (après les manipulations DOM).
+    // Preserve the scroll across the "Construire prereq invalide" redirects —
+    // restored at the end of run(), once the DOM work is done.
     let scrollY = Utils.preserveScroll("o_constructionScroll");
-    // verification des niveaux
+    // check the levels
     let level = new Array(13);
     $(".ligneAmelioration").each((i, elt) => {
       level[i] = parseInt($(elt).find(".niveau_amelioration").text().split(" ")[1]);
@@ -50,31 +50,31 @@ export class BuildingsPage {
       getProfile().niveauConstruction = level;
       getProfile().save();
     }
-    // Affichage de la rentabilité
+    // show the payback
     if (!$(".desciption_amelioration:eq(11) table").find(".verificationOK").length)
       this.stableTitle();
-    // Sauvegarde construction AVANT le remplacement (saveConstruction lit le strong)
+    // save the building BEFORE the replacement (saveBuildings reads the strong)
     if (!Utils.comptePlus) this.plus();
-    // ⚠️ Ordre : confirmationAnnuler AVANT tableauEvolution — la 1re ajoute le
-    // <a>Retour</a> juste après "Je confirme", et la 2nde le déplace en même
-    // temps que le warning sous le tableau récap. Sinon en C+ le Retour
-    // resterait orphelin à sa position d'injection.
+    // ⚠️ Order matters: cancelConfirmation BEFORE upgradesTable — the first adds
+    // the <a>Retour</a> right after "Je confirme", and the second moves it along
+    // with the warning under the summary table. Otherwise, on ComptePlus, Retour
+    // would be left behind at its injection point.
     Utils.cancelConfirmation("construction.php");
     Utils.upgradesTable("Construction", "Construction");
-    // Visualisation des coûts/temps par niveau
+    // cost and time charts per level
     this.costs();
-    // Restauration du scroll APRÈS toutes les manipulations DOM (sinon le
-    // tableau évolutions et le widget couts décalent la mise en page après).
+    // Restore the scroll AFTER all the DOM work, otherwise the upgrades table
+    // and the costs widget shift the layout afterwards.
     if (scrollY !== null) requestAnimationFrame(() => window.scrollTo(0, scrollY));
     return this;
   }
   /**
-   * Injecte un widget de visualisation graphique des coûts/temps par niveau,
-   * pour les 13 constructions et 10 recherches du jeu, ainsi qu'un trigger
-   * dans l'en-tête de la page (style natif `boutonDescription`). Cliquable
+   * Injects a widget charting cost and time per level for the game's 13
+   * buildings and 10 researches, plus a trigger in the page header (styled with
+   * the game's own `boutonDescription`). Clickable
    * via l'ancre `#cout`.
    *
-   * @method couts
+   * @method costs
    */
   costs() {
     if ($("#o_couts").length) return this;
@@ -86,10 +86,10 @@ export class BuildingsPage {
       .join("");
     let archiLevel = getProfile().niveauRecherche[3] || 0;
     let saLevel = getProfile().niveauConstruction[6] || 0;
-    // Pas d'ancre <a id='cout'> : on garde le hash pour le toggle (hashchange
-    // listener) mais on évite le scroll-to-anchor du navigateur — devenu
-    // inutile depuis qu'on masque la simulation native, le widget est déjà
-    // tout seul en haut du viewport.
+    // No <a id='cout'> anchor: the hash is kept for the toggle (a hashchange
+    // listener) but the browser's scroll-to-anchor is avoided — pointless since
+    // the game's simulation is hidden and the widget already sits alone at the
+    // top of the viewport.
     $("#cadre, #centre").last().append(`
         <div id='o_couts' class='boite_amelioration simulateur centre' style='display:none;'>
           <h2>Coûts & temps de développement</h2>
@@ -132,24 +132,24 @@ export class BuildingsPage {
     $("#o_coutsArchi, #o_coutsSa").spinner({ min: 0, max: 45, numberFormat: "i" });
     $("#o_coutsConstru, #o_coutsRecherche").on("change", () => this._renderCostsCharts());
     $("#o_coutsArchi, #o_coutsSa").on("input spin", () => this._renderCostsCharts());
-    // Toggle natif <-> widget selon le hash : sur #cout on masque la simulation
-    // native (build queue, lignes d'amélioration) pour ne montrer que les
+    // Toggles between the game's view and the widget from the hash: on #cout the
+    // game's simulation (build queue, upgrade rows) is hidden to show only the
     // courbes. Sans hash, comportement habituel. hashchange permet de
-    // basculer sans recharger la page (depuis une autre entrée du menu).
-    // Highcharts.render est appelé seulement quand le widget devient visible
-    // (sinon il calcule des dimensions à 0).
+    // switching without a page reload (from another menu entry).
+    // Highcharts.render is only called once the widget becomes visible,
+    // otherwise it measures zero dimensions.
     this._applyCostsHash();
     $(window).on("hashchange.couts", () => this._applyCostsHash());
     return this;
   }
   /**
    * @private
-   * @method _appliquerHashCouts
+   * @method _applyCostsHash
    */
   _applyCostsHash() {
-    // Le masquage de la simulation native est géré par CSS (`.toolzzz-mode-couts`
-    // posée sur <html> par bootstrap.js dès le document_start) — on n'a plus
-    // qu'à toggler notre widget côté JS.
+    // Hiding the game's simulation is handled in CSS (`.toolzzz-mode-couts`, put
+    // on <html> by the bootstrap content script at document_start), so only our
+    // widget has to be toggled from JS.
     let surCosts = location.hash === "#cout";
     if (surCosts) {
       $("#o_couts").show();
@@ -159,12 +159,12 @@ export class BuildingsPage {
     }
   }
   /**
-   * (Re)dessine les deux charts en fonction des sélections actuelles.
-   * Croissance exponentielle des coûts → log sur l'axe Y de droite, axe linéaire
-   * (formaté en durée) à gauche pour le temps.
+   * (Re)draws both charts from the current selections. Costs grow
+   * exponentially, hence a log right-hand Y axis, with a linear axis (formatted
+   * as a duration) on the left for the time.
    *
    * @private
-   * @method _renderCoutsCharts
+   * @method _renderCostsCharts
    */
   _renderCostsCharts() {
     let [niveauMin, niveauMax] = $("#o_coutsSlider").slider("values"),
@@ -227,7 +227,7 @@ export class BuildingsPage {
   }
   /**
    * @private
-   * @method _renderCoutsChart
+   * @method _renderCostsChart
    */
   _renderCostsChart(containerId, titre, levels, series) {
     Highcharts.chart(containerId, {
@@ -276,10 +276,10 @@ export class BuildingsPage {
     });
   }
   /**
-   * Ajoute un title detaillé pour connaitre la rentabilité de la construction : etable à pucerons.
+   * Adds a detailed title showing the payback of the aphid stable.
    *
    * @private
-   * @method titleEtable
+   * @method stableTitle
    */
   stableTitle() {
     let workersDispo = Utils.ouvrieres - Utils.terrain,
@@ -303,18 +303,18 @@ export class BuildingsPage {
     return this;
   }
   /**
-   * Sauvegarde la construction en cours.
+   * Saves the running building.
    *
    * @private
    * @method plus
    */
   plus() {
-    // La mention "Terminé le X" est désormais affichée par
-    // `Utils.tableauEvolution()` pour tous (C+ comme non-C+), plus besoin de
-    // la dupliquer ici.
-    // Sauvegarde de la construction en cours
+    // The "Terminé le X" line is now rendered by `Utils.upgradesTable()` for
+    // everyone (ComptePlus and free alike), so there is no need to duplicate it
+    // here.
+    // save the running building
     this.saveBuildings();
-    // Suppresion de la construction en cours si on annule
+    // drop the running building when it is cancelled
     if ($("a:contains('Annuler')").length)
       $("a:contains('Annuler')").click((e) => {
         this._comptePlusBox.expConstruction = 0;
@@ -325,10 +325,10 @@ export class BuildingsPage {
     return this;
   }
   /**
-   * Sauvegarde la construction en cours.
+   * Saves the running building.
    *
    * @private
-   * @method saveConstruction
+   * @method saveBuildings
    */
   saveBuildings() {
     let str = $("#centre > strong").text();

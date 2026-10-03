@@ -1,5 +1,5 @@
 /*
- * Laboratoire.ts
+ * Lab.ts
  * Hraesvelg
  **********************************************************************/
 
@@ -10,23 +10,23 @@ import { getProfile } from "~/models/currentPlayer";
 import { Army } from "~/models/Army";
 
 /**
- * Classe de fonction pour la page /laboratoire.php.
+ * Enriches the /laboratoire.php page.
  *
- * @class PageLaboratoire
+ * @class LabPage
  * @constructor
  */
 export class LabPage {
-  // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
+  // Fields declared for TypeScript (Phase 2 was a straight conversion; real
+  // typing is deferred — see .claude/plans/wxt-migration-followups.md).
   _comptePlusBox: any;
   _army: any;
   constructor(boxComptePlus) {
     /**
-     * Accés à la boite compte+
+     * access to the ComptePlus box
      */
     this._comptePlusBox = boxComptePlus;
     /**
-     * Armée du joueur pour calculer le rentabilité Armes et Bouclier
+     * the player's army, used for the weapons and shield payback
      */
     this._army = new Army();
   }
@@ -34,10 +34,10 @@ export class LabPage {
    *
    */
   run() {
-    // Préservation du scroll à travers les redirects "Rechercher prereq invalide"
-    // — la restauration se fait à la fin d'executer() (après les manipulations DOM).
+    // Preserve the scroll across the "Rechercher prereq invalide" redirects —
+    // restored at the end of run(), once the DOM work is done.
     let scrollY = Utils.preserveScroll("o_laboratoireScroll");
-    // verification des niveaux
+    // check the levels
     let level = new Array(10);
     $(".ligneAmelioration").each((i, elt) => {
       level[i] = parseInt($(elt).find(".niveau_amelioration").text().split(" ")[1]);
@@ -49,27 +49,27 @@ export class LabPage {
     // ajout title evolution
     this._army.getArmy().then((data) => {
       this._army.loadData(data);
-      // Affichage de la rentabilité du bouclier et de la rentabilité de l'armes
+      // show the shield and weapons payback
       this.shieldTitle().weaponsTitle();
     });
-    // Sauvegarde recherche AVANT le remplacement (saveRecherche lit $("#centre strong"))
+    // save the research BEFORE the replacement (saveResearches reads $("#centre strong"))
     if (!Utils.comptePlus) this.plus();
-    // ⚠️ Ordre : confirmationAnnuler AVANT tableauEvolution — la 1re ajoute le
-    // <a>Retour</a> juste après "Je confirme", et la 2nde le déplace en même
-    // temps que le warning sous le tableau récap. Sinon en C+ le Retour
-    // resterait orphelin à sa position d'injection.
+    // ⚠️ Order matters: cancelConfirmation BEFORE upgradesTable — the first adds
+    // the <a>Retour</a> right after "Je confirme", and the second moves it along
+    // with the warning under the summary table. Otherwise, on ComptePlus, Retour
+    // would be left behind at its injection point.
     Utils.cancelConfirmation("laboratoire.php");
     Utils.upgradesTable("Recherche", "Laboratoire");
-    // Restauration du scroll APRÈS toutes les manipulations DOM (sinon le
-    // tableau évolutions décale la mise en page après).
+    // Restore the scroll AFTER all the DOM work, otherwise the upgrades table
+    // shifts the layout afterwards.
     if (scrollY !== null) requestAnimationFrame(() => window.scrollTo(0, scrollY));
     return this;
   }
   /**
-   * Ajoute un title detaillé pour connaitre la rentabilité du niveau bouclier.
+   * Adds a detailed title showing the payback of the next shield level.
    *
    * @private
-   * @method titleBouclier
+   * @method shieldTitle
    */
   shieldTitle() {
     let hpAB = this._army.getBaseHp() + this._army.getHpBonus(getProfile().niveauRecherche[1]);
@@ -98,10 +98,10 @@ export class LabPage {
     return this;
   }
   /**
-   * Ajoute un title detaillé pour connaitre la rentabilité du niveau d'armes.
+   * Adds a detailed title showing the payback of the next weapons level.
    *
    * @private
-   * @method titleArmes
+   * @method weaponsTitle
    */
   weaponsTitle() {
     let attAB = this._army.getTotalAtt(getProfile().niveauRecherche[2]);
@@ -147,18 +147,18 @@ export class LabPage {
     return this;
   }
   /**
-   * Sauvegarde la recherche en cours.
+   * Saves the running research.
    *
    * @private
    * @method plus
    */
   plus() {
-    // La mention "Terminé le X" est désormais affichée par
-    // `Utils.tableauEvolution()` pour tous (C+ comme non-C+), plus besoin de
-    // la dupliquer ici.
-    // Sauvegarde de la recherche en cours
+    // The "Terminé le X" line is now rendered by `Utils.upgradesTable()` for
+    // everyone (ComptePlus and free alike), so there is no need to duplicate it
+    // here.
+    // save the running research
     this.saveResearches();
-    // Suppresion de la recherche en cours si on annule
+    // drop the running research when it is cancelled
     if ($("a:contains('Je confirme')").length)
       $("a:contains('Je confirme')").click((e) => {
         this._comptePlusBox.expRecherche = 0;
@@ -169,10 +169,10 @@ export class LabPage {
     return this;
   }
   /**
-   * Sauvegarde la recherche en cours.
+   * Saves the running research.
    *
    * @private
-   * @method saveRecherche
+   * @method saveResearches
    * @return
    */
   saveResearches() {

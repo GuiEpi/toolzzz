@@ -1,8 +1,8 @@
 /*
- * Les bibliothèques de `lib/` ne sont pas des modules : ce sont des scripts
- * UMD/IIFE vendorisés tels quels, importés uniquement pour leur effet de bord
- * (ils se posent sur `window` ou étendent `jQuery.fn`). `allowJs` est à false,
- * donc tsc ne doit pas chercher à les lire — cette déclaration générique les
+ * The libraries in `lib/` are not modules: they are UMD/IIFE scripts vendored
+ * as they are, imported purely for their side effects (they put themselves on
+ * `window` or extend `jQuery.fn`). `allowJs` is false, so tsc must not try to
+ * read them — this blanket declaration covers
  * couvre toutes.
  */
 declare module "~/vendor/lib/*";

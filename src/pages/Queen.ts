@@ -1,5 +1,5 @@
 /*
- * Reine.ts
+ * Queen.ts
  * Hraesvelg
  **********************************************************************/
 
@@ -19,28 +19,28 @@ import { Utils } from "~/lib/Utils";
 import { getProfile } from "~/models/currentPlayer";
 
 /**
- * Classe de fonction pour la page /reine.php.
+ * Enriches the /Reine.php page.
  *
- * @class PageReine
+ * @class QueenPage
  * @constructor
  * @extends Page
  */
 export class QueenPage {
-  // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
+  // Fields declared for TypeScript (Phase 2 was a straight conversion; real
+  // typing is deferred — see .claude/plans/wxt-migration-followups.md).
   _comptePlusBox: any;
   constructor(boxComptePlus) {
     /**
-     * Accés à la boite compte+
+     * access to the ComptePlus box
      */
     this._comptePlusBox = boxComptePlus;
   }
   /**
-   * Modifie les champs de saisie, sauvegarde la ponte en cours.
+   * Reworks the input fields and saves the running spawn.
    * @method plus
    */
   plus() {
-    // Affichage de la fin des pontes
+    // show when the spawns end
     $(".tableau_leger tr:eq(0)").append("<td><strong>Terminé le</strong></td>");
     $(".tableau_leger tr:gt(0)").each((i, elt) => {
       $(elt).append(
@@ -51,19 +51,19 @@ export class QueenPage {
       "span[id^='bouton_cout_nombre'], span[id^='bouton_cout_temps'], span[id^='bouton_cout_nourriture'], .icones_unite",
     ).addClass("cliquable3");
     $(".icones_unite").attr("onclick", "$('.tab_stat').toggle();");
-    // Ajout des statistiques des unités avec bonus
+    // add the unit stats including bonuses
     $(".icones_unite").each((i, elt) => {
       let index = UNIT_NAMES.indexOf($(elt).parent().find("h2").text());
       $(elt).append(
         `<table class="tab_stat" style="display: none;"><tbody><tr><td style="text-align:center;font-size:0.8em;height:30px;" colspan="2"> Avec Bonus</td></tr><tr title="Vie avec Bouclier niveau ${getProfile().niveauRecherche[1]}"><td class="icone_vie" style="position:relative; top:4px">${IMG_HP}</td><td class="vie" style="white-space:nowrap">${UNIT_HP[index] + Number(((UNIT_HP[index] / 10) * getProfile().niveauRecherche[1]).toFixed(1))}</td></tr><tr title="Dégâts en Attaque avec Armes niveau ${getProfile().niveauRecherche[2]}"><td class="icone_degat_attaque" style="position:relative;top:3px">${IMG_ATT}</td><td class="degat_defense" style="white-space:nowrap">${UNIT_ATTACK[index] + Number(((UNIT_ATTACK[index] / 10) * getProfile().niveauRecherche[2]).toFixed(1))}</td></tr><tr title="Dégâts en Défense avec Armes niveau ${getProfile().niveauRecherche[2]}"><td class="icone_degat_defense" style="position:relative;top:3px">${IMG_DEF}</td><td class="degat_defense" style="white-space:nowrap">${UNIT_DEFENSE[index] + Number(((UNIT_DEFENSE[index] / 10) * getProfile().niveauRecherche[2]).toFixed(1))}</td></tr><tr><td style="height:30px;" colspan="2"></td></tr></tbody></table>`,
       );
     });
-    // Switch entre les inputs : clic sur un bouton-span → on ouvre son input
-    // (et on referme les autres). Les natifs Fourmizzz appellent
-    // `ouvrir_input` / `fermer_input` via des inline `onclick` / `onblur`,
+    // Switching between inputs: clicking a span-button opens its input and
+    // closes the others. The game's own markup calls `ouvrir_input` /
+    // `fermer_input` through inline `onclick` / `onblur`,
     // mais ces fonctions semblent C+-only — chez nous elles peuvent throw
-    // silencieusement et bloquer le reste. On vire les attributs inline pour
-    // que seuls nos handlers jQuery (plus bas) prennent la main.
+    // silently and block the rest. The inline attributes are removed so only our
+    // own jQuery handlers (below) are in charge.
     $(
       "span[id^='bouton_cout_nombre'], span[id^='bouton_cout_temps'], span[id^='bouton_cout_nourriture']",
     ).removeAttr("onclick");
@@ -72,14 +72,14 @@ export class QueenPage {
     )
       .removeAttr("onblur")
       .removeAttr("onkeyup");
-    // Le HTML natif non-C+ oublie height/width sur #cout_nombre alors que
-    // cout_temps et cout_nourriture les ont — du coup le span fourmi se
-    // redimensionne au contenu et casse l'alignement visuel avec les deux
+    // The game's free-account HTML forgets height/width on #cout_nombre while
+    // cout_temps and cout_nourriture have them, so the ant span resizes to its
+    // content and breaks the visual alignment with the other two
     // autres. On aligne ici.
     $("span[id^='cout_nombre']").css({ height: "20px", width: "85px" });
-    // État initial forcé : tous les spans visibles, tous les inputs cachés.
-    // Sans ça, l'input nombre de la page native peut apparaître ouvert dès le
-    // chargement (au lieu d'être en mode display compact comme côté C+).
+    // Forced initial state: every span visible, every input hidden. Without it,
+    // the game's number input can show up already open on load instead of the
+    // compact display used on ComptePlus.
     $("span[id^='cout_nombre'], span[id^='cout_temps'], span[id^='cout_nourriture']").css(
       "display",
       "inline-block",
@@ -116,9 +116,9 @@ export class QueenPage {
         ).hide();
       });
     }
-    // Blur handler : referme l'input et restaure le span quand l'utilisateur
-    // sort du champ (clic ailleurs, Tab, etc.). Délégué via document pour
-    // couvrir aussi les inputs créés dynamiquement plus bas (cout_temps /
+    // Blur handler: closes the input and restores the span when the player
+    // leaves the field (clicking elsewhere, Tab, …). Delegated on document so it
+    // also covers the inputs created dynamically below (cout_temps /
     // cout_nourriture).
     $(document).on(
       "blur",
@@ -131,7 +131,7 @@ export class QueenPage {
         $("#" + m[1] + m[2]).css("display", "inline-block");
       },
     );
-    // Gestion du temps pour la ponte
+    // spawn time handling
     $("span[id^='bouton_cout_temps']").each((i, elt) => {
       $(elt).append(
         `<input id="input_cout_temps${i == 0 ? "" : i}" class="tooltip_droite" type="text" style="height: 20px; width: 85px;display:none;" title="Ex: 1.5 jour, 1j 12h, 36h" value="${$(elt).find("span[id^='cout_temps']").text()}"/>`,
@@ -152,7 +152,7 @@ export class QueenPage {
       $("#cout_temps" + i).text(e.currentTarget.value);
       $("#cout_nourriture" + i).text(numeral(count * UNIT_COST[i == "" ? 0 : i]).format("0 a"));
     });
-    // Gestion de la consommation pour la ponte
+    // spawn consumption handling
     $("span[id^='bouton_cout_nourriture']").each((i, elt) => {
       $(elt).append(
         `<input id="input_cout_nourriture${i == 0 ? "" : i}" class="tooltip_droite" type="tel" style="height: 20px; width: 85px; display: none;" title="Ex: 100 000, 100k, 0.1M" value="${$(elt).find("span[id^='cout_nourriture']").text()}"/>`,
@@ -173,9 +173,9 @@ export class QueenPage {
       );
       $("#cout_nourriture" + i).text(e.currentTarget.value);
     });
-    // Slider de ponte (équivalent du slider natif Compte+) — uniquement
-    // pour les unités déverrouillées, identifiées par la présence du champ
-    // input_cout_nombre. Plage 1 → max sur 7 jours, comme en Compte+.
+    // Spawn slider (the equivalent of the ComptePlus one) — only for unlocked
+    // units, recognised by the presence of the input_cout_nombre field. Range 1 →
+    // the 7-day maximum, as on ComptePlus.
     const SECONDES_7J = 7 * 24 * 3600;
     $("input[id^='input_cout_nombre']").each((idx, input) => {
       let suffix = $(input).attr("id").replace("input_cout_nombre", ""),
@@ -185,8 +185,8 @@ export class QueenPage {
         sliderId = "o_sliderPonte" + suffix,
         step = 0,
         slidMax = 0;
-      // Met à jour les affichages et le champ caché que le jeu soumet. L'input
-      // n'est réécrit que si la valeur ne vient pas de lui (saisie en cours).
+      // Updates the displays and the hidden field the game submits. The input is
+      // only rewritten when the value did not come from it (while typing).
       let sync = (count, depuisSaisie = false) => {
         $("#cout_nombre" + suffix).text(numeral(count).format());
         if (!depuisSaisie) $("#input_cout_nombre" + suffix).val(count);
@@ -196,9 +196,9 @@ export class QueenPage {
         $("#cout_temps" + suffix).text(Utils.intToTime(count * timeByUnit));
         $("#cout_nourriture" + suffix).text(numeral(count * UNIT_COST[iUnit]).format("0 a"));
       };
-      // Saisie clavier du nombre : le onkeyup natif a été retiré plus haut,
-      // sans ce relais le champ caché garderait la valeur du curseur et le
-      // jeu pondrait ce nombre-là (issue #24). Accepte 30 000, 30k, 0.5M.
+      // Typing the number: the game's onkeyup was removed above, and without
+      // this relay the hidden field would keep the slider's value and the game
+      // would spawn that number (issue #24). Accepts 30 000, 30k, 0.5M.
       $(input).on("input", (e) => {
         let count = Math.max(0, Math.floor(numeral(e.currentTarget.value).value() || 0));
         sync(count, true);
@@ -212,10 +212,10 @@ export class QueenPage {
         .prepend(
           `<tr><td colspan="2"><div id="${sliderId}" class="slider tooltip_haut" title="Vous pouvez aussi cliquer sur les nombres." style="margin:3px;margin-right:12px;"></div></td></tr>`,
         );
-      // 20 paliers visibles le long de la course. jQuery UI exige que
-      // (max - min) soit un multiple exact de step pour snapper proprement,
-      // donc on aligne `slidMax` sur `1 + 20*step`, et on remappe la
-      // dernière position vers `max7j` pour atteindre exactement 7 jours.
+      // 20 visible stops along the track. jQuery UI needs (max - min) to be an
+      // exact multiple of step to snap cleanly, so `slidMax` is aligned on
+      // `1 + 20*step` and the last position is remapped to `max7j` to land on
+      // exactly 7 days.
       const PALIERS = 20;
       step = Math.max(1, Math.floor((max7j - 1) / PALIERS));
       slidMax = 1 + PALIERS * step;
@@ -224,18 +224,18 @@ export class QueenPage {
         max: slidMax,
         value: 1,
         step: step,
-        // Snap vers max7j dès qu'on est dans le dernier cran (pas seulement à
-        // la valeur exacte) : sur Firefox la barre s'arrête parfois un palier
-        // avant slidMax, ce qui empêchait l'égalité stricte de matcher et
-        // affichait ~6j au lieu de 7j sur le dernier cran.
+        // Snap to max7j as soon as the handle is in the last notch, not only on
+        // the exact value: on Firefox the bar sometimes stops one stop short of
+        // slidMax, which stopped the strict equality from matching and showed
+        // ~6d instead of 7d on the last notch.
         slide: (event, ui) => sync(ui.value >= slidMax - step ? max7j : ui.value),
       });
-      // Sync initial : sans cet appel, les displays nombre/temps/nourriture
-      // gardent l'état natif (typiquement 0 ou la valeur courante de la ponte
-      // en cours) alors que le slider est posé à 1 — incohérence visuelle.
+      // Initial sync: without this call the number/time/food displays keep the
+      // game's state (typically 0, or the running spawn's value) while the slider
+      // sits at 1 — a visual inconsistency.
       sync(1);
     });
-    // Sauvegarde de la ponte en cours
+    // save the running spawn
     let listSpawn = new Array();
     for (let i = 1, l = $(".tableau_leger:eq(0) tr").length; i < l; i++) {
       let unite = $(".tableau_leger:eq(0) tr:eq(" + i + ") td:eq(0)")
@@ -254,12 +254,12 @@ export class QueenPage {
         exp: moment().add(time, "s"),
       });
     }
-    // Verification si les données sont deja enregistré
+    // check whether the data is already recorded
     if (listSpawn.length) this.saveSpawns(listSpawn);
   }
   /**
-   * Sauvegarde la ponte en cours.
-   * @method savePonte
+   * Saves the running spawn.
+   * @method saveSpawns
    */
   saveSpawns(listSpawn) {
     if (

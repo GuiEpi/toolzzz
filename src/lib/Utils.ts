@@ -14,13 +14,13 @@ import { getProfile } from "~/models/currentPlayer";
 import * as session from "~/storage/session";
 
 /**
- * Données globales du projet, de fourmizzz et des fonctions utilisables partout dans le code.
+ * Project-wide data about Fourmizzz, plus helpers usable from anywhere.
  *
  * @class Utils
  */
 export class Utils {
   /**
-   * Renvoie le serveur sur lequel joue le joueur.
+   * Returns the server the player is on.
    *
    * @static
    * @method serveur
@@ -36,7 +36,7 @@ export class Utils {
     return $("#tag_alliance").text();
   }
   /**
-   * Renvoie si le joueur à du compte plus.
+   * Whether the player has a ComptePlus account.
    *
    * @static
    * @method comptePlus
@@ -49,7 +49,7 @@ export class Utils {
       : false;
   }
   /**
-   * Renvoie le terrain du joueur en cm².
+   * Returns the player's terrain in cm².
    *
    * @static
    * @method tag
@@ -59,7 +59,7 @@ export class Utils {
     return parseInt($("#quantite_tdc").text());
   }
   /**
-   * Renvoie le nombre d'ouvrières.
+   * Returns the number of workers.
    *
    * @static
    * @method ouvrieres
@@ -69,7 +69,7 @@ export class Utils {
     return parseInt($("#nb_ouvrieres").text());
   }
   /**
-   * Renvoie le nombre de nourritures en stock dans l'entrepot.
+   * Returns the food held in the warehouse.
    *
    * @static
    * @method nourriture
@@ -79,7 +79,7 @@ export class Utils {
     return parseInt($("#nb_nourriture").text());
   }
   /**
-   * Renvoie le nombre de materiaux en stock dans l'entrepot.
+   * Returns the materials held in the warehouse.
    *
    * @static
    * @method materiaux
@@ -89,23 +89,23 @@ export class Utils {
     return parseInt($("#nb_materiaux").text());
   }
   /**
-   * Calcul des quantités de ressources commandées - fdthierry
+   * Computes the ordered resource quantities — fdthierry
    */
   static computeQuantity(evoOrder) {
     switch (true) {
-      // cas Champi
+      // mushroom farm case
       case evoOrder == 0:
         return [
           0,
           BUILDING_COSTS[evoOrder] * Math.pow(1.85, getProfile().niveauConstruction[evoOrder]),
         ];
-      // cas construction
+      // building case
       case evoOrder > 0 && evoOrder < 13:
         return [
           0,
           BUILDING_COSTS[evoOrder] * Math.pow(2, getProfile().niveauConstruction[evoOrder]),
         ];
-      // cas recherche
+      // research case
       case evoOrder >= 13 && evoOrder < 23:
         return [
           RESEARCH_FOOD_COST[evoOrder - 13] *
@@ -127,7 +127,7 @@ export class Utils {
     return val;
   }
   /**
-   * Formate un nombre entier en temps.
+   * Formats an integer number of seconds as a duration.
    *
    * @static
    * @method intToTime
@@ -147,7 +147,7 @@ export class Utils {
       : "0 sec";
   }
   /**
-   * Convertit une chaine de caractere en entier.
+   * Converts a duration string into a number of seconds.
    *
    * @static
    * @method timeToInt
@@ -168,7 +168,7 @@ export class Utils {
     return duree;
   }
   /**
-   * Arrondie un temps à la minute.
+   * Rounds a time to the minute.
    *
    * @static
    * @method roundMinute
@@ -179,27 +179,27 @@ export class Utils {
     return moment().add(temps, "s").add(1, "minute").startOf("minute");
   }
   /**
-   * Sur construction.php / laboratoire.php, remplace les blocs natifs
-   * `<strong>…</strong><br><small>…</small>` qui annoncent les évolutions
-   * en cours par un petit tableau récap (Nom / Temps restant / Terminé le
-   * / Annuler).
+   * On construction.php / laboratoire.php, replaces the game's
+   * `<strong>…</strong><br><small>…</small>` blocks announcing the running
+   * upgrades with a small summary table (Nom / Temps restant / Terminé le /
+   * Annuler).
    *
-   * Le span de countdown natif est *déplacé* dans la nouvelle cellule, pas
-   * recréé, pour que le `setTimeout` natif de Fourmizzz (cf. fonction `reste()`
-   * du jeu) continue à mettre l'élément à jour en temps réel — il accède le
-   * span par son ID, qui reste valide tant qu'il est dans le DOM.
+   * The game's countdown span is *moved* into the new cell rather than
+   * recreated, so Fourmizzz's own `setTimeout` (its `reste()` function) keeps
+   * updating it live — it looks the span up by id, which stays valid as long as
+   * the span is in the DOM.
    *
    * @static
-   * @method tableauEvolution
+   * @method upgradesTable
    * @param {String} typeLabel Texte de l'entête de la 1re colonne (ex. "Recherche").
    * @param {String} [sectionH2] Texte du h2 affiché au-dessus du tableau
-   *                             (ex. "Construction" / "Laboratoire"). Omis = pas de h2.
+   *                             (e.g. "Construction" / "Laboratoire"). Omitted = no h2.
    */
   static upgradesTable(typeLabel, sectionH2) {
     let $strongs = $("#centre > strong");
     if (!$strongs.length) return;
-    // `tableau_leger` = classe native Fourmizzz utilisée par le tableau des
-    // pontes sur Reine.php — donne le même look visuel que le récap ponte.
+    // `tableau_leger` is the game's own class, used by the spawn table on
+    // Reine.php, so this matches the look of the spawn summary.
     let $table = $(
       `<table id='o_evolutionEnCours' class='tableau_leger o_maxWidth' cellspacing='0'>
         <caption class='gras left'>${typeLabel}(s) en cours:</caption>
@@ -212,10 +212,10 @@ export class Utils {
         <tbody></tbody>
       </table>`,
     );
-    // Container caché pour les spans natifs : la chaîne setTimeout du jeu
-    // les met à jour via getElementById, on les déplace ici pour qu'elle
-    // continue à tourner sans erreur (au lieu de les supprimer avec le strong
-    // → null.innerHTML → throw). Le contenu de ces spans n'est plus affiché.
+    // Hidden container for the game's spans: its setTimeout chain updates them
+    // through getElementById, so they are moved here and the chain keeps
+    // running without error (instead of being deleted along with the strong →
+    // null.innerHTML → throw). Their content is no longer displayed.
     let $hidden = $("#o_resteHidden");
     if (!$hidden.length)
       $hidden = $("<div id='o_resteHidden' style='display:none'></div>").appendTo("body");
@@ -225,19 +225,19 @@ export class Utils {
       let $strong = $(elt),
         $nativeSpan = $strong.children("span").first(),
         $link = $strong.children("a").last(),
-        // `.clone()` puis `.children().remove()` pour récupérer le préfixe
-        // "- Name level (terminé|se termine) dans:" sans contaminer avec le
-        // contenu du <script> inline (sinon `.text()` récursif renvoie le
-        // body du script, ex. `reste(22, "batiment_…");`)
+        // `.clone()` then `.children().remove()` to read the
+        // "- Name level (terminé|se termine) dans:" prefix without picking up
+        // the inline <script> (a recursive `.text()` would return the script
+        // body, e.g. `reste(22, "batiment_…");`)
         $cloneText = $strong.clone(),
         scriptText = $strong.children("script").text(),
         secMatch = scriptText.match(/reste\((\d+),/);
       $cloneText.children().remove();
-      // Pas de chrono `reste(N, …)` = ce n'est pas une évolution réelle mais
-      // un message d'erreur du jeu (ex. "Prerequis non valide." quand la file
-      // d'attente C+ tente de lancer une construction dont les prérequis ne
-      // sont pas remplis). On évite la ligne 0s/maintenant dans le tableau,
-      // on relaye le texte en toast à la fin.
+      // No `reste(N, …)` countdown means this is not a real upgrade but one of
+      // the game's error messages (e.g. "Prerequis non valide." when the
+      // ComptePlus queue tries to start a building whose prerequisites are not
+      // met). Rather than a 0s/now row in the table, the text is relayed as a
+      // toast at the end.
       if (!secMatch) {
         let errText = $cloneText
           .text()
@@ -248,14 +248,14 @@ export class Utils {
       }
       let seconds = parseInt(secMatch[1]),
         endDate = Utils.roundMinute(seconds).format("D MMM YYYY à HH[h]mm");
-      // Construction = "...se termine dans :" ; Recherche = "...terminé dans:".
+      // Buildings say "...se termine dans :", researches "...terminé dans:".
       let name = $cloneText
         .text()
         .replace(/^\s*-\s*/, "")
         .replace(/\s+(?:terminé|se\s+termine).*$/i, "")
         .trim();
-      // On déplace le span natif dans le container caché (préserve l'ID) et
-      // on monte notre propre span avec un format compact via Utils.intToTime.
+      // Move the game's span into the hidden container (keeping its id) and
+      // mount our own with a compact format through Utils.intToTime.
       $nativeSpan.appendTo($hidden);
       let toolzzzId = "o_evoTime_" + ($nativeSpan.attr("id") || Date.now());
       let $row = $(
@@ -266,14 +266,14 @@ export class Utils {
           <td></td>
         </tr>`,
       );
-      // Native `appendChild` (au lieu de jQuery `.append()`) pour bypass
-      // `domManip` qui collecte les `<script>` descendants et les passe à
-      // `DOMEval` → bloqué par la CSP MV3 de l'extension. Le `<a>Annuler</a>`
-      // natif est juste déplacé, son flag HTML "already-started" est préservé.
+      // Native `appendChild` rather than jQuery's `.append()`, to bypass
+      // `domManip`, which collects descendant `<script>` tags and hands them to
+      // `DOMEval` → blocked by the extension's MV3 CSP. The game's
+      // `<a>Annuler</a>` is only moved, so its "already-started" flag survives.
       if ($link.length) $row.find("td:last")[0].appendChild($link[0]);
       $table.find("tbody")[0].appendChild($row[0]);
       validRows++;
-      // Countdown isolated-world, basé sur `Date.now()` pour ne pas dériver.
+      // Countdown in the isolated world, based on `Date.now()` so it cannot drift.
       let start = Date.now();
       let intervalId = setInterval(() => {
         let $el = $("#" + toolzzzId);
@@ -291,26 +291,26 @@ export class Utils {
       }, 1000);
     });
     let $first = $strongs.first();
-    // Cas "que des erreurs" (typique : file d'attente C+ qui échoue alors qu'il
-    // n'y a rien en construction) → pas de h2 ni de tableau vide, juste le toast.
+    // "Errors only" case (typically a failing ComptePlus queue while nothing is
+    // being built) → no h2 and no empty table, just the toast.
     if (validRows) {
       if (sectionH2) $first.before(`<h2 class='o_marginT15 o_evolutionH2'>${sectionH2}</h2>`);
-      // Native `insertBefore` : $table contient le `<a>Annuler</a>` natif déplacé
-      // ; un append jQuery scanne ses descendants pour `DOMEval` → bloqué par CSP.
+      // Native `insertBefore`: $table holds the game's moved `<a>Annuler</a>`,
+      // and a jQuery append would scan its descendants for `DOMEval` → CSP.
       $first[0].parentNode.insertBefore($table[0], $first[0]);
     }
-    // Cleanup : retire les <strong>, <small> et <br> entre la table et le
-    // séparateur natif `.Bas` (qui marque la fin de la zone évolutions).
+    // Cleanup: drop the <strong>, <small> and <br> between the table and the
+    // game's `.Bas` separator, which marks the end of the upgrades area.
     $first.nextUntil(".Bas").addBack().filter("strong, small, br").remove();
-    // Dedup du toast : le serveur garde le message d'erreur ~2 min sur la page.
-    // Sur un simple reload (F5) on évite de re-spam le toast tant que le même
-    // message est encore là. En revanche pour toute autre navigation (clic
-    // "Construire", clic dans le menu…), on considère que l'utilisateur a
-    // agi et qu'il faut le notifier à nouveau si l'erreur persiste.
+    // Toast de-duplication: the server keeps the error message on the page for
+    // about 2 minutes. On a plain reload (F5) the toast is not shown again while
+    // the same message is still there. On any other navigation (clicking
+    // "Construire", a menu entry…) the player has acted, so they are notified
+    // again if the error persists.
     let toastKey = "o_evoErrSeen_" + location.pathname;
     if (toastErrors.length) {
       let signature = toastErrors.join("|"),
-        // `type` n'existe que sur PerformanceNavigationTiming, pas sur le PerformanceEntry générique.
+        // `type` only exists on PerformanceNavigationTiming, not on the generic PerformanceEntry.
         navType = (performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming)
           ?.type,
         skip = navType === "reload" && session.getRaw(toastKey) === signature;
@@ -319,23 +319,23 @@ export class Utils {
     } else {
       session.remove(toastKey);
     }
-    // Sur la page de confirmation d'annulation, Fourmizzz ajoute :
-    //  - non-C+ : un `<p>` contenant strong+Je confirme (tout dans le même p).
-    //  - C+ : un `<p>` contenant juste strong, et `<a>Je confirme</a>` en
-    //    sibling direct de #centre. Notre `<a>Retour</a>` (cf. confirmationAnnuler)
-    //    est ajouté juste après "Je confirme", donc aussi sibling en C+.
-    // On déplace le tout sous le tableau. DocumentFragment pour préserver
-    // l'ordre DOM (jQuery `.after()` avec une collection insère en reverse).
+    // On the cancellation confirmation page, Fourmizzz adds:
+    //  - free accounts: a `<p>` holding strong + Je confirme (all in one p).
+    //  - ComptePlus: a `<p>` holding only strong, with `<a>Je confirme</a>` as a
+    //    direct sibling of #centre. Our `<a>Retour</a>` (see cancelConfirmation)
+    //    is added right after "Je confirme", so it is a sibling there too.
+    // Everything is moved below the table. A DocumentFragment preserves DOM
+    // order (jQuery's `.after()` inserts a collection in reverse).
     let $warning = $("#centre > p").has("strong");
     if ($warning.length) {
       let $confCancel = $("#centre > a[href*='confAnnuler']"),
         $retour = $confCancel.next("a"),
         $wrapper = $("<div class='o_annulationGroup'></div>");
-      // En C+, "Je confirme" + "Retour" sont siblings du `<p>` (qui ne contient
-      // que le `<strong>` + un `<br>`). On les déplace DANS le `<p>` pour
-      // qu'ils restent collés au texte — sinon le `margin-bottom` natif du
-      // `<p>` crée un gap entre le warning et les liens. En non-C+, les liens
-      // sont déjà dans le `<p>`, donc $confAnnuler.length = 0 → no-op.
+      // On ComptePlus, "Je confirme" + "Retour" are siblings of the `<p>` (which
+      // only holds the `<strong>` and a `<br>`). They are moved INTO the `<p>` so
+      // they stay next to the text — otherwise the `<p>`'s own `margin-bottom`
+      // leaves a gap between the warning and the links. On free accounts the
+      // links already sit inside the `<p>`, so $confAnnuler.length = 0 → no-op.
       if ($confCancel.length) {
         $warning[0].appendChild(document.createTextNode(" "));
         $warning[0].appendChild($confCancel[0]);
@@ -343,21 +343,21 @@ export class Utils {
         $warning[0].appendChild($retour[0]);
       }
       $wrapper[0].appendChild($warning[0]);
-      // Native insertion : $wrapper porte le `<strong>` natif qui contient un
-      // `<script>reste(…)>` inline → un append jQuery déclencherait `DOMEval`,
-      // bloqué par CSP MV3.
+      // Native insertion: $wrapper carries the game's `<strong>`, which holds an
+      // inline `<script>reste(…)>` → a jQuery append would trigger `DOMEval`,
+      // blocked by the MV3 CSP.
       $table[0].parentNode.insertBefore($wrapper[0], $table[0].nextSibling);
     }
   }
   /**
-   * Préserve le scrollY à travers une navigation aller-retour sur la même page
-   * (ex: clic "Construire" prereq invalide → POST → 302 → on revient en haut).
-   * Pose un listener `pagehide` pour sauver la position, et retourne la
-   * position à restaurer si elle est récente (< 5s).
+   * Preserves scrollY across a round trip on the same page (e.g. clicking
+   * "Construire" with unmet prerequisites → POST → 302 → back at the top).
+   * Registers a `pagehide` listener to save the position and returns the
+   * position to restore when it is recent (< 5s).
    *
-   * Le caller doit appeler `window.scrollTo(0, y)` APRÈS ses manipulations DOM
-   * (tableauEvolution insère un tableau au début de #centre et décale le
-   * contenu) — d'où le pattern : on récupère la valeur tôt, on l'applique tard.
+   * The caller must call `window.scrollTo(0, y)` AFTER its DOM work
+   * (upgradesTable inserts a table at the start of #centre and shifts the
+   * content down) — hence the pattern: read the value early, apply it late.
    *
    * @static
    * @method preserveScroll
@@ -378,14 +378,14 @@ export class Utils {
     return y;
   }
   /**
-   * Sur la page de confirmation d'annulation d'une recherche ou construction
-   * (`?confAnnuler=ID&t=TOKEN`), ajoute un lien "Retour" à côté du "Je confirme"
-   * natif (sinon l'utilisateur n'a aucun moyen évident de revenir en arrière)
-   * et nettoie l'URL via `history.replaceState` pour qu'un Ctrl+R ramène sur
-   * la page normale au lieu de re-afficher la confirmation.
+   * On the confirmation page for cancelling a research or a building
+   * (`?confAnnuler=ID&t=TOKEN`), adds a "Retour" link next to the game's
+   * "Je confirme" (otherwise there is no obvious way back) and cleans the URL
+   * with `history.replaceState`, so Ctrl+R returns to the normal page instead
+   * of showing the confirmation again.
    *
    * @static
-   * @method confirmationAnnuler
+   * @method cancelConfirmation
    * @param {String} returnUrl URL de retour (ex. "construction.php").
    */
   static cancelConfirmation(returnUrl) {
@@ -397,7 +397,7 @@ export class Utils {
     if (location.search.includes("confAnnuler")) history.replaceState({}, "", returnUrl);
   }
   /**
-   * Decremente un chrono dynamique toutes les secondes.
+   * Ticks a live countdown down every second.
    *
    * @static
    * @method decreaseTime
@@ -413,7 +413,7 @@ export class Utils {
       }, 1000);
   }
   /**
-   * Incremente un chrono dynamique toutes les secondes.
+   * Ticks a live countdown up every second.
    *
    * @static
    * @method incrementTime
@@ -432,7 +432,7 @@ export class Utils {
     }, 1000);
   }
   /**
-   * Réduit la taille d'une chaine de caractére qui représente une durée.
+   * Shortens a string representing a duration.
    *
    * @static
    * @method shortcutTime
@@ -447,7 +447,7 @@ export class Utils {
     else return tmp.join(" ");
   }
   /**
-   * Extrait les paramétres d'une URL.
+   * Extracts the parameters of a URL.
    *
    * @static
    * @method extractUrlParams
@@ -471,7 +471,7 @@ export class Utils {
     let element = new Array(),
       cptJ = alliance ? 3 : 6,
       cptA = player ? 3 : 6;
-    // si la recherche renvoi ne renvoi qu'un resultat on tombe sur un profil de joueur
+    // a search returning a single result lands straight on a player's profile
     if ($(data).find("h2").length) {
       let pseudo = $(data).find("h2").text();
       element.push({ value: pseudo, value_avec_html: pseudo, url: "Membre.php?Pseudo=" + pseudo });
@@ -479,17 +479,17 @@ export class Utils {
       $(data)
         .find(".simulateur:eq(0) tr")
         .each((i, elt) => {
-          // les joueurs et les alli ont 6 cellules
+          // players and alliances both have six cells
           if ($(elt).find("td").length == 6) {
             let cellule = $(elt).find("td:eq(1) a"),
               lien = cellule.attr("href"),
               nom = cellule.text();
-            // c'est un joueur si on trouve un lien de profil cellule 2
+            // a profile link in cell 2 means it is a player
             if (player && lien.includes("Membre.php") && cptJ) {
               element.push({ value: nom, value_avec_html: nom, url: "Membre.php?Pseudo=" + nom });
               cptJ--;
             }
-            // c'est une alliance
+            // it is an alliance
             if (alliance && lien.includes("classementAlliance.php") && cptA) {
               let tag = $(elt).find("td:eq(0)").text();
               element.push({
@@ -506,10 +506,11 @@ export class Utils {
     return element;
   }
   /**
-   * Parse une chaîne HTML reçue d'une page Fourmizzz sans exécuter ses scripts
-   * inline. À utiliser à la place de `$("<div/>").append(html)` qui, sur Chrome,
-   * exécute les `<script>` du HTML reçu et propage leurs ReferenceError jusqu'à
-   * casser la suite du callback (cf. `envoyerFlood` / `_mfEnvoyerAttaqueSuivante`).
+   * Parses an HTML string received from a Fourmizzz page without running its
+   * inline scripts. Use it instead of `$("<div/>").append(html)`, which on Chrome
+   * executes the `<script>` tags of the received HTML and lets their
+   * ReferenceErrors break the rest of the callback (see `sendFlood` /
+   * `_mfSendNextAttack`).
    *
    * @static
    * @method parseHtml

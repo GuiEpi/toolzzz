@@ -1,50 +1,50 @@
 /**
- * Creer une boite radar pour la surveillance des joueurs/alliances.
+ * Builds the radar box used to watch players and alliances.
  *
- * @class BoiteRadar
+ * @class RadarBox
  * @constructor
- * @extends Boite
+ * @extends Box
  */
 import { $ } from "~/vendor";
 import { IMG_REFRESH, IMG_ARROW, TOAST_WARNING } from "~/constants";
 import { VERSION } from "~/lib/version";
 import { Utils } from "~/lib/Utils";
-// Cycle d'import volontaire (usage dans les méthodes uniquement, jamais au niveau module) : voir ~/models/Alliance.
+// Deliberate import cycle (used inside methods only, never at module level): see ~/models/Alliance.
 import { Alliance } from "~/models/Alliance";
-// Cycle d'import volontaire (usage dans les méthodes uniquement, jamais au niveau module) : voir ~/models/Joueur.
+// Deliberate import cycle (used inside methods only, never at module level): see ~/models/Player.
 import { Player } from "~/models/Player";
 import * as storage from "~/storage";
 
 export class RadarBox {
-  // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
+  // Fields declared for TypeScript (Phase 2 was a straight conversion; real
+  // typing is deferred — see .claude/plans/wxt-migration-followups.md).
   _players: any;
   _alliances: any;
   _separators: any;
   _editMode: any;
   constructor() {
     /**
-     * liste des joueurs
+     * list of players
      */
     this._players = {};
     /**
-     * liste des alliances
+     * list of alliances
      */
     this._alliances = {};
     /**
-     * Liste des séparateurs (sections de regroupement, ex. "--- Amis ---").
-     * Chaque entrée : { id, texte, ordreRadar }. `id` est généré côté client
-     * (timestamp) puisqu'un séparateur n'a pas de clé naturelle comme un
-     * pseudo ou un tag d'alliance.
+     * List of separators (grouping sections, e.g. "--- Amis ---").
+     * Each entry is { id, texte, ordreRadar }. `id` is generated client-side
+     * (a timestamp) since a separator has no natural key the way a nickname or
+     * an alliance tag does.
      */
     this._separators = [];
     /**
-     * État du mode édition (toggle via ⚙ du toolbar). En mode édition :
-     * un `×` apparait sur chaque ligne pour supprimer, et le texte des
-     * séparateurs devient `contenteditable`. État volatile (pas persisté).
+     * Edit-mode state (toggled by the ⚙ in the toolbar). In edit mode a `×`
+     * appears on every row for deletion and separator text becomes
+     * `contenteditable`. Volatile state, never persisted.
      */
     this._editMode = false;
-    // on recupére les données
+    // read the stored data
     this.getData();
   }
   /**
@@ -108,7 +108,7 @@ export class RadarBox {
     return this;
   }
   /**
-   * Ajoute un séparateur à la fin de la liste.
+   * Appends a separator to the list.
    */
   addSeparator(texte = "Section") {
     this._separators.push({
@@ -119,14 +119,14 @@ export class RadarBox {
     return this;
   }
   /**
-   * Supprime un séparateur par son id.
+   * Removes a separator by id.
    */
   removeSeparator(id) {
     this._separators = this._separators.filter((s) => s.id !== id);
     return this;
   }
   /**
-   * Renomme un séparateur. Repli sur "Section" si le texte fourni est vide.
+   * Renames a separator, falling back to "Section" when the text is empty.
    */
   renameSeparator(id, texte) {
     let sep = this._separators.find((s) => s.id === id);
@@ -170,13 +170,13 @@ export class RadarBox {
     return this.save();
   }
   /**
-   * Récupére les données sur les joueurs sous surveillance.
+   * Reads the data about the watched players.
    *
    * @method getRadar
    */
   getData() {
     let data = storage.getJSON("outiiil_radar") || {};
-    // Si des données sont deja presente et à jour on les charges
+    // Load the stored data when it is present and still fresh
     if (data.hasOwnProperty("joueurs"))
       for (let item in data.joueurs) this._players[item] = new Player(data.joueurs[item]);
     if (data.hasOwnProperty("alliances"))
@@ -198,9 +198,9 @@ export class RadarBox {
       alliances[a] = JSON.parse(
         JSON.stringify(this._alliances[a], ["tag", "terrain", "ordreRadar"]),
       );
-    // si on a des joueurs sous surveillance on ajoute à l'objet
+    // add the watched players when there are any
     if (Object.keys(players).length) json["joueurs"] = players;
-    // si on a des alliances sous surveillance on ajoute à l'objet
+    // add the watched alliances when there are any
     if (Object.keys(alliances).length) json["alliances"] = alliances;
     if (this._separators.length) json["separateurs"] = this._separators;
     return json;
@@ -213,57 +213,58 @@ export class RadarBox {
     return this;
   }
   /**
-   * Affiche la boie.
+   * Renders the box.
    *
    * @private
-   * @method afficher
+   * @method render
    */
   render() {
-    // si il y a des joueurs, alliances ou séparateurs surveillés on affiche la boite
+    // only render the box when something is watched
     if (
       Object.keys(this._players).length ||
       Object.keys(this._alliances).length ||
       this._separators.length
     ) {
-      // Modification de la boite compte plus pour faire apparaitre la boite radar
+      // adjust the ComptePlus box so the radar box can show
       $("#boiteComptePlus .titre_colonne_cliquable").replaceWith(() => {
         return `<div class='titre_colonne_cliquable'>${IMG_ARROW} <span class='titre_compte_plus'>Toolzzz ${VERSION.substring(0, 2)}<span class='reduce'>${VERSION.substring(2)}</span></span> ${IMG_ARROW}</div>`;
       });
-      // Event sur le titre si on utilise le radar
+      // title events, when the radar is in use
       $("#boiteComptePlus .titre_colonne_cliquable").click((e) => {
         if ($(e.currentTarget).next().find("table:visible").attr("id"))
           storage.setRaw("outiiil_boiteActive", "C");
         else storage.setRaw("outiiil_boiteActive", "R");
         $("#boiteComptePlus .contenu_boite_compte_plus table").toggle();
       });
-      // Remplissage de la boite
+      // fill the box
       this.refresh();
     }
     return this;
   }
   /**
-   * Rafraichie la boite radar quand un element est inséré ou retiré.
+   * Refreshes the radar box when an entry is added or removed.
    *
    * @private
    * @method actualiseBoite
    */
   refresh() {
     let show = storage.getRaw("outiiil_boiteActive"),
-      // En Compte+, le champ #requete natif vit dans une <tr><td> du table:eq(0)
-      // qui est masqué en mode radar — donc inaccessible. On insère ici une row
-      // jumelle dans le tfoot d'#o_radar (id `o_requete` pour éviter le duplicate
-      // ID avec le natif resté en place côté table caché). Wiré sur l'autocomplete
-      // Toolzzz (`Joueur.rechercher`) comme #recherche en non-C+.
+      // On ComptePlus the game's #requete field lives in a <tr><td> of
+      // table:eq(0), which radar mode hides — so it is unreachable. A twin row is
+      // inserted here in #o_radar's tfoot (id `o_requete` to avoid clashing with
+      // the original left in the hidden table). Wired to the autocomplete
+      // Toolzzz (`Player.search`) comme #recherche en non-C+.
       searchRow = Utils.comptePlus
         ? `<tr id='o_radarSearchRow'><td colspan='3'><form method='post' action='classementAlliance.php' style='text-align:center;'><input type='text' name='requete' id='o_requete' placeholder='Rechercher Joueur ou Alliance' autocomplete='off' style='text-align:center;width:95%;'/></form></td></tr>`
         : "",
       html = `<table id='o_radar' ${!show || show == "C" ? `style="display:none"` : ""}><colgroup><col><col><col></colgroup><tbody></tbody><tfoot><tr id='o_radarToolbar'><td colspan='3' class='right'><div id='o_radarToolbarInner'><a id='o_radarRefreshAll' class='o_actualiser' href='' title='Tout actualiser'><img src="${IMG_REFRESH}" alt="Tout actualiser" height="14"/></a><span id='o_radarAddSep' class='cursor' title='Ajouter une section'>+</span><span id='o_radarToggleEdit' class='cursor' title='Mode édition'>✎</span></div></td></tr>${searchRow}</tfoot></table>`;
-    // on remplace le contenu ou l'ajoute
+    // replace the content, or add it
     if ($("#o_radar").length) $("#o_radar").replaceWith(html);
     else $("#boiteComptePlus .contenu_boite_compte_plus table").after(html);
-    // Autocomplete sur le champ de recherche injecté en C+, branché sur le même
-    // backend que `#recherche` non-C+ (Joueur.rechercher → Utils.extraitRecherche).
-    // Réinit nécessaire à chaque rebuild car le DOM précédent est remplacé.
+    // Autocomplete on the search field injected for ComptePlus, wired to the
+    // same backend as the free-account `#recherche` (Player.search →
+    // Utils.extractResearch). It must be re-initialised on every rebuild because
+    // the previous DOM is replaced.
     if (Utils.comptePlus)
       $("#o_requete").autocomplete({
         source: (request, response) => {
@@ -276,28 +277,27 @@ export class RadarBox {
           window.location.replace(ui.item.url);
         },
       });
-    // Le `sortable` doit être (ré)initialisé à chaque rebuild de la table :
-    // un `replaceWith` remplace le tbody par un nouveau noeud DOM qui n'a pas
-    // l'instance jQuery UI sortable. Sans cette ligne, ajouter un joueur via
-    // "Surveiller" cassait silencieusement le drag-and-drop jusqu'au prochain
-    // reload de la page.
+    // `sortable` has to be (re)initialised on every rebuild of the table: a
+    // `replaceWith` swaps the tbody for a new DOM node that carries no jQuery UI
+    // sortable instance. Without this line, adding a player through "Surveiller"
+    // silently broke drag-and-drop until the next page reload.
     $("#o_radar tbody").sortable({
       placeholder: "o_radarPlaceholder",
-      // `cancel` empêche le drag de démarrer quand on clique sur un élément
-      // listé : on ajoute `[contenteditable="true"]` pour qu'éditer un texte
-      // de séparateur (mode édition) ne lance pas un drag par accident.
+      // `cancel` stops a drag from starting on the listed elements;
+      // `[contenteditable="true"]` is added so editing a separator's text in edit
+      // mode does not start a drag by accident.
       cancel: 'input, textarea, button, select, option, [contenteditable="true"]',
-      // Le drag-and-drop n'est actif qu'en mode édition (cf. UX iOS/Linear/
-      // Notion : "Edit puis réordonne"). En vue normale, la liste est en
-      // lecture seule pour éviter les mismanipulations.
+      // Drag-and-drop is only active in edit mode (the iOS/Linear/Notion
+      // pattern: edit, then reorder). In the normal view the list is read-only,
+      // which avoids mis-drags.
       disabled: !this._editMode,
       update: (e, ui) => {
         this.computeOrder($("#o_radar tbody").sortable("serialize"));
       },
     });
-    // Event pour mettre à jour les données d'un joueur ou une alliance
+    // event that refreshes a player's or an alliance's data
     $("#o_radar").off();
-    // Rendu unifié des 3 collections, ordonnées par `ordreRadar` croissant.
+    // All three collections rendered together, ordered by ascending `ordreRadar`.
     let entries = [];
     for (let p in this._players)
       entries.push({ type: "joueur", obj: this._players[p], ordre: this._players[p].ordreRadar });
@@ -315,16 +315,16 @@ export class RadarBox {
       if (e.type === "separateur") this._renderSeparator(e.obj, index++);
       else e.obj.getRadarRow(this, "#o_radar tbody", index++);
     }
-    // Pour les rows joueur/alliance, on wrappe deux cellules :
-    //  - 1re td dans `<div.o_radarFirstCell>` (flex) — le `≡` du mode édition
-    //    s'alignait sinon sous l'icône refresh à cause d'une règle native
-    //    Fourmizzz qui force `display: block` sur les `<a>` du panneau Compte+.
-    //  - 3e td (terrain) dans `<span.o_radarTerrainNum>` — permet d'ellipsizer
-    //    juste le nombre en mode édition sans manger le `×`.
-    // Les wrappers sont posés indépendamment du mode édition (cosmétiquement
-    // identiques sans le `≡` / sans l'ellipsis). `.detach()` préserve les
-    // event handlers déjà bindés (notamment le click du `.o_actualiser`
-    // et le `<a>` du terrain attaquable).
+    // Player and alliance rows get two wrapped cells:
+    //  - the first td in `<div.o_radarFirstCell>` (flex) — otherwise edit mode's
+    //    `≡` lines up under the refresh icon, because a Fourmizzz rule forces
+    //    `display: block` on the `<a>` elements of the ComptePlus panel.
+    //  - the third td (terrain) in `<span.o_radarTerrainNum>` — so only the
+    //    number is ellipsised in edit mode, without eating the `×`.
+    // The wrappers are applied regardless of edit mode (visually identical
+    // without the `≡` and without the ellipsis). `.detach()` keeps the handlers
+    // already bound (notably the `.o_actualiser` click and the `<a>` of an
+    // attackable terrain).
     $("#o_radar tbody tr:not(.o_radarSep)").each((_, tr) => {
       let $td1 = $(tr).find("td:first");
       if (!$td1.find(".o_radarFirstCell").length) {
@@ -345,9 +345,9 @@ export class RadarBox {
     $("#o_radarAddSep").click((e) => {
       e.stopPropagation();
       this.addSeparator().save().refresh();
-      // En mode édition, focus + sélection du texte du nouveau séparateur
-      // pour permettre de taper son nom directement (les `Section` par défaut
-      // sont remplacés par la frappe vu que la sélection est active).
+      // In edit mode, focus and select the new separator's text so a name can
+      // be typed straight away (the default `Section` is replaced as soon as the
+      // player types, since the text is selected).
       if (this._editMode) {
         let nodes = $("#o_radar tbody .o_radarSep").last().find(".o_radarSepText");
         if (nodes.length) {
@@ -365,17 +365,17 @@ export class RadarBox {
       e.stopPropagation();
       this._toggleEdit();
     });
-    // Ré-applique le mode édition après chaque rebuild (le DOM des rows a
-    // été régénéré, les × et `contenteditable` doivent être ré-attachés).
+    // Re-apply edit mode after every rebuild: the row DOM has been regenerated,
+    // so the × and `contenteditable` need re-attaching.
     if (this._editMode) this._applyEdit();
     return this;
   }
   /**
-   * Rend une ligne séparateur dans le tbody. Wrapper `<div>` intérieur :
-   * mettre `display: flex` directement sur un `<td>` casse le rendu table
-   * (la cellule shrink à la largeur du contenu au lieu de remplir colspan),
-   * d'où ce niveau d'indirection. Le `data-id` permet à calculeOrdre /
-   * supprimeSeparateur / renommeSeparateur de retrouver l'entrée.
+   * Renders a separator row in the tbody. The inner `<div>` wrapper exists
+   * because putting `display: flex` straight on a `<td>` breaks the table layout
+   * (the cell shrinks to its content instead of filling the colspan). The
+   * `data-id` lets computeOrder / removeSeparator / renameSeparator find the
+   * entry again.
    */
   _renderSeparator(sep, index) {
     $("#o_radar tbody").append(
@@ -383,7 +383,7 @@ export class RadarBox {
     );
   }
   /**
-   * Échappement minimal pour les valeurs user-supplied injectées en HTML.
+   * Minimal escaping for user-supplied values injected as HTML.
    */
   static _escapeHtml(s) {
     return String(s).replace(
@@ -392,22 +392,22 @@ export class RadarBox {
     );
   }
   /**
-   * Refresh batch de toutes les entrées surveillées (joueurs + alliances) en
-   * parallèle via Promise.all. Le navigateur cap naturellement à ~6 connexions
-   * simultanées sur l'origine, donc 30 entrées finissent en quelques vagues
-   * sans pool explicite. Les suppressions (joueurs disparus du jeu) sont
-   * appliquées en différé pour éviter un rebuild DOM en plein batch — qui
-   * casserait les highlights et les refresh en cours.
+   * Refreshes every watched entry (players and alliances) in parallel through
+   * Promise.all. The browser caps itself at about 6 simultaneous connections per
+   * origin, so 30 entries finish in a few waves without an explicit pool.
+   * Deletions (players gone from the game) are applied afterwards to avoid a DOM
+   * rebuild in the middle of the batch, which would break the highlights and the
+   * refreshes still running.
    *
    * @private
-   * @method _actualiserTout
+   * @method _refreshAll
    */
   _refreshAll() {
     let entries = [...Object.values(this._players), ...Object.values(this._alliances)];
     if (!entries.length) return;
     let $btn = $("#o_radarRefreshAll");
-    // Spin du bouton — même 600ms qu'une icône per-ligne. Pas de compteur ni de
-    // disable : le batch va trop vite (~1-2s en pratique) pour que ça serve.
+    // Spin the button — the same 600ms as a per-row icon. No counter and no
+    // disabling: the batch is too quick (1-2s in practice) for either to help.
     $({ deg: 0 }).animate(
       { deg: 360 },
       {
@@ -436,39 +436,39 @@ export class RadarBox {
     });
   }
   /**
-   * Toggle du mode édition.
+   * Toggles edit mode.
    */
   _toggleEdit() {
     this._editMode = !this._editMode;
     this._applyEdit();
   }
   /**
-   * Applique (ou retire) les affordances du mode édition :
-   *  - × cliquable à droite de chaque ligne (joueur, alliance ou séparateur)
-   *  - séparateurs `contenteditable` pour rename inline
+   * Applies (or removes) the edit-mode affordances:
+   *  - a clickable × on the right of every row (player, alliance or separator)
+   *  - `contenteditable` separators for inline renaming
    */
   _applyEdit() {
     let on = this._editMode;
     $("#o_radar").toggleClass("o_radarEditMode", on);
-    // Reset des affordances avant ré-application — actualiser() peut être
-    // appelée alors que _modeEdition est déjà true (cas : ajout séparateur).
+    // Clear the affordances before re-applying: refresh() can be called while
+    // _editMode is already true (for instance when adding a separator).
     $("#o_radar .o_radarDelete, #o_radar .o_radarDragHandle").remove();
     $(".o_radarSepText")
       .off("blur.radarSep keydown.radarSep input.radarSep")
       .removeAttr("contenteditable");
     $("#o_radar").off("click.radarDel");
 
-    // Le drag-and-drop suit l'état du mode édition.
+    // Drag-and-drop follows the edit-mode state.
     if ($("#o_radar tbody").sortable("instance"))
       $("#o_radar tbody").sortable(on ? "enable" : "disable");
 
     if (!on) return;
-    // Pour chaque ligne (joueur, alliance, séparateur) on injecte :
-    //  - `≡` à gauche pour signaler le drag-and-drop
-    //  - `×` à droite pour la suppression
-    // Pour joueur/alliance, on les met dans la 1re et la dernière `<td>`.
-    // Pour séparateur, on les met dans `.o_radarSepInner` (le flex container),
-    // pour qu'ils deviennent flex items et restent alignés autour du texte.
+    // Every row (player, alliance, separator) gets:
+    //  - a `≡` on the left to advertise drag-and-drop
+    //  - a `×` on the right for deletion
+    // For players and alliances they go in the first and last `<td>`. For
+    // separators they go inside `.o_radarSepInner` (the flex container), so they
+    // become flex items and stay aligned around the text.
     $("#o_radar tbody tr").each((i, tr) => {
       let $tr = $(tr);
       if ($tr.hasClass("o_radarSep")) {
@@ -485,11 +485,11 @@ export class RadarBox {
           .append(` <span class='o_radarDelete cursor red gras' title='Retirer'>×</span>`);
       }
     });
-    // Séparateurs : contenteditable + save on blur, Enter pour valider, et
-    // cap dur à 16 caractères (le panneau Compte+ est étroit, au-delà le
-    // texte serait tronqué visuellement par les pointillés du flex). On
-    // tronque dynamiquement au lieu de bloquer l'input pour rester simple
-    // (replace selection, paste, etc. sont tous gérés au même endroit).
+    // Separators: contenteditable, saved on blur, Enter to confirm, and a hard
+    // cap of 16 characters (the ComptePlus panel is narrow; beyond that the text
+    // would be visually clipped by the flex ellipsis). Truncating as the player
+    // types is simpler than blocking input — replacing a selection, pasting and
+    // so on are all handled in the same place.
     $(".o_radarSepText")
       .attr("contenteditable", "true")
       .on("blur.radarSep", (e) => {
@@ -515,8 +515,8 @@ export class RadarBox {
           sel.addRange(range);
         }
       });
-    // Délégation sur #o_radar pour la suppression — les × sont des spans
-    // ajoutés dynamiquement, et la délégation évite de re-bind à chaque rebuild.
+    // Deletion is delegated on #o_radar: the × are spans added dynamically, and
+    // delegation avoids re-binding on every rebuild.
     $("#o_radar").on("click.radarDel", ".o_radarDelete", (e) => {
       e.stopPropagation();
       let $tr = $(e.currentTarget).closest("tr");

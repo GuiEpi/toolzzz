@@ -1,4 +1,4 @@
-// États d'une commande de ponte (index = valeur stockée).
+// Statuses of a resource order (index = stored value).
 export const ORDER_STATUS = {
   Nouvelle: 0,
   "En attente": 1,

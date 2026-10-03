@@ -1,9 +1,9 @@
 /**
- * Creer la boite compte plus.
+ * Builds the ComptePlus box.
  *
- * @class BoiteComptePlus
+ * @class ComptePlusBox
  * @constructor
- * @extends Boite
+ * @extends Box
  */
 import { $, moment, numeral } from "~/vendor";
 import {
@@ -23,8 +23,8 @@ import { Player } from "~/models/Player";
 import * as storage from "~/storage";
 
 export class ComptePlusBox {
-  // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
+  // Fields declared for TypeScript (Phase 2 was a straight conversion; real
+  // typing is deferred — see .claude/plans/wxt-migration-followups.md).
   _spawn: any;
   _spawnStart: any;
   _building: any;
@@ -40,7 +40,7 @@ export class ComptePlusBox {
   _hunt: any;
   _huntStart: any;
   constructor() {
-    // attribut de la classe
+    // class attributes
     this._spawn = [];
     this._spawnStart = 0;
     this._building = "";
@@ -55,7 +55,7 @@ export class ComptePlusBox {
     this._convoyStart = 0;
     this._hunt = [];
     this._huntStart = 0;
-    // on charge les données depuis le storage
+    // load the data from storage
     this.getData();
   }
   /**
@@ -227,7 +227,7 @@ export class ComptePlusBox {
     this._huntStart = newStart;
   }
   /**
-   * Récupére les données sur les joueurs sous surveillance.
+   * Reads the data about the watched players.
    *
    * @method getRadar
    */
@@ -281,48 +281,48 @@ export class ComptePlusBox {
    *
    */
   checkData() {
-    // si la construction est fini
+    // building finished
     if (this._building && moment(this._buildingExpiry).diff(moment()) < 0) {
-      // on met à jour le niveau de la construction
+      // bump the building level
       let index = BUILDINGS.findIndex((elt) => {
         return this._building.toLowerCase().includes(elt.toLowerCase());
       });
       getProfile().niveauConstruction[index]++;
       getProfile().save();
-      // si la construction est une evolution de ponte, on met a jour les pontes
+      // a building that affects spawning also refreshes the spawns
       if (this._building.includes("Couveuse") || this._building.includes("Solarium"))
         this.recomputeSpawnTime();
       this._buildingStart = 0;
       this._buildingExpiry = 0;
       this._building = "";
     }
-    // si la recherche est fini
+    // research finished
     if (this._research && moment(this._researchExpiry).diff(moment()) < 0) {
-      // on met à jour le niveau de la recherche
+      // bump the research level
       let index = RESEARCHES.findIndex((elt) => {
         return this._research.toLowerCase().includes(elt.toLowerCase());
       });
       getProfile().niveauRecherche[index]++;
       getProfile().save();
-      // si la recherche est une evolution de ponte, on met a jour les pontes
+      // a research that affects spawning also refreshes the spawns
       if (this._research.includes("Technique de ponte")) this.recomputeSpawnTime();
       this._researchExpiry = 0;
       this._researchStart = 0;
       this._research = "";
     }
-    // si la ou les pontes sont finis
+    // spawns finished
     for (let i = this._spawn.length; i--; )
       if (moment(this._spawn[i].exp).diff(moment()) < 0) this._spawn.splice(i, 1);
     if (!this._spawn.length) this._spawnStart = 0;
-    // si la ou les convois sont finis
+    // convoys finished
     for (let i = this._convoy.length; i--; )
       if (moment(this._convoy[i].exp).diff(moment()) < 0) this._convoy.splice(i, 1);
     if (!this._convoy.length) this._convoyStart = 0;
-    // si la ou les attaques sont finis
+    // attacks finished
     for (let i = this._attack.length; i--; )
       if (moment(this._attack[i].exp).diff(moment()) < 0) this._attack.splice(i, 1);
     if (!this._attack.length) this._attackStart = 0;
-    // si la ou les chasses sont finis
+    // hunts finished
     for (let i = this._hunt.length; i--; )
       if (moment(this._hunt[i].exp).diff(moment()) < 0) this._hunt.splice(i, 1);
     if (!this._hunt.length) this._huntStart = 0;
@@ -337,16 +337,16 @@ export class ComptePlusBox {
     });
   }
   /**
-   * Construit le bloc de raccourcis « menu rapide » (cf. MENU_RAPIDE) à
-   * partir des préférences stockées par `PageCompte`. Renvoie une chaîne
-   * vide si aucune préférence n'est cochée — pas de bloc fantôme.
+   * Builds the "menu rapide" shortcut block (see QUICK_MENU) from the
+   * preferences saved by `AccountPage`. Returns an empty string when nothing
+   * is ticked, so no empty block is rendered.
    *
-   * Réutilise la classe native `lien_rapide` que Fourmizzz utilise dans
-   * la BoiteComptePlus côté Compte+ → on hérite gratuitement de son
-   * styling au lieu de bricoler.
+   * Reuses the game's own `lien_rapide` class, the one Fourmizzz uses in its
+   * ComptePlus box, so the styling comes for free instead of being
+   * reinvented.
    *
    * @private
-   * @method _htmlRaccourcisMenuRapide
+   * @method _quickMenuShortcutsHtml
    * @returns {string}
    */
   _quickMenuShortcutsHtml() {
@@ -367,12 +367,11 @@ export class ComptePlusBox {
     return `<div class='lien_rapide'>${liens}</div>`;
   }
   /**
-   * Re-rend le bloc raccourcis depuis localStorage. Appelé par PageCompte
-   * après que l'utilisateur valide ses préférences sur compte.php — évite
-   * le reload de page qui serait disproportionné pour un changement de
-   * pure préférence visuelle.
+   * Re-renders the shortcut block from localStorage. Called by AccountPage
+   * once the player saves their preferences on compte.php, which avoids a
+   * full page reload for what is only a display preference.
    *
-   * @method majRaccourcisMenuRapide
+   * @method updateQuickMenuShortcuts
    */
   updateQuickMenuShortcuts() {
     if (Utils.comptePlus) return this; // natif gère pour les C+
@@ -384,15 +383,15 @@ export class ComptePlusBox {
     return this;
   }
   /**
-   * Affiche la boite.
+   * Renders the box.
    *
    * @private
-   * @method afficher
+   * @method render
    */
   render() {
     let visible = storage.getRaw("outiiil_boiteActive");
     if (!Utils.comptePlus) {
-      // Ajout du contenue
+      // Add the content
       $("#boiteComptePlus").replaceWith(
         "<div id='boiteComptePlus' class='boite_compte_plus'><div class='titre_colonne_cliquable'><span class='titre_compte_plus'>Toolzzz " +
           VERSION.substring(0, 2) +
@@ -401,25 +400,25 @@ export class ComptePlusBox {
           "</span></span></div><div class='contenu_boite_compte_plus'><table " +
           (visible == null || visible == "C" ? "" : "style='display:none'") +
           ">" +
-          // Ligne ponte
+          // Spawn row
           "<tr class='lien' title='Aller sur Reine'><td><a href='Reine.php'><div style='position:relative;height:27px;padding-left:5px;'><div class='mini_icone_ponte'/><div id='o_resteUnite' class='o_labelBoite'></div><div id='o_tempsUnite' class='o_labelTempsBoite'></div><div id='o_progressUnite'/></div></a></td></tr>" +
-          // Ligne construction
+          // Building row
           "<tr class='lien' title='Aller sur Construction'><td><a href='construction.php'><div style='position:relative;height:27px;padding-left:5px;'><div class='mini_icone_construction'/><div id='o_resteConstruction' class='o_labelBoite'>Aucune construction</div><div id='o_tempsConstruction' class='o_labelTempsBoite'></div><div id='o_progressConstruction'/></div></a></td></tr>" +
-          // Ligne recherche
+          // Research row
           "<tr class='lien' title='Aller sur Laboratoire'><td><a href='laboratoire.php'><div style='position:relative;height:27px;padding-left:5px;'><div class='mini_icone_recherche'/><div id='o_resteRecherche' class='o_labelBoite'>Aucune recherche</div><div id='o_tempsRecherche' class='o_labelTempsBoite'></div><div id='o_progressRecherche'/></div></a></td></tr>" +
-          // Ligne Chasse
+          // Hunt row
           "<tr class='lien' title='Aller sur Ressource'><td><a href='Ressources.php'><div style='position:relative;height:27px;padding-left:5px;'><div class='mini_icone_chasse'/><div id='o_resteChasse' class='o_labelBoite'></div><div id='o_tempsChasse' class='o_labelTempsBoite'></div><div id='o_progressChasse'/></div></a></td></tr>" +
-          // Ligne attaque
+          // Attack row
           "<tr class='lien' title='Aller sur Armée'><td><a href='Armee.php'><div style='position:relative;height:27px;padding-left:5px;'><div class='mini_icone_attaque'/><div id='o_resteAttaque' class='o_labelBoite'></div><div id='o_tempsAttaque' class='o_labelTempsBoite'></div><div id='o_progressAttaque'/></div></a></td></tr>" +
-          // Ligne Convoi
+          // Convoy row
           "<tr class='lien' title='Aller sur Convoi'><td><a href='commerce.php'><div style='position:relative;height:27px;padding-left:5px;'><div class='mini_icone_convoi'/><div id='o_resteConvoi' class='o_labelBoite'></div><div id='o_tempsConvoi' class='o_labelTempsBoite'></div><div id='o_progressConvoi'/></div></a></td></tr>" +
-          // Formulaire de recherche
+          // Search form
           "</table>" +
           "<form method='post' action='classementAlliance.php' style='text-align:center;margin-top:5px;'><input type='text' name='requete' id='recherche' placeholder='Joueur ou Alliance'/></form>" +
           this._quickMenuShortcutsHtml() +
           "</div></div>",
       );
-      // Remplissage des champs
+      // Fill in the fields
       this.checkData()
         .updateSpawn()
         .updateBuilding()
@@ -427,7 +426,7 @@ export class ComptePlusBox {
         .updateAttack()
         .updateConvoy()
         .updateHunt();
-      // Formatage du title
+      // Format the title
       $("#boiteComptePlus table tr").tooltip({
         tooltipClass: "warning-tooltip",
         content: function () {
@@ -436,11 +435,11 @@ export class ComptePlusBox {
         position: { my: "left+10 center", at: "right center" },
         hide: { effect: "fade", duration: 10 },
       });
-      // autocomplete sur le chams de recherche
+      // autocomplete on the search field
       $("#recherche")
         .autocomplete({
           source: (request, response) => {
-            // requete pour autocomplete
+            // autocomplete request
             Player.search(request.term).then((data) => {
               response(Utils.extractResearch(data));
             });
@@ -457,12 +456,12 @@ export class ComptePlusBox {
       visible == null || visible == "C"
         ? ""
         : $("#boiteComptePlus .contenu_boite_compte_plus table:eq(0)").css("display", "none");
-    // Effet highlight si du terrain est découvert : on parse un tooltip
-    // injecté en script-tag à côté de #tableau_boite_info (forme `content: ... })`).
-    // Sur mobile, ce bandeau natif peut être absent ou rendu différemment ;
-    // sans guard, le `.split("content:")[1]` renvoie undefined et le
-    // `.split("})")` qui suit throw, ce qui cassait toute la chaîne d'init
-    // (BoiteRadar, routage Reine.php / compte.php, etc.).
+    // Highlight effect when new terrain is discovered: parses a tooltip the
+    // game injects in a script tag next to #tableau_boite_info (shaped like
+    // `content: ... })`). On mobile that native banner can be missing or
+    // rendered differently; without the guard, `.split("content:")[1]` returns
+    // undefined and the following `.split("})")` throws, which used to break
+    // the whole init chain (RadarBox, Reine.php / compte.php routing, etc.).
     let tooltipRaw = $("#tableau_boite_info").next().text();
     if (tooltipRaw.includes("content:")) {
       let tooltipConso = Utils.parseHtml(tooltipRaw.split("content:")[1].split("})")[0]);
@@ -476,10 +475,10 @@ export class ComptePlusBox {
     }
   }
   /**
-   * Met à jour les pontes si elles ne correspondent pas.
+   * Updates the spawns when they no longer match.
    *
    * @private
-   * @method majPonte
+   * @method updateSpawn
    */
   updateSpawn() {
     if (this._spawn.length) {
@@ -494,7 +493,7 @@ export class ComptePlusBox {
           ((moment().valueOf() - moment(this._spawnStart).valueOf()) * 100) /
           (moment(this._spawn[0].exp).valueOf() - moment(this._spawnStart).valueOf()),
       });
-      // Ajout du title
+      // Add the title
       let table = "<table>",
         tmpExpiry = moment(this._spawn[0].exp),
         countU,
@@ -515,7 +514,7 @@ export class ComptePlusBox {
       }
       table += "</table>";
       $("#boiteComptePlus table tr:eq(0)").attr("title", table);
-      // Si il reste moins d'une heure (on voit les secondes) on met dynamise
+      // Under an hour left (seconds are visible): animate the countdown
       let timeR = moment(this._spawn[0].exp).diff(moment()) / 1000;
       $("#o_tempsUnite").text(Utils.shortcutTime(timeR));
       if (timeR <= 3600) Utils.decreaseTime(timeR, "o_tempsUnite");
@@ -528,10 +527,10 @@ export class ComptePlusBox {
     return this;
   }
   /**
-   * Met à jour la construction en cours si elle change.
+   * Updates the running building when it changes.
    *
    * @private
-   * @method majConstruction
+   * @method updateBuilding
    */
   updateBuilding() {
     if (this._building) {
@@ -556,10 +555,10 @@ export class ComptePlusBox {
     return this;
   }
   /**
-   * Met à jour la recherche en cours si elle change.
+   * Updates the running research when it changes.
    *
    * @private
-   * @method majRecherche
+   * @method updateResearch
    */
   updateResearch() {
     if (this._research) {
@@ -584,10 +583,10 @@ export class ComptePlusBox {
     return this;
   }
   /**
-   * Met à jour les attaques si elles ne correspondent pas.
+   * Updates the attacks when they no longer match.
    *
    * @private
-   * @method majAttaque
+   * @method updateAttack
    */
   updateAttack() {
     if (this._attack.length) {
@@ -602,7 +601,7 @@ export class ComptePlusBox {
           ((moment().valueOf() - moment(this._attackStart).valueOf()) * 100) /
           (moment(this._attack[0].exp).valueOf() - moment(this._attackStart).valueOf()),
       });
-      // Ajout du title
+      // Add the title
       let table = "<table>";
       for (let i = 0, l = this._attack.length; i < l; i++)
         table += `<tr><td class='gras'>${this._attack[i].cible}</td><td>&nbsp;</td><td>Retour le ${moment(this._attack[i].exp).add(1, "minute").startOf("minute").format("D MMM YYYY à HH[h]mm")}</td></tr>`;
@@ -620,10 +619,10 @@ export class ComptePlusBox {
     return this;
   }
   /**
-   * Met à jour les convois si ils ne correspondent pas.
+   * Updates the convoys when they no longer match.
    *
    * @private
-   * @method majConvoi
+   * @method updateConvoy
    */
   updateConvoy() {
     if (this._convoy.length) {
@@ -638,7 +637,7 @@ export class ComptePlusBox {
           ((moment().valueOf() - moment(this._convoyStart).valueOf()) * 100) /
           (moment(this._convoy[0].exp).valueOf() - moment(this._convoyStart).valueOf()),
       });
-      // Ajout du title
+      // Add the title
       let table = "<table id='o_titleConvoi'>";
       for (let i = 0, l = this._convoy.length; i < l; i++)
         table += `<tr><td>${this._convoy[i].sens ? "<img src='" + IMG_DOWN + "' alt='reception'/>" : "<img src='" + IMG_UP + "' alt='livraison'/>"}</td><td class='gras'>${this._convoy[i].cible}</td><td>&nbsp;</td><td class="right">${numeral(this._convoy[i].nou).format("0[.]00a")} <img alt="nourritures" src="images/icone/icone_pomme.png" height="17"></td><td class="right">${numeral(this._convoy[i].mat).format("0[.]00a")} <img alt="materiaux" src="images/icone/icone_bois.png" height="17"/></td><td>Retour le ${moment(this._convoy[i].exp).add(1, "minute").startOf("minute").format("D MMM YYYY à HH[h]mm")}</td></tr>`;
@@ -656,14 +655,14 @@ export class ComptePlusBox {
     return this;
   }
   /**
-   * Met à jour les chasses si elles ne correspondent pas.
+   * Updates the hunts when they no longer match.
    *
    * @private
-   * @method majChasse
+   * @method updateHunt
    */
   updateHunt() {
     if (this._hunt.length) {
-      // creation du title
+      // build the title
       let table = "<table>",
         total = 0;
       for (let i = 0, l = this._hunt.length; i < l; i++) {
@@ -684,7 +683,7 @@ export class ComptePlusBox {
           ((moment().valueOf() - moment(this._huntStart).valueOf()) * 100) /
           (moment(this._hunt[0].exp).valueOf() - moment(this._huntStart).valueOf()),
       });
-      // Ajout du title
+      // Add the title
       $("#boiteComptePlus table tr:eq(3)").attr("title", table);
       let timeR = moment(this._hunt[0].exp).diff(moment()) / 1000;
       $("#o_tempsChasse").text(Utils.shortcutTime(timeR));

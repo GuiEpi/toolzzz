@@ -6,18 +6,18 @@
 import { $, numeral } from "~/vendor";
 import { IMG_REFRESH } from "~/constants";
 import { Utils } from "~/lib/Utils";
-// Cycle d'import volontaire (usage dans les méthodes uniquement, jamais au niveau module) : Alliance ↔ BoiteRadar.
+// Deliberate import cycle (used inside methods only, never at module level): Alliance ↔ RadarBox.
 import { RadarBox } from "~/boxes/Radar";
 import { Player } from "~/models/Player";
 
 /**
- * Classe pour creer et gérer une alliance
+ * Creates and manages an alliance.
  *
  * @class Alliance
  */
 export class Alliance {
-  // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
+  // Fields declared for TypeScript (Phase 2 was a straight conversion; real
+  // typing is deferred — see .claude/plans/wxt-migration-followups.md).
   _tag: any;
   _name: any;
   _terrain: any;
@@ -28,15 +28,15 @@ export class Alliance {
   _forumTopic: any;
   constructor(settings) {
     /**
-     * tag de l'alliance
+     * alliance tag
      */
     this._tag = settings["tag"];
     /**
-     * nom de l'alliance
+     * alliance name
      */
     this._name = settings["nom"] || "";
     /**
-     * terrain globale de l'alliance
+     * total terrain of the alliance
      */
     this._terrain = settings["terrain"] || -1;
     /**
@@ -48,7 +48,7 @@ export class Alliance {
      */
     this._technology = settings["technologie"] || -1;
     /**
-     * liste des joueurs
+     * list of players
      */
     this._players = {};
     if (settings.hasOwnProperty("joueurs"))
@@ -177,7 +177,7 @@ export class Alliance {
     };
   }
   /**
-   * Récupére la description d'une alliance.
+   * Reads an alliance's description page.
    *
    * @private
    * @method getDescription
@@ -194,7 +194,7 @@ export class Alliance {
     $(id).append(
       `<tr id="o_item_${index}" class="lien"><td><a id="o_maj_${this._tag}" class='o_actualiser' href=""><img src="${IMG_REFRESH}" alt="rang" height="20"/></a></td><td class="left"><a class="gras" href="classementAlliance.php?alliance=${this._tag}">${this._tag}</a><sup style="font-size:0.65em;margin-left:3px;opacity:0.7;">ALI</sup></td><td id="o_terrain_${this._tag}" class="right reduce" title="">${numeral(this._terrain).format()}</td></tr>`,
     );
-    // event
+    // events
     $("#o_maj_" + this._tag).click((e) => {
       this.refreshInRadar(radar).then((res) => {
         if (res.changed) radar.save();
@@ -204,12 +204,12 @@ export class Alliance {
     return this;
   }
   /**
-   * Rafraîchit l'alliance dans le contexte de la boite radar : spin de l'icône,
-   * fetch de la description, somme du terrain des membres, highlight du diff.
-   * Ne sauvegarde pas — c'est au caller (click single, ou batch "Tout actualiser")
-   * de décider quoi faire selon le résultat ({ removed, changed }).
+   * Refreshes the alliance inside the radar box: spins the icon, fetches the
+   * description, sums the members' terrain, highlights the diff. It does not
+   * save — the caller (single click, or the "Tout actualiser" batch)
+   * decides what to do from the result ({ removed, changed }).
    *
-   * @method refreshDansRadar
+   * @method refreshInRadar
    * @param {BoiteRadar} radar
    * @return {Promise<{ removed: boolean, changed: boolean }>}
    */

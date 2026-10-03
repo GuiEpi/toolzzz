@@ -1,5 +1,5 @@
 /*
- * Ponte.ts
+ * Spawn.ts
  * Hraesvelg
  **********************************************************************/
 
@@ -10,11 +10,11 @@ import { getProfile } from "~/models/currentPlayer";
 import { Box } from "~/boxes/Box";
 
 /**
- * Classe pour creer et gérer un lanceur de ponte.
+ * Builds and drives the spawn launcher.
  *
- * @class BoitePonte
+ * @class SpawnBox
  * @constructor
- * @extends Boite
+ * @extends Box
  */
 export class SpawnBox extends Box {
   constructor() {
@@ -43,14 +43,14 @@ export class SpawnBox extends Box {
     );
   }
   /**
-   * Affiche la boite.
+   * Renders the box.
    *
    * @private
-   * @method afficher
+   * @method render
    */
   override render() {
     if (super.render()) {
-      // Formatage des spinners
+      // Spinner formatting
       $("input[name^='o_nombre'], input[name^='o_jour']").spinner({ min: 0, numberFormat: "i" });
       $("input[name^='o_heure'], input[name^='o_minute'], input[name^='o_seconde']").spinner({
         min: 0,
@@ -62,7 +62,7 @@ export class SpawnBox extends Box {
     return this;
   }
   /**
-   * Applique le style propre à la boite.
+   * Applies the box's own styling.
    *
    * @private
    * @method css
@@ -76,7 +76,7 @@ export class SpawnBox extends Box {
     return this;
   }
   /**
-   * Ajoute les evenements propres à la boite.
+   * Wires up the box's own events.
    *
    * @private
    * @method event
@@ -85,7 +85,7 @@ export class SpawnBox extends Box {
     super.event();
     $("input[name^='o_nombre']").on("input spin", (e, ui) => {
       let count = numeral(ui ? ui.value : e.currentTarget.value).value();
-      // mise à jour du temps
+      // update the time
       this.updateTime(
         parseInt($(e.currentTarget).attr("name").replace("o_nombre", "")),
         count *
@@ -104,7 +104,7 @@ export class SpawnBox extends Box {
         $("input[name='o_minute" + unite + "']").spinner("stepUp");
         return false;
       }
-      // mise à jour du nombre
+      // update the count
       this.updateCount(unite, -1, -1, -1, seconde);
     });
     $("input[name^='o_minute']").on("input spin", (e, ui) => {
@@ -115,7 +115,7 @@ export class SpawnBox extends Box {
         $("input[name='o_heure" + unite + "']").spinner("stepUp");
         return false;
       }
-      // mise à jour du nombre
+      // update the count
       this.updateCount(unite, -1, -1, minute, -1);
     });
     $("input[name^='o_heure']").on("input spin", (e, ui) => {
@@ -126,12 +126,12 @@ export class SpawnBox extends Box {
         $("input[name='o_jour" + unite + "']").spinner("stepUp");
         return false;
       }
-      // mise à jour du nombre
+      // update the count
       this.updateCount(unite, -1, hour, -1, -1);
     });
     $("input[name^='o_jour']").on("input spin", (e, ui) => {
       let day = ui ? ui.value : $(e.currentTarget).spinner("value");
-      // mise à jour du nombre
+      // update the count
       this.updateCount(
         parseInt($(e.currentTarget).attr("name").replace("o_jour", "")),
         day,
@@ -141,11 +141,11 @@ export class SpawnBox extends Box {
       );
       $(e.currentTarget).spinner("value", day);
     });
-    // event sur le temps de ponte
+    // spawn time events
     $("#o_niveauTDP").on("input spin", (e, ui) => {
       let spawnTech = ui ? ui.value : $(e.currentTarget).spinner("value");
       $("input[name^='o_nombre']").each((i, elt) => {
-        // Pour chaque unité on met à jour le temps
+        // Update the time for every unit
         let unite = parseInt($(elt).attr("name").replace("o_nombre", ""));
         $(elt)
           .parent()
@@ -153,22 +153,22 @@ export class SpawnBox extends Box {
           .prev()
           .text(SpawnBox.roundTime(UNIT_TIME[unite] * Math.pow(0.9, spawnTech)));
         let count = $(elt).spinner("value");
-        // mise à jour du temps
+        // update the time
         if (count) this.updateTime(unite, count * (UNIT_TIME[unite] * Math.pow(0.9, spawnTech)));
       });
     });
-    // Lancer les pontes
+    // Launch the spawns
     $("img[id^=o_lancer]").click((e) => {
       let unite = ~~$(e.currentTarget).attr("id").replace("o_lancer", ""),
         count = $("input[name='o_nombre" + unite + "']").spinner("value"),
         securite = "";
       let correspondanceFzzz = new Array<any>("", 1, 2, 3, 4, 5, 6, -1, 7, 8, 9, 10, -1, 11, 12);
       if (count) {
-        // on recup un jeton
+        // grab a token
         $.ajax({ url: "http://" + Utils.serveur + ".fourmizzz.fr/Reine.php" }).then((data) => {
           let parsed = Utils.parseHtml(data);
           securite = parsed.find("#t").attr("name") + "=" + parsed.find("#t").attr("value");
-          // on prepare et on lance la ponte
+          // prepare and launch the spawn
           let donnees = {};
           donnees["destination"] = $("input[name='o_destination']:checked").val();
           donnees["unePonte"] = "oui";
@@ -194,10 +194,10 @@ export class SpawnBox extends Box {
     return this;
   }
   /**
-   * Met à jour le nombre d'unité lorsqu'on à modifié le temps.
+   * Updates the unit count after the time changed.
    *
    * @private
-   * @method majNombre
+   * @method updateCount
    * @param {String} unite
    * @param {Integer} day
    * @param {Integer} hour
@@ -219,24 +219,24 @@ export class SpawnBox extends Box {
     return this;
   }
   /**
-   * Met à jour les spinner lorsqu'on a modifié la ponte pour une unité.
+   * Updates the spinners after a unit's spawn changed.
    *
    * @private
-   * @method majTemps
+   * @method updateTime
    * @param {String} i
    * @param {Integer} time
    */
   updateTime(i, time) {
-    // on compte les jours
+    // count the days
     $("input[name='o_jour" + i + "']").spinner("value", (time - (time % 86400)) / 86400);
     time %= 86400;
-    // on compte les heures restantes
+    // count the remaining hours
     $("input[name='o_heure" + i + "']").spinner("value", (time - (time % 3600)) / 3600);
     time %= 3600;
-    // on compte les minutes restantes
+    // count the remaining minutes
     $("input[name='o_minute" + i + "']").spinner("value", (time - (time % 60)) / 60);
     time = Math.round(time % 60);
-    // il ne reste que les secondes
+    // only seconds left
     $("input[name='o_seconde" + i + "']").spinner("value", time);
     return this;
   }

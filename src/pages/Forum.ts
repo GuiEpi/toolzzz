@@ -18,36 +18,36 @@ import { Alliance } from "~/models/Alliance";
 import { Order } from "~/models/Order";
 
 /**
- * Noms des sections cachées du forum d'alliance utilisées comme stockage
- * partagé. Ordre = priorité de lecture : on essaie le nom Toolzzz d'abord,
- * puis on retombe sur l'ancien Outiiil pour les alliances qui ont préparé
- * leur forum à l'époque d'Outiiil v2 (ou d'une version pré-3.x de Toolzzz).
+ * Names of the hidden alliance-forum sections used as shared storage. The order
+ * is the read priority: the Toolzzz name is tried first, then the older Outiiil
+ * one for alliances that set their forum up in the Outiiil v2 days (or with a
+ * pre-3.x Toolzzz).
  *
- * À la création (Préparer le forum pour un SDC), on n'écrit que le nouveau
- * nom — et seulement si aucun des deux n'existe déjà — pour éviter les
- * doublons dans une alliance qui a hérité des anciennes sections.
+ * At creation time ("Préparer le forum pour un SDC") only the new name is
+ * written, and only when neither already exists, so an alliance that inherited
+ * the old sections does not end up with duplicates.
  */
 const FORUM_SECTION_ORDERS = ["Toolzzz_Commande", "Outiiil_Commande"];
 const FORUM_SECTION_MEMBERS = ["Toolzzz_Membre", "Outiiil_Membre"];
 
 /**
- * Classe de fonction pour la page /alliance.php?forum_menu.
+ * Enriches the /alliance.php?forum_menu page.
  *
- * @class PageForum
+ * @class ForumPage
  * @constructor
  */
 export class ForumPage {
-  // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
+  // Fields declared for TypeScript (Phase 2 was a straight conversion; real
+  // typing is deferred — see .claude/plans/wxt-migration-followups.md).
   _order: any;
   _monAlliance: any;
   constructor() {
     /**
-     * liste des commandes.
+     * list of orders
      */
     this._order = {};
     /**
-     * liste des joueurs.
+     * list of players
      */
     this._monAlliance = null;
   }
@@ -179,9 +179,9 @@ export class ForumPage {
   run() {
     let $alliance = $("#alliance");
     if (!$alliance.length) return this;
-    // si le forum est deja chargé lance le traitement
+    // the forum is already loaded: process it
     if ($("#cat_forum").length) this.processSection("#alliance");
-    // Récupération des données du forum pour communiquer.
+    // read the forum data used to communicate
     let observer = new MutationObserver((mutationsList) => {
       mutationsList.forEach((mutation) => {
         this.processSection(mutation.target);
@@ -194,9 +194,9 @@ export class ForumPage {
    *
    */
   processSection(element) {
-    // ajoute les options pour outiiil
+    // add the Toolzzz options
     if ($(element).find("div.simulateur").length) this.optionAdmin();
-    // on enregistre les id des topic si on utilise l'utilitaire
+    // record the topic ids when the alliance tools are in use
     let $cmdSpan = ForumPage.findForumSection(element, FORUM_SECTION_ORDERS);
     if (!getProfile().parametre["forumCommande"].valeur && $cmdSpan.length) {
       getProfile().parametre["forumCommande"].valeur = $cmdSpan.attr("class").match(/\d+/)[0];
@@ -207,20 +207,20 @@ export class ForumPage {
       getProfile().parametre["forumMembre"].valeur = $memSpan.attr("class").match(/\d+/)[0];
       getProfile().parametre["forumMembre"].save();
     }
-    // selon la section ACTIVE on ajoute les outils necessaires
+    // add the tools matching the ACTIVE section
     let actif = $(element).find("span[class^='forum'][class$='ligne_paire']").html();
     if (FORUM_SECTION_ORDERS.includes(actif)) {
-      // on verifie si on n'est dans un sujet mais bien sur la liste des topics
+      // make sure this is the topic list and not a topic itself
       if ($("#form_cat").length && !$("#o_afficherEtat").length) this.adminOrderOption();
     }
     return this;
   }
   /**
-   * Cherche la première section du forum dont le nom appartient à `noms`,
-   * dans l'ordre. Renvoie le `<span>` jQuery (vide si aucune trouvée).
+   * Finds the first forum section whose name is in `names`, in order. Returns
+   * the jQuery `<span>`, empty when none matches.
    *
    * @static
-   * @method trouverSectionForum
+   * @method findForumSection
    */
   static findForumSection(element, noms) {
     for (let nom of noms) {
@@ -244,7 +244,7 @@ export class ForumPage {
         .each((i, elt) => {
           let titleTopic = $(elt).find("td:eq(1)").text().trim(),
             id = -1;
-          // les lignes des commandes ont 3 td et du contenu
+          // order rows have three tds and some content
           if (titleTopic) {
             id = $(elt).find("a.topic_forum").attr("onclick").match(/\d+/)[0];
             order = new Order();
@@ -282,7 +282,7 @@ export class ForumPage {
         .each((i, elt) => {
           let titleTopic = $(elt).find("td:eq(1)").text().trim(),
             id = $(elt).find("input[name='topic[]']").val();
-          // les lignes des commandes ont 3 td et du contenu
+          // order rows have three tds and some content
           if (titleTopic) {
             let infos = titleTopic.split(" / ");
             players[infos[0]] = {
@@ -307,7 +307,7 @@ export class ForumPage {
    *
    */
   optionAdmin() {
-    // il faut etre chef pour preparer le fofo
+    // only a leader can prepare the forum
     if ($("img[src='images/icone/outil.gif']").length && !$("#o_afficheMenuUtilitaire").length) {
       $("#cat_forum")
         .prepend(`<span id="o_afficheMenuUtilitaire" class="o_forumOption categorie_forum"><img src="${IMG_TOOLZZZ}" alt="toolzzz"/></span>
@@ -319,15 +319,15 @@ export class ForumPage {
         $("#o_menuUtilitaire").toggle();
         return false;
       });
-      // ajout de l'input pour la selection du tag alliance
+      // add the input for picking the alliance tag
       $("#alliance .simulateur").append(
         `<div id="o_formGuerre" style="display:none;"><input id="o_tagGuerre" type="text"/> <button id="o_creerSectionGuerre">Créer section</button></div>`,
       );
       // Creation de l'utilitaire
       $("#o_creerUtilitaire").click((e) => {
-        // On ne crée la nouvelle section Toolzzz que si ni Toolzzz_* ni Outiiil_*
-        // n'existent déjà — pour ne pas dédoubler le stockage dans une alliance
-        // qui a déjà ses sections sous l'ancien nom.
+        // The new Toolzzz section is only created when neither Toolzzz_* nor
+        // Outiiil_* already exists, so storage is not duplicated in an alliance
+        // that already has its sections under the old name.
         let cmdExiste = FORUM_SECTION_ORDERS.some(
           (n) => $(`#cat_forum span:contains(${n})`).length,
         );
@@ -341,7 +341,7 @@ export class ForumPage {
                 .parent()
                 .attr("id")
                 .match(/\d+/)[0];
-              // on ne peut pas creer directement une section caché donc on cache aprés
+              // a section cannot be created hidden, so it is hidden afterwards
               this.editSection(nameCmd, idCat, "cache").then(
                 (data) => {
                   $.toast({
@@ -365,7 +365,7 @@ export class ForumPage {
             },
           );
         } else $.toast({ ...TOAST_WARNING, text: "Section commande est déjà créée !" });
-        // creation de la section membre pour les membres de l'alliance
+        // create the member section for the alliance's members
         let memExiste = FORUM_SECTION_MEMBERS.some(
           (n) => $(`#cat_forum span:contains(${n})`).length,
         );
@@ -379,7 +379,7 @@ export class ForumPage {
                 .parent()
                 .attr("id")
                 .match(/\d+/)[0];
-              // on ne peut pas creer directement une section caché donc on cache aprés
+              // a section cannot be created hidden, so it is hidden afterwards
               this.editSection(nameMem, idCat, "cache").then(
                 (data) => {
                   $.toast({
@@ -405,7 +405,7 @@ export class ForumPage {
         } else $.toast({ ...TOAST_WARNING, text: "Section membre est déjà créée !" });
         return false;
       });
-      // Preparation d'une guerre
+      // war preparation
       $("#o_preparerGuerre").click((e) => {
         $("#o_formGuerre").toggle();
       });
@@ -428,7 +428,7 @@ export class ForumPage {
         let style = "";
         return $("<li>").append(`<a style="${style}">${item.value_avec_html}</a>`).appendTo(ul);
       };
-      // event sur le bouton guerre
+      // events on the war button
       $("#o_creerSectionGuerre").click((e) => {
         let alliance = new Alliance({ tag: $("#o_tagGuerre").val() }),
           titleSection = "Guerre " + alliance.tag;
@@ -438,10 +438,10 @@ export class ForumPage {
             .toUpperCase()
             .includes(titleSection.toUpperCase())
         ) {
-          // on créer la section "Guerre " + tag
+          // create the "Guerre " + tag section
           this.createSection(titleSection).then(
             (data) => {
-              // on recup la section pour ajouter les sujets des joueurs
+              // read the section back to add the players' topics
               let response = Utils.parseHtml(Utils.parseHtml(data).find("cmd:eq(1)").html() || "");
               let idCat = $(response)
                 .find(`input[value='${titleSection}']`)
@@ -450,7 +450,7 @@ export class ForumPage {
                 .match(/\d+/)[0];
               alliance.getDescription().then(
                 (data) => {
-                  // on construit les appels de creation des sujets
+                  // build the topic-creation calls
                   let promisePlayer = new Array();
                   $(data)
                     .find("#tabMembresAlliance tr:gt(0)")
@@ -460,7 +460,7 @@ export class ForumPage {
                         this.createTopic(pseudo, `[player]${pseudo}[/player]`, idCat),
                       );
                     });
-                  // on creer les sujets
+                  // create the topics
                   Promise.all(promisePlayer).then((values) => {
                     location.reload();
                   });
@@ -507,7 +507,7 @@ export class ForumPage {
       $("#o_changerEtat").click((e) => {
         let promiseCmdModif = new Array();
         $("#form_cat tr:gt(0)").each((i, elt) => {
-          // si la commande est selectionné
+          // the order is selected
           if ($(elt).find("input[name='topic[]']:checked").length) {
             let titleTopic = $(elt).find("td:eq(1)").text().trim(),
               id = $(elt).find("input[name='topic[]']").val();

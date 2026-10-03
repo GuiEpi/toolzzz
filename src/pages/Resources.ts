@@ -1,5 +1,5 @@
 /*
- * Ressource.ts
+ * Resources.ts
  * Hraesvelg
  **********************************************************************/
 
@@ -17,21 +17,21 @@ import { Army } from "~/models/Army";
 import * as session from "~/storage/session";
 
 /**
- * Classe de fonction pour la page /Ressource.php.
+ * Enriches the /Ressources.php page.
  *
- * @class PageRessource
+ * @class ResourcesPage
  * @constructor
  * @extends Page
  */
 export class ResourcesPage {
-  // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
+  // Fields declared for TypeScript (Phase 2 was a straight conversion; real
+  // typing is deferred — see .claude/plans/wxt-migration-followups.md).
   _comptePlusBox: any;
   _huntCount: any;
   _army: any;
   constructor(boxComptePlus) {
     /**
-     * Accés à la boite compte+
+     * access to the ComptePlus box
      */
     this._comptePlusBox = boxComptePlus;
     /**
@@ -44,7 +44,7 @@ export class ResourcesPage {
         .text()
         .split(/- Vos chasseuses vont conquérir/g).length;
     /**
-     * Armée du joueur pour envoyer des chasses
+     * the player's army, used to send hunts
      */
     this._army = new Army();
   }
@@ -54,24 +54,24 @@ export class ResourcesPage {
   run() {
     this._army.getArmy().then((data) => {
       this._army.loadData(data);
-      // Ajout du lanceur de chasse
+      // add the hunt launcher
       this.launcher();
     });
-    // Sauvegarde les chasses en cours et ajoute les boutons max recolte
+    // save the running hunts and add the max-harvest buttons
     if (!Utils.comptePlus) this.plus();
-    // Affectation automatique des ouvrières (tous comptes)
+    // automatic worker assignment (every account)
     this.assignment();
-    // Bouton "Annuler toutes les chasses" si au moins une est en cours
+    // "Annuler toutes les chasses" button when at least one hunt is running
     this.cancelHuntsButton();
     return this;
   }
   /**
-   * Ajoute un bouton "Annuler toutes les chasses" dans la boîte de chasse en cours.
-   * Le serveur expose `Ressources.php?annuler=<chasseId>` pour annuler une chasse —
-   * on itère sur tous les spans `chasse_<id>` présents dans `#boite_tdc`.
+   * Adds an "Annuler toutes les chasses" button to the running-hunts box.
+   * The server exposes `Ressources.php?annuler=<chasseId>` to cancel one hunt, so
+   * this iterates over every `chasse_<id>` span found in `#boite_tdc`.
    *
    * @private
-   * @method boutonAnnulerChasses
+   * @method cancelHuntsButton
    */
   cancelHuntsButton() {
     let hunts = $("#boite_tdc span[id^='chasse_']");
@@ -101,10 +101,10 @@ export class ResourcesPage {
     });
   }
   /**
-   * Formulaire de lancement pour les chasses.
+   * Hunt launch form.
    *
    * @private
-   * @method lanceur
+   * @method launcher
    */
   launcher() {
     $("#boite_tdc")
@@ -189,7 +189,7 @@ export class ResourcesPage {
       minDate: 0,
     });
     $(".o_otherHfInputAlt").spinner({ min: 0, numberFormat: "i" });
-    // Completion des valeurs
+    // fill the values in
     this.prepareHunt();
     // Event
     $("#o_chasseTDCDep, #o_chasseNbr, #o_chasseTDCRep").on("input spin", (e, ui) => {
@@ -241,7 +241,7 @@ export class ResourcesPage {
       );
     });
     $(".o_otherHfInputAlt").on("input spin", () => this.updateHuntingGroundLosses());
-    // Lancement des chasses
+    // launch the hunts
     $("#o_chasseEnvoyer").click((e) => {
       if (this._army.getTotalUnits()) {
         let terrainHunt = $("#o_chasseTDCRep").spinner("value"),
@@ -251,9 +251,10 @@ export class ResourcesPage {
           url: "http://" + Utils.serveur + ".fourmizzz.fr/AcquerirTerrain.php",
         }).then((data) => {
           let parsed = Utils.parseHtml(data);
-          // AcquerirTerrain.php a un id="t" sur la <table> principale ET sur l'<input> du token CSRF.
-          // find("#t:last") matche aussi la table (qui n'a ni name ni value), donc on cible
-          // explicitement l'input via [name='t'] pour récupérer le bon token.
+          // AcquerirTerrain.php uses id="t" both on the main <table> and on the
+          // CSRF token <input>. find("#t:last") also matches the table (which has
+          // neither name nor value), so the input is targeted explicitly through
+          // [name='t'] to read the right token.
           let tokenInput = parsed.find("input[name='t']");
           this._army.sendHunt(
             terrainHunt,
@@ -273,10 +274,10 @@ export class ResourcesPage {
     return this;
   }
   /**
-   * Calcule les données de la chasse en fonction des valeurs souhaitées par le joueur.
+   * Computes the hunt data from the values the player asked for.
    *
    * @private
-   * @method preparerChasse
+   * @method prepareHunt
    */
   prepareHunt() {
     let huntingGroundDep = $("#o_chasseTDCDep").spinner("value"),
@@ -285,7 +286,7 @@ export class ResourcesPage {
       fixCount = countHunt && !$("#o_chasseNbrAuto").is(":checked") ? countHunt : 0,
       terrainHunt = $("#o_chasseTDCRep").spinner("value"),
       fixHF = terrainHunt && !$("#o_chasseTDCRepAuto").is(":checked") ? terrainHunt : 0;
-    // Si une chasse peut être calculer
+    // a hunt can be computed
     if (huntingGroundDep) {
       let simu = this._army.simulateHunt(
         huntingGroundDep,
@@ -304,9 +305,9 @@ export class ResourcesPage {
         simu.ratioRef,
         simu.iTabPerte,
       );
-      // Sync la dropdown Difficulté sur le ratio réellement atteignable
-      // (calculRefRatio peut renvoyer un ratio plus bas si l'armée ne peut
-      // pas tenir celui sélectionné par l'utilisateur).
+      // Sync the Difficulté dropdown with the ratio that is actually reachable
+      // (computeRatioRef can return a lower one when the army cannot sustain the
+      // selected value).
       let computed = parseFloat(simu.ratioRef).toString();
       if ($("#o_chasseDiff").val() !== computed) {
         $("#o_chasseDiff").val(computed);
@@ -316,10 +317,10 @@ export class ResourcesPage {
     }
   }
   /**
-   * Met à jour la couleur de la dropdown Difficulté selon le seuil de ratio.
+   * Updates the Difficulté dropdown's colour from the ratio threshold.
    *
    * @private
-   * @method _majCouleurDiff
+   * @method _updateDiffColor
    */
   _updateDiffColor() {
     let value = parseFloat($("#o_chasseDiff").val()),
@@ -327,12 +328,12 @@ export class ResourcesPage {
     $("#o_chasseDiff").css("color", color);
   }
   /**
-   * Calcule le terrain par chasse suggéré pour qu'une chasse parte maintenant et
-   * revienne à la date saisie. Inverse de `temps = (Utils.terrain + tdc) × 0.9^niveau`
+   * Computes the suggested terrain per hunt so a hunt leaving now returns at the
+   * date entered. The inverse of `time = (Utils.terrain + tdc) × 0.9^level`
    * (ligne 286 de majRecapitulatif).
    *
    * @private
-   * @method calculerTdcDate
+   * @method computeHuntingGroundDate
    */
   computeHuntingGroundDate() {
     let raw = $("#o_chasseDateArrivee").val(),
@@ -342,8 +343,9 @@ export class ResourcesPage {
         $("#o_chasseDateArriveeApply").prop("disabled", true);
       };
     if (!raw) return reset();
-    // datetimepicker redéclenche `change` au blur avec la même valeur — sans ce
-    // garde-fou le tdc dérive d'~1 unité à chaque firing (diff vs moment() avance)
+    // the datetimepicker fires `change` again on blur with the same value, and
+    // without this guard the tdc drifts by about 1 unit each time (the diff
+    // against moment() keeps moving)
     if ($("#o_chasseDateArrivee").data("tdcRaw") === raw) return;
     let target = moment(raw, "DD-MM-YYYY HH:mm");
     if (!target.isValid()) return reset();
@@ -357,13 +359,13 @@ export class ResourcesPage {
     $("#o_chasseDateArriveeApply").prop("disabled", false);
   }
   /**
-   * Met à jour la table "Pertes selon TdC à l'arrivée" en réutilisant les paramètres
-   * courants (nb chasses, terrain par chasse, difficulté) mais en faisant varier
-   * uniquement le tdcDep sur les valeurs saisies par l'utilisateur. Affiche aussi
-   * la variation moyenne par rapport au tdcDep courant.
+   * Updates the "Pertes selon TdC à l'arrivée" table, reusing the current
+   * parameters (hunt count, terrain per hunt, difficulty) and varying only
+   * tdcDep over the values the player entered. It also shows the average change
+   * relative to the current tdcDep.
    *
    * @private
-   * @method mettreAjourPertesTdc
+   * @method updateHuntingGroundLosses
    */
   updateHuntingGroundLosses() {
     let count = $("#o_chasseNbr").spinner("value"),
@@ -374,12 +376,12 @@ export class ResourcesPage {
     if (!count || !hf || ratioIdx < 0) return;
     let curDDiff = this._army.computeDifficulty(huntingGroundCurrent, count, hf),
       curLosses = this._army.computeLoss(ratioIdx, curDDiff);
-    // Ligne 0 = référence (TdC courant, miroir live de #o_chasseTDCDep)
+    // Row 0 is the reference (current TdC, mirroring #o_chasseTDCDep live)
     $("#o_otherHfRefValue").text(numeral(huntingGroundCurrent).format());
     $(".o_otherHfMin[data-idx='0']").text(numeral(Math.round(curLosses.MIN)).format());
     $(".o_otherHfAvg[data-idx='0']").text(numeral(Math.round(curLosses.AVG)).format());
     $(".o_otherHfMax[data-idx='0']").text(numeral(Math.round(curLosses.MAX)).format());
-    // Lignes 1..10 = alternatives, variation calculée vs ligne 0
+    // Rows 1..10 are alternatives, their change computed against row 0
     $(".o_otherHfInputAlt").each((_, el) => {
       let $el = $(el),
         i = $el.data("idx"),
@@ -398,10 +400,10 @@ export class ResourcesPage {
     });
   }
   /**
-   * Affiche la répartition des unités pour les chasses.
+   * Renders how the units are spread across the hunts.
    *
    * @private
-   * @method majSimulation
+   * @method updateSimulation
    * @param {Array} distribution
    */
   updateSimulation(distribution) {
@@ -438,10 +440,10 @@ export class ResourcesPage {
     $("#o_simulationChasse tr:even").addClass("ligne_paire");
   }
   /**
-   * Affiche le compte rendu de la simulation.
+   * Renders the simulation summary.
    *
    * @private
-   * @method majRecapitulatif
+   * @method updateSummary
    * @param {Integer} countHunt
    * @param {Integer} terrainHunt
    * @param {Float} ratio
@@ -475,20 +477,20 @@ export class ResourcesPage {
     );
   }
   /**
-   * Ajoute les boutons "max", sauvegarde la chasse en cours.
+   * Adds the "max" buttons and saves the running hunt.
    *
    * @private
    * @method plus
    */
   plus() {
-    // Ajout des boutons pour l'affectation max
+    // add the max-assignment buttons
     $("#RecolteNourriture").after(
       "<a title='Affecter un maximum d’ouvrière à la nourriture' class='button_max' onclick='javascript:maxNourriture();' href='#max'><img class='o_vAlign' width='23' height='23' src='images/bouton/fleche_haut.gif'/></a>",
     );
     $("#RecolteMateriaux").after(
       "<a title='Affecter un maximum d’ouvrière aux matériaux' class='button_max' onclick='javascript:maxMateriaux();' href='#max'><img class='o_vAlign' width='23' height='23' src='images/bouton/fleche_haut.gif'/></a>",
     );
-    // Affichage du retour des chasses
+    // show when the hunts come back
     let listHunt = new Array();
     $("span[id^=chasse_]").each((i, elt) => {
       listHunt.push({
@@ -506,65 +508,64 @@ export class ResourcesPage {
             "</span>",
         );
     });
-    // Sauvegarde de la chasse en cours
+    // save the running hunt
     if (listHunt.length) this.saveHunts(listHunt);
   }
   /**
-   * Choix du mode d'affectation automatique des ouvrières sur la page, et
-   * application du mode enregistré. Pour tous les comptes : en C+ le jeu
-   * propose nativement Matériaux / Nourriture, mais pas le ratio.
+   * Picks the automatic worker assignment mode on the page and applies the saved
+   * one. For every account: on ComptePlus the game offers Matériaux / Nourriture
+   * natively, but not the ratio.
    *
    * @private
-   * @method affectation
+   * @method assignment
    */
   assignment() {
     let affection = parseInt(getProfile().parametre["affectationRessource"].valeur),
       ratio = parseInt(getProfile().parametre["ratioRecolte"].valeur),
-      // la part en nourriture est saisissable au clavier, celle en matériaux
-      // en découle ; les deux suivent le curseur
+      // the food share can be typed in and the materials share follows from it;
+      // both track the slider
       labelRatio = (r) =>
         `<input id="o_ratioRecoltePart" class="o_sliderValeur" type="text" value="${r}"/> % <img alt="nourriture" src="images/icone/icone_pomme.png" height="14" class="o_vAlign"/> nourriture, <span id="o_ratioRecolteReste" class="gras">${100 - r} %</span> <img alt="matériaux" src="images/icone/icone_bois.png" height="13" class="o_vAlign"/> matériaux`,
       updateRatio = (r) => {
         $("#o_ratioRecoltePart").spinner("value", r);
         $("#o_ratioRecolteReste").text(`${100 - r} %`);
       };
-    // Ajout de la pref pour l'affectation auto.
-    // C+ : le jeu a déjà sa rangée « Affectation automatique des ouvrières »
-    // (radios choixOuvriere, envoyées au serveur). On y ajoute un choix
-    // « Ratio » dans le même groupe pour garder une seule sélection. Sa valeur
-    // est « rien », comme la croix : le jeu enregistre « pas d'affectation
-    // automatique » (sinon il replacerait les ouvrières libres d'un seul côté
-    // entre deux visites) et Toolzzz garde le mode Ratio de son côté. Le
-    // radio est reconnu par son id, pas par sa valeur.
-    // Non-C+ : rangée Toolzzz complète, avec un nom de groupe qui lui est propre.
+    // Add the preference for automatic assignment.
+    // ComptePlus: the game already has its « Affectation automatique des
+    // ouvrières » row (the choixOuvriere radios, sent to the server). A
+    // « Ratio » choice is added to the same group so only one stays selected.
+    // Its value is « rien », like the cross: the game records "no automatic
+    // assignment" (otherwise it would move the free workers all to one side
+    // between visits) while Toolzzz keeps Ratio mode on its side. The radio is
+    // recognised by its id, not by its value.
+    // Free accounts: a full Toolzzz row, with a group name of its own.
     let rowRatio = `<tr id="o_ratioRecolte" style="display:none;">
             <td><span class="text"><img src="images/icone/favicon.gif" height="16"> Répartition : <span id="o_ratioRecolteValeur">${labelRatio(ratio)}</span></span></td>
             <td><div id="o_ratioRecolteCurseur" class="slider" style="width:150px;margin:6px 0;"></div></td>
         </tr>`;
     if (Utils.comptePlus) {
-      // état enregistré côté serveur, lu avant d'ajouter notre radio
+      // the state saved server-side, read before our radio is added
       let nativeCoche = $("input[name=choixOuvriere]:checked").val();
       $("input[name=choixOuvriere][value=rien]")
         .closest("label")
         .before(
           `<label title="Répartir les ouvrières entre nourriture et matériaux selon une part fixe, refaite à chaque consultation de la page (Toolzzz)"><input type="radio" name="choixOuvriere" value="rien" id="o_ratioRadio"> Ratio</label> `,
         );
-      // L'exclusion mutuelle des radios se fait par formulaire propriétaire, pas
-      // par position dans le DOM : inséré dynamiquement, notre radio n'en a
-      // aucun (le HTML du jeu ferme son <form> avant cette cellule) et forme
-      // donc un groupe à part, où il reste coché en même temps qu'un choix
-      // natif. On le rattache explicitement au formulaire des radios du jeu,
-      // ce qui rétablit l'exclusion et l'envoi de sa valeur (« rien »).
+      // Radio buttons are mutually exclusive per owning form, not by position in
+      // the DOM: inserted dynamically, our radio has no owner (the game's HTML
+      // closes its <form> before this cell) and therefore forms a group of its
+      // own, where it stays ticked alongside one of the game's choices. It is
+      // attached explicitly to the form of the game's radios, which restores the
+      // exclusivity and makes its value (« rien ») be submitted.
       let formNative = $("input[name=choixOuvriere]").not("#o_ratioRadio")[0].form;
       if (formNative) {
         if (!formNative.id) formNative.id = "o_formRessource";
         $("#o_ratioRadio").attr("form", formNative.id);
       }
-      // Le mode Ratio soumet toujours « rien » au jeu : si le serveur a
-      // enregistré autre chose, c'est que l'affectation native a été choisie
-      // depuis, on abandonne le ratio. Sans ce recalage, un ratio mémorisé
-      // recocherait Ratio à chaque chargement et rendrait les autres choix
-      // impossibles à conserver.
+      // Ratio mode always submits « rien » to the game, so if the server has
+      // recorded anything else the native assignment was chosen since and the
+      // ratio is dropped. Without this resync a saved ratio would re-tick Ratio
+      // on every load and make the other choices impossible to keep.
       if (affection == 3 && nativeCoche && nativeCoche != "rien") {
         affection = 0;
         getProfile().parametre["affectationRessource"].valeur = 0;
@@ -589,10 +590,10 @@ export class ResourcesPage {
       getProfile().parametre["ratioRecolte"].save();
       this.assignWorkers(3, ratio);
     };
-    // Le pas jQuery UI reste à 1 : avec un pas de 10, une valeur fine posée
-    // depuis le champ serait arrondie. Le glissement à la souris est filtré
-    // sur les multiples de 10 pour garder un curseur rapide ; le clavier sur
-    // la poignée garde la précision.
+    // The jQuery UI step stays at 1: with a step of 10, a precise value typed
+    // into the field would be rounded. Mouse dragging is filtered to multiples
+    // of 10 to keep the slider snappy, while the keyboard on the handle keeps
+    // full precision.
     $("#o_ratioRecolteCurseur").slider({
       min: 0,
       max: 100,
@@ -602,32 +603,32 @@ export class ResourcesPage {
         if (ui.value % 10 && !(e.originalEvent && e.originalEvent.type == "keydown")) return false;
         updateRatio(ui.value);
       },
-      // seulement sur action de l'utilisateur : une valeur posée depuis le
-      // champ est appliquée par le champ
+      // only on user action: a value set from the field is applied by the field
+      // itself
       change: (e, ui) => {
         if (e.originalEvent) applyRatio(ui.value);
       },
     });
-    // saisie au clavier : validée à la sortie du champ ou avec les flèches,
-    // pas à chaque frappe (un « 5 » tapé avant « 0 » lancerait une affectation)
+    // typed input: applied when the field is left or with the arrows, not on
+    // every keystroke (a « 5 » typed before « 0 » would trigger an assignment)
     $("#o_ratioRecoltePart").on("spinstop change", (e) => {
       let v = Math.min(100, Math.max(0, parseInt($(e.currentTarget).val()) || 0));
       $("#o_ratioRecolteCurseur").slider("value", v);
       applyRatio(v);
     });
     if (Utils.comptePlus)
-      // sur "click" et non "change" : le jeu peut réagir au changement en
-      // rechargeant la page, l'écriture du paramètre doit être faite avant.
-      // On identifie notre radio par son id, sa valeur étant « rien » comme
-      // celle de la croix native.
+      // on "click" rather than "change": the game may react to the change by
+      // reloading the page, so the setting must be written first. Our radio is
+      // identified by its id, since its value is « rien », like the game's own
+      // cross.
       $("input[name=choixOuvriere]").on("click", (e) => {
         let actif = e.currentTarget.id == "o_ratioRadio";
-        // un choix natif (nourriture, matériaux, rien) désactive le ratio Toolzzz
+        // one of the game's choices (food, materials, none) turns Toolzzz's ratio off
         getProfile().parametre["affectationRessource"].valeur = actif ? 3 : 0;
         getProfile().parametre["affectationRessource"].save();
         $("#o_ratioRecolte").toggle(actif);
-        // soumission même si la répartition est déjà bonne : le jeu doit
-        // enregistrer « rien » pour son affectation automatique
+        // submit even when the split is already right: the game has to record
+        // « rien » for its own automatic assignment
         if (actif) this.assignWorkers(3, ratio, true);
       });
     else
@@ -648,21 +649,21 @@ export class ResourcesPage {
         }
         getProfile().parametre["affectationRessource"].save();
         $("#o_ratioRecolte").toggle(getProfile().parametre["affectationRessource"].valeur == 3);
-        // le ratio se voit tout de suite, les autres modes agissent à la prochaine consultation
+        // the ratio shows immediately, the other modes act on the next visit
         if (getProfile().parametre["affectationRessource"].valeur == 3)
           this.assignWorkers(3, ratio);
         return false;
       });
-    // Affectation des ouvriéres inutilisé si on a la pref
+    // assign the idle workers when the preference is set
     if (affection) this.assignWorkers(affection, ratio);
   }
   /**
-   * Affecte les ouvrières selon le mode choisi et soumet le formulaire du jeu
-   * si quelque chose change. Matériaux / Nourriture complètent seulement les
-   * ouvrières inutilisées ; Ratio impose la répartition.
+   * Assigns the workers according to the chosen mode and submits the game's form
+   * when something changes. Matériaux / Nourriture only top up the idle workers;
+   * Ratio enforces the whole split.
    *
    * @private
-   * @method affecterOuvrieres
+   * @method assignWorkers
    * @param {Integer} mode 1 matériaux, 2 nourriture, 3 ratio
    * @param {Integer} ratio part en nourriture (%) pour le mode 3
    * @param {Boolean} forcer soumettre même si la répartition ne change pas
@@ -678,7 +679,7 @@ export class ResourcesPage {
       nouvelleFood = Math.round((affectables * ratio) / 100);
       nouveauMaterials = affectables - nouvelleFood;
     } else if (materials + food < affectables) {
-      // si on ne couvre pas le terrain et qu'on a assez d'ouvrières
+      // the terrain is not covered and there are enough workers
       if (mode == 1) nouveauMaterials = affectables - food;
       else if (mode == 2) nouvelleFood = affectables - materials;
     }
@@ -686,8 +687,8 @@ export class ResourcesPage {
       session.remove(KEY_TENTATIVE);
       return;
     }
-    // la soumission recharge la page : si le jeu n'a pas appliqué la valeur
-    // demandée on ne retente pas, sinon la page rechargerait en boucle
+    // submitting reloads the page: if the game did not apply the requested value
+    // there is no retry, otherwise the page would reload forever
     if (session.getRaw(KEY_TENTATIVE)) {
       session.remove(KEY_TENTATIVE);
       $.toast({
@@ -702,10 +703,10 @@ export class ResourcesPage {
     $("#ChangeRessource").click();
   }
   /**
-   * Sauvegarde la chasse en cours.
+   * Saves the running hunt.
    *
    * @private
-   * @method saveChasse
+   * @method saveHunts
    */
   saveHunts(listHunt) {
     if (

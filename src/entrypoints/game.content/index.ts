@@ -1,19 +1,18 @@
 /*
- * Content script principal : bibliothèques, feuilles de style, puis l'appli.
+ * Main content script: libraries, stylesheets, then the app.
  *
- * L'ordre des trois blocs d'import est significatif :
- *  1. `~/vendor` — jQuery et ses plugins, moment, numeral, Highcharts,
- *     DataTables… posés sur `window` dans l'ordre historique du manifest ;
- *  2. les CSS — WXT les regroupe dans l'entrée `css` du content script.
- *     Le thème jQuery UI (ex-<link> vers code.jquery.com) passe en premier
- *     pour que les correctifs d'outiiil.css continuent de l'emporter à
- *     spécificité égale, comme aujourd'hui ;
+ * The order of the three import blocks matters:
+ *  1. `~/vendor` — jQuery and its plugins, moment, numeral, Highcharts,
+ *     DataTables… put on `window` in the manifest's historical order;
+ *  2. the stylesheets — WXT collects them into the content script's `css`
+ *     entry. The jQuery UI theme (formerly a <link> to code.jquery.com) comes
+ *     first so outiiil.css's overrides keep winning ties, as they do today;
  *  3. l'appli (`./main`).
  *
- * Tout ce qui est importé ici ne doit servir que dans `main()` : WXT retire
- * `main` puis les imports devenus inutiles avant d'évaluer ce fichier sous
- * Node pour lire `matches`/`runAt`. Un import utilisé au niveau module
- * ferait tourner jQuery & co. dans Node au build.
+ * Everything imported here must only be used inside `main()`: WXT strips
+ * `main` and then the imports that became unused before evaluating this file
+ * under Node to read `matches`/`runAt`. An import used at module level would
+ * run jQuery and friends inside Node at build time.
  */
 import "~/vendor";
 

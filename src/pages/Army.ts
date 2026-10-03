@@ -1,5 +1,5 @@
 /*
- * Armee.ts
+ * Army.ts
  * Hraesvelg
  **********************************************************************/
 
@@ -12,14 +12,14 @@ import { SentAttack } from "~/models/SentAttack";
 import * as session from "~/storage/session";
 
 /**
- * Classe de fonction pour la page /Armee.php.
+ * Enriches the /Armee.php page.
  *
- * @class PageArmee
+ * @class ArmyPage
  * @constructor
  */
 export class ArmyPage {
-  // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
+  // Fields declared for TypeScript (Phase 2 was a straight conversion; real
+  // typing is deferred — see .claude/plans/wxt-migration-followups.md).
   _comptePlusBox: any;
   _huntingGroundArmy: any;
   _domeArmy: any;
@@ -27,11 +27,11 @@ export class ArmyPage {
   _attackCount: any;
   constructor(boxComptePlus) {
     /**
-     * Accés à la boite compte+
+     * access to the ComptePlus box
      */
     this._comptePlusBox = boxComptePlus;
     /**
-     * Armée sur le terrain.
+     * army on the hunting ground
      *
      * @private
      * @property armeeTdc
@@ -39,7 +39,7 @@ export class ArmyPage {
      */
     this._huntingGroundArmy = null;
     /**
-     * Armée en dome.
+     * army in the dome
      *
      * @private
      * @property armeeDome
@@ -47,7 +47,7 @@ export class ArmyPage {
      */
     this._domeArmy = null;
     /**
-     * Armée en loge.
+     * army in the lodge
      *
      * @private
      * @property armeeLoge
@@ -73,11 +73,11 @@ export class ArmyPage {
     this.fetchHuntingGroundArmy();
     this.fetchDomeArmy();
     this.fetchLodgeArmy();
-    // Affichage du nombre d'attaque restante
+    // show how many attacks are left
     $("h3:eq(2)").append(
       ` ${this._attackCount}, reste : ${getProfile().niveauRecherche[6] + 1 - this._attackCount}.</p>`,
     );
-    // Affichage du nombre total d'unité
+    // show the total unit count
     $("h3:first").append(
       ` (${numeral(this._huntingGroundArmy.getTotalUnits() + this._domeArmy.getTotalUnits() + this._lodgeArmy.getTotalUnits()).format()})</p>`,
     );
@@ -92,7 +92,7 @@ export class ArmyPage {
 
     if (!Utils.comptePlus) this.plus();
     SentAttack.renderTables();
-    // Affichage du temps Hof de votre armée
+    // show your army's HOF time
     $(".simulateur:first").append(
       "<tr><td colspan=10>Temps <span class='gras' title='Hall Of Fame' >HOF : " +
         Utils.shortcutTime(
@@ -108,16 +108,16 @@ export class ArmyPage {
         ) +
         "</span></td></tr>",
     );
-    // Affichage des statistiques detaillés
+    // show the detailed stats
     this.renderStats();
-    // Auto-replacer : déclenché en sortie de flood (flag sessionStorage) ou par le param utilisateur.
+    // Auto-reposition: triggered when a flood ends (sessionStorage flag) or by the player's setting.
     let floodFlag = session.getRaw("outiiil_floodPuisReplacer") === "1";
     if (floodFlag) session.remove("outiiil_floodPuisReplacer");
     if (floodFlag || getProfile().parametre["replacerArmeeAuto"].valeur) this.repositionArmy(true);
     return this;
   }
   /**
-   * Initialise l'armée en terrain de chasse.
+   * Sets up the army on the hunting ground.
    *
    * @private
    * @method getArmeeTdc
@@ -132,7 +132,7 @@ export class ArmyPage {
     this._huntingGroundArmy = new Army({ unite: units });
   }
   /**
-   * Initialise l'armée en dome.
+   * Sets up the army in the dome.
    *
    * @private
    * @method getArmeeDome
@@ -152,7 +152,7 @@ export class ArmyPage {
     this._domeArmy = new Army({ unite: units });
   }
   /**
-   * Initialise l'armée en loge.
+   * Sets up the army in the lodge.
    *
    * @private
    * @method getArmeeLoge
@@ -167,9 +167,10 @@ export class ArmyPage {
     this._lodgeArmy = new Army({ unite: units });
   }
   /**
-   * Replace l'armée en respectant les bornes d'antisonde des paramètres.
-   * Quand auto=true (déclenché par le param d'auto-replacer ou en sortie de flood),
-   * les toasts informatifs sont supprimés pour ne pas spammer à chaque visite.
+   * Repositions the army within the anti-probe bounds from the settings.
+   * With auto=true (triggered by the auto-reposition setting or at the end of a
+   * flood) the informational toasts are suppressed, to avoid spamming on every
+   * visit.
    */
   repositionArmy(auto = false) {
     if (
@@ -182,13 +183,13 @@ export class ArmyPage {
         this._lodgeArmy.unite[firstUnit] +
         this._domeArmy.unite[firstUnit] +
         this._huntingGroundArmy.unite[firstUnit];
-      // si j'ai assez d'unité pour mettre les antisonde en param
+      // enough units to place the anti-probes from the settings
       if (
         countUnitDispo >=
         getProfile().parametre["uniteAntisondeDome"].valeur +
           getProfile().parametre["uniteAntisondeTerrain"].valeur
       ) {
-        // si les unités en terrain et dome ne sont pas dans les bornes dasn antisonde on replace tout sinon on est bon
+        // units outside the anti-probe bounds on the ground and in the dome mean everything is repositioned
         if (
           !this.isPlacedForAntiProbe(
             firstUnit,
@@ -212,7 +213,7 @@ export class ArmyPage {
    *
    */
   firstUnitIndex() {
-    // on trouve d'abord la premiere unite dispo c'est elle qui sert d'antisonde
+    // the first available unit is the one used as the anti-probe
     for (let i = 0; i < this._huntingGroundArmy.unite.length; i++)
       if (this._huntingGroundArmy.unite[i] + this._domeArmy.unite[i] + this._lodgeArmy.unite[i])
         return i;
@@ -223,19 +224,19 @@ export class ArmyPage {
    */
   isPlacedForAntiProbe(indUnit, countUnitTerrain, countUnitDome) {
     if (indUnit != -1) {
-      // si on a des unites autres que la premiere en terrain ou dome on est mal place
+      // units other than the first on the ground or in the dome mean a bad placement
       for (let i = 0; i < this._huntingGroundArmy.unite.length; i++) {
         if (this._huntingGroundArmy.unite[i] > 0 && i != indUnit) return false;
         if (this._domeArmy.unite[i] > 0 && i != indUnit) return false;
       }
-      // si on assez d'unite on doit respecter les bornes
+      // with enough units the bounds must be honoured
       if (
         this._huntingGroundArmy.unite[indUnit] +
           this._domeArmy.unite[indUnit] +
           this._lodgeArmy.unite[indUnit] >
         countUnitTerrain + countUnitDome
       ) {
-        // si la premiere unite n'est pas dans les bornes on est mal place
+        // the first unit outside the bounds means a bad placement
         if (
           this._domeArmy.unite[indUnit] > countUnitDome ||
           this._domeArmy.unite[indUnit] < countUnitDome * 0.9 ||
@@ -256,7 +257,7 @@ export class ArmyPage {
       "http://" + Utils.serveur + ".fourmizzz.fr/Armee.php?deplacement=3&" + securite,
       (data) => {
         let correspondanceUnit = [1, 2, 3, 4, 5, 6, 14, 7, 8, 9, 10, 13, 11, 12];
-        // si on a pas assez de troupes on prend un nombre au hasard
+        // not enough troops: pick a random amount
         let countTroops = Math.round(
           Math.random() *
             (getProfile().parametre["uniteAntisondeDome"].valeur -
@@ -285,7 +286,7 @@ export class ArmyPage {
                   getProfile().parametre["uniteAntisondeTerrain"].valeur * 0.9) +
                 getProfile().parametre["uniteAntisondeTerrain"].valeur * 0.9,
             );
-            // si on a pas assez de troupes on prend un nombre au hasard
+            // not enough troops: pick a random amount
             if (countTroupeDispo < countTroops)
               countTroops = Math.round(
                 Math.random() * (countTroupeDispo - countTroupeDispo * 0.9) +
@@ -348,13 +349,13 @@ export class ArmyPage {
     return this;
   }
   /**
-   * Ajoute les fonctionnalités du compte+. Affiche les infos sur l'armée et les fléches dans le tableau des unités.
+   * Adds the ComptePlus features: army figures and the arrows in the unit table.
    *
    * @private
    * @method plus
    */
   plus() {
-    // Affiche les fléches de deplacement des unités
+    // show the unit-move arrows
     $(".simulateur td").each((i, elt) => {
       if (/^[0-9,]+$/.test($(elt).text().replace(/ /g, ""))) {
         let info = $(elt).find("span").attr("id").replace(/\(|\)/g, "");
@@ -403,21 +404,21 @@ export class ArmyPage {
         }
       }
     });
-    // Affichage des infos sur l'armée selon son placement
+    // show the army figures for each placement
     this.renderHpRow();
     this.renderAttackRow();
     this.renderDefenseRow();
     this.renderConsumptionRow();
-    // Affichage de l'arrivée + sauvegarde des attaques en cours
+    // show the arrival and save the running attacks
     let listAttack = SentAttack.enrichRows();
-    // Verification si les données sont deja enregistré
+    // check whether the data is already recorded
     this.saveAttacks(listAttack);
   }
   /**
-   * Affiche les informations supplémentaires sur la vie des armées.
+   * Shows the extra hit-point figures for the armies.
    *
    * @private
-   * @method afficherLigneVie
+   * @method renderHpRow
    */
   renderHpRow() {
     let shield = getProfile().niveauRecherche[1];
@@ -439,10 +440,10 @@ export class ArmyPage {
     });
   }
   /**
-   * Affiche les informations supplémentaires sur l'attaque des armées.
+   * Shows the extra attack figures for the armies.
    *
    * @private
-   * @method afficherLigneAttaque
+   * @method renderAttackRow
    */
   renderAttackRow() {
     let weapons = getProfile().niveauRecherche[2];
@@ -464,10 +465,10 @@ export class ArmyPage {
     });
   }
   /**
-   * Affiche les informations supplémentaires sur la defense des armées.
+   * Shows the extra defense figures for the armies.
    *
    * @private
-   * @method afficherLigneDefense
+   * @method renderDefenseRow
    */
   renderDefenseRow() {
     let weapons = getProfile().niveauRecherche[2];
@@ -489,10 +490,10 @@ export class ArmyPage {
     });
   }
   /**
-   * Affiche les informations supplémentaires sur la consommation des armées.
+   * Shows the extra consumption figures for the armies.
    *
    * @private
-   * @method afficherLigneConsommation
+   * @method renderConsumptionRow
    */
   renderConsumptionRow() {
     let line = `<tr align='center' class='ligne_paire'>
@@ -522,10 +523,10 @@ export class ArmyPage {
     $("#o_statArmee").width($(".simulateur:first").width());
   }
   /**
-   * Verifie les attaques en cours avec ce qui est sauvegarder.
+   * Checks the running attacks against what was saved.
    *
    * @private
-   * @method saveAttaque
+   * @method saveAttacks
    */
   saveAttacks(listAttack) {
     if (

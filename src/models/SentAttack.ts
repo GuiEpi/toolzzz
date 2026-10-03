@@ -1,50 +1,50 @@
 /*
- * AttaqueLancee.ts
+ * SentAttack.ts
  **********************************************************************/
 
 import { $, Clipboard, moment, numeral } from "~/vendor";
 import { TOAST_ERROR, TOAST_SUCCESS, TOAST_WARNING } from "~/constants";
 import { Utils } from "~/lib/Utils";
-// Cycle d'import volontaire (usage dans les méthodes uniquement, jamais au niveau module) : AttaqueLancee ↔ Armee.
+// Deliberate import cycle (used inside methods only, never at module level): SentAttack ↔ Army.
 import { Army } from "~/models/Army";
 import * as storage from "~/storage";
 import * as session from "~/storage/session";
 
 /**
- * Capture des attaques au moment de leur lancement (page Attaquer) pour
- * afficher un récapitulatif par cible (lieu, troupes, arrivée, terrain estimé
- * de la cible à l'arrivée) avec export texte pour le forum.
+ * Records attacks as they are sent (Attaquer page) so a per-target summary can
+ * be shown — place, troops, arrival, estimated terrain of the target on
+ * arrival — with a text export for the forum.
  *
- * Le serveur n'envoie ni le lieu visé ni la composition des troupes aux
- * comptes gratuits : on les mémorise donc en localStorage à l'envoi, puis on
- * les lie à la ligne que le jeu affiche. La liaison ne s'appuie pas sur un
- * temps de trajet estimé (la formule peut diverger du jeu) mais sur l'id
- * d'attaque : une attaque fraîchement lancée porte toujours l'id le plus
- * élevé de la liste pour sa cible. En flood la réponse du POST contient déjà
- * la liste, on lie immédiatement ; en envoi de formulaire on lie au premier
- * rendu de la page suivante. Une attaque lancée hors de ce navigateur reste
- * sans capture — seule l'heure d'arrivée, calculée depuis le compte à
- * rebours du jeu, est affichée pour toutes (non-C+, le C+ l'a nativement).
+ * The server tells free accounts neither the targeted place nor the troop
+ * composition, so both are kept in localStorage when the attack is sent and
+ * then tied to the row the game displays. The matching does not rely on an
+ * estimated travel time (the formula can drift from the game's) but on the
+ * attack id: a freshly sent attack always carries the highest id of the list
+ * for its target. During a flood the POST response already contains the list
+ * and the match happens immediately; for a form submission it happens on the
+ * first render of the next page. An attack sent from another browser stays
+ * unmatched — only the arrival time, derived from the game's countdown, is
+ * shown for every attack (free accounts; ComptePlus has it natively).
  *
- * @class AttaqueLancee
+ * @class SentAttack
  */
 const KEY_SENT_ATTACKS = "outiiil_attaquesLancees";
-// délai (s) au-delà duquel une capture jamais retrouvée dans la liste du jeu
-// est abandonnée (envoi refusé par le serveur, page jamais rechargée…)
+// delay (s) after which a record never found in the game's list is dropped
+// (send refused by the server, page never reloaded…)
 const CAPTURE_TTL = 600;
-// fenêtre (s) pendant laquelle le jeu accepte d'annuler une attaque après son lancement
+// window (s) during which the game still accepts cancelling an attack
 const CANCEL_WINDOW = 120;
-// nombre d'attaques qu'un « Tout annuler » n'a pas pu annuler, affiché après rechargement
+// how many attacks a "Tout annuler" failed to cancel, reported after reload
 const KEY_CANCEL_FAILURES = "outiiil_annulationEchec";
 
 export class SentAttack {
-  // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
-  // Posé par PageAttaquer au lancement d'un flood, lu par Armee.
+  // Fields declared for TypeScript (Phase 2 was a straight conversion; real
+  // typing is deferred — see .claude/plans/wxt-migration-followups.md).
+  // Set by AttackPage when a flood starts, read by Army.
   static contexteFlood: any;
   /**
-   * Charge la liste des captures en purgeant les attaques déjà arrivées et
-   * les captures jamais liées à une ligne du jeu.
+   * Loads the records, dropping attacks that already landed and records never
+   * tied to a row of the game.
    */
   static load() {
     let list;
@@ -66,19 +66,19 @@ export class SentAttack {
     storage.setJSON(KEY_SENT_ATTACKS, list);
   }
   /**
-   * Mémorise une attaque au moment de l'envoi.
+   * Records an attack as it is sent.
    *
    * @param {String} target pseudo du joueur attaqué
    * @param {String} lieu libellé du lieu visé (tel qu'affiché dans le formulaire)
    * @param {Object} unite composition {nom d'unité: nombre}
    * @param {Object} options
-   *   - html : réponse du serveur si l'envoi est fait en AJAX (flood), permet
-   *            de lier tout de suite l'id et l'arrivée exacte
-   *   - terrain : terrain de la cible connu au lancement, pour estimer celui
-   *               qu'elle aura à l'arrivée
+   *   - html: server response when sent over AJAX (flood), which allows the id
+   *           and the exact arrival to be matched right away
+   *   - terrain: the target's terrain known at launch, used to estimate what it
+   *              will be on arrival
    */
   static record(target, place, unite, options: any = {}) {
-    // clic à vide (aucune unité) : le jeu refusera l'envoi, rien à mémoriser
+    // empty click (no unit): the game will refuse the send, nothing to record
     if (!Object.values(unite).some((count) => count)) return;
     let list = SentAttack.load(),
       capture = {
@@ -88,10 +88,10 @@ export class SentAttack {
         unite: unite,
         lancee: moment().valueOf(),
         arrivee: null,
-        // terrain de la cible avant cette attaque puis estimé après : on
-        // repart de l'estimation de la dernière attaque encore en vol sur
-        // cette cible s'il y en a une — le terrain du profil ne les reflète
-        // pas encore — sinon du terrain connu au lancement
+        // the target's terrain before this attack, then estimated after: start
+        // from the estimate of the last attack still in flight on that target
+        // when there is one — the profile's terrain does not reflect those yet
+        // — otherwise from the terrain known at launch
         terrainDepart: null,
         terrainCible: null,
       },
@@ -118,8 +118,8 @@ export class SentAttack {
     SentAttack.save(list);
   }
   /**
-   * Extrait les lignes « Vous allez attaquer » / « Des renforts arrivent »
-   * d'un document, triées par id d'attaque croissant (= ordre de lancement).
+   * Extracts the « Vous allez attaquer » / « Des renforts arrivent » rows from
+   * a document, sorted by ascending attack id (i.e. order of sending).
    *
    * @param {jQuery} racine document (ou fragment) à parcourir
    * @return {Array} liste {elt, id, cible (null pour un renfort), cibleHtml, secondes, arrivee}
@@ -127,12 +127,12 @@ export class SentAttack {
   static extractRows(racine = $(document)) {
     let rows: any[] = [];
     racine.find("span[id^='attaque_']").each((i, elt) => {
-      // le compteur du jeu est alimenté par un script voisin : reste(secondes, "attaque_<id>")
+      // the game's countdown is driven by a neighbouring script: reste(seconds, "attaque_<id>")
       let secondes = parseInt($(elt).nextAll("script").first().text().split("(")[1]);
       if (isNaN(secondes)) return;
-      // C+ : le jeu écrit le lieu entre parenthèses après le pseudo et les
-      // troupes dans un bloc après le lien Annuler — on les lit pour les
-      // attaques qu'on n'a pas capturées (lancées ailleurs)
+      // ComptePlus: the game writes the place in brackets after the nickname
+      // and the troops in a block after the Annuler link — both are read for
+      // attacks we did not record (sent from somewhere else)
       let native = SentAttack.rowNodes(elt),
         texte = native.map((n) => n.textContent).join(" "),
         place = texte.match(/\((terrain de chasse|fourmilière|loge impériale)\)/i),
@@ -140,11 +140,11 @@ export class SentAttack {
       rows.push({
         elt: elt,
         id: parseInt($(elt).attr("id").split("_")[1]),
-        // attaque normale (la cible est un lien) — un renfort n'a pas de cible
+        // regular attack (the target is a link) — reinforcements have no target
         cible: $(elt).prev().find("a").length ? $(elt).prev().find("a:first").text() : null,
-        // HTML natif du bloc cible (lien vers le profil, et vers l'alliance
-        // entre parenthèses quand le jeu l'affiche), réutilisé tel quel dans
-        // le titre du tableau pour garder les pseudos cliquables (issue #25)
+        // the game's own HTML for the target block (link to the profile, and to
+        // the alliance in brackets when shown), reused as is in the table title
+        // so nicknames stay clickable (issue #25)
         cibleHtml: $(elt).prev().find("a").length ? $(elt).prev().html() : null,
         secondes: secondes,
         arrivee: moment().add(secondes, "s"),
@@ -155,9 +155,9 @@ export class SentAttack {
     return rows.sort((a, b) => a.id - b.id);
   }
   /**
-   * Lie les captures encore orphelines aux lignes affichées : pour une cible
-   * donnée, les N captures les plus récentes correspondent aux N lignes aux
-   * ids les plus élevés qui ne sont pas déjà liées.
+   * Ties the still-unmatched records to the displayed rows: for a given target,
+   * the N most recent records correspond to the N highest-id rows that are not
+   * already tied.
    *
    * @param {Array} list captures chargées
    * @param {Array} rows lignes extraites de la page
@@ -182,9 +182,9 @@ export class SentAttack {
     return modifie;
   }
   /**
-   * Terrain estimé de la cible après une attaque : même règle que la
-   * simulation de flood, une unité prend 1 de terrain, plafonné à 20 % du
-   * terrain de la cible avant l'attaque.
+   * The target's estimated terrain after an attack: same rule as the flood
+   * simulation — one unit takes 1 terrain, capped at 20 % of the target's
+   * terrain before the attack.
    *
    * @param {Object} capture
    * @param {Integer|null} base terrain de la cible avant l'attaque
@@ -200,9 +200,9 @@ export class SentAttack {
     return (capture.terrainCible = base - Math.min(count, Math.floor(base * 0.2)));
   }
   /**
-   * Recalcule la chaîne des terrains estimés d'une cible à partir de la plus
-   * ancienne capture encore en vol : nécessaire quand une attaque du milieu
-   * de la chaîne disparaît (annulation).
+   * Recomputes a target's chain of estimated terrains from the oldest record
+   * still in flight: needed when an attack in the middle of the chain goes
+   * away (cancelled).
    *
    * @param {Array} list captures
    * @return {Boolean} true si une estimation a changé
@@ -224,9 +224,9 @@ export class SentAttack {
     return modifie;
   }
   /**
-   * Met les captures en phase avec les lignes affichées : liaison des
-   * orphelines, purge de celles dont l'attaque a été annulée, recalcul des
-   * terrains estimés.
+   * Brings the records back in step with the displayed rows: ties the
+   * unmatched ones, drops those whose attack was cancelled, recomputes the
+   * estimated terrains.
    *
    * @param {Array} rows lignes extraites de la page
    * @return {Array} captures à jour
@@ -234,9 +234,9 @@ export class SentAttack {
   static sync(rows) {
     let list = SentAttack.load(),
       modifie = SentAttack.link(list, rows);
-    // les pages qui listent les attaques en cours les listent toutes : une
-    // capture liée dont la ligne a disparu correspond à une attaque annulée.
-    // Elle rend le terrain qu'elle aurait pris aux attaques lancées après elle.
+    // pages that list running attacks list them all: a tied record whose row
+    // has disappeared means the attack was cancelled.
+    // It gives back the terrain it would have taken to the attacks sent after it.
     list
       .filter((a) => a.id && !rows.some((l) => l.id == a.id))
       .forEach((annulee) => {
@@ -256,16 +256,16 @@ export class SentAttack {
     return list;
   }
   /**
-   * Heure d'arrivée arrondie à la minute, avec la date si ce n'est pas
-   * aujourd'hui (rendu calqué sur le natif C+).
+   * Arrival time rounded to the minute, with the date when it is not today
+   * (rendered like the ComptePlus original).
    */
   static formatArrival(secondes) {
     let rArrival = Utils.roundMinute(secondes);
     return `${rArrival.isSame(moment(), "day") ? "à" : "le " + rArrival.format("D MMM à")} ${rArrival.format("HH[h]mm")}`;
   }
   /**
-   * Non-C+ : ajoute l'heure d'arrivée sous chaque ligne « Des renforts
-   * arrivent » (les attaques, elles, passent dans les tableaux par cible).
+   * Free accounts: adds the arrival time under every « Des renforts arrivent »
+   * row (attacks themselves go into the per-target tables).
    *
    * @return {Array} liste {cible, exp} des attaques normales, pour la boite C+
    */
@@ -284,16 +284,16 @@ export class SentAttack {
     return listAttack;
   }
   /**
-   * Un tableau récapitulatif par cible : lieu, troupes, temps restant,
-   * arrivée, terrain estimé, annulation unitaire ou groupée, et copie au
-   * format texte du jeu pour le forum.
+   * One summary table per target: place, troops, time left, arrival, estimated
+   * terrain, single or grouped cancellation, and a copy in the game's text
+   * format for the forum.
    *
-   * Les tableaux remplacent les lignes natives « Vous allez attaquer »
-   * (toutes les attaques, capturées ou non). Le span du compte à rebours et
-   * le lien Annuler du jeu sont déplacés dans le tableau, pas recréés : le
-   * compteur natif (fonction reste() du jeu) retrouve le span par son id et
-   * continue de le mettre à jour. Pour une attaque non capturée, lieu et
-   * troupes viennent du texte du jeu quand il les donne (C+), sinon « ? ».
+   * The tables replace the game's « Vous allez attaquer » rows (every attack,
+   * recorded or not). The countdown span and the game's Annuler link are moved
+   * into the table rather than recreated: the game's own counter (its reste()
+   * function) finds the span by its id and keeps updating it. For an attack we
+   * did not record, place and troops come from the game's text when it provides
+   * them (ComptePlus), otherwise « ? ».
    */
   static renderTables() {
     let echecs = session.getRaw(KEY_CANCEL_FAILURES);
@@ -336,18 +336,18 @@ export class SentAttack {
           <td>${c && c.terrainCible != null ? numeral(c.terrainCible).format() : "?"}</td>
           <td id="${id}Annuler${i}"></td></tr>`;
       });
-      // type="button" obligatoire : sur la page Attaquer ce bloc est dans le
-      // formulaire de lancement du jeu, un <button> nu le soumettrait
+      // type="button" is required: on the Attaquer page this block sits inside
+      // the game's launch form, and a bare <button> would submit it
       html += `<tr class="reduce"><td colspan="7"><em>* : terrain estimé après l'attaque, si elle réussit et que rien d'autre ne le fait varier entre-temps.${groupe.some((a) => !SentAttack.troops(a)) ? " « ? » : attaque lancée depuis un autre navigateur, détails inconnus." : ""}</em></td></tr>
           </tbody></table>
           <button type="button" id="${id}Copier" class="o_marginT15 o_button">Copier pour le forum</button>
           ${annulables.length > 1 ? `<button type="button" id="${id}ToutAnnuler" class="o_marginT15 o_button f_error">Tout annuler</button>` : ""}
           </div>`;
       conteneur.append(html);
-      // compteur et lien Annuler : déplacés dans le tableau (natif conservé).
-      // Pour une attaque capturée on connaît l'heure de lancement : le lien
-      // est retiré dès que la fenêtre d'annulation du jeu est passée, même
-      // si la page reste ouverte.
+      // counter and Annuler link: moved into the table, the game's own kept.
+      // For a recorded attack the launch time is known, so the link is removed
+      // as soon as the game's cancellation window has passed, even if the page
+      // stays open.
       let updateAllCancel = () => {
         if (groupe.filter((a) => $(a.cellule).find("a").length).length < 2)
           $(`#${id}ToutAnnuler`).hide();
@@ -371,7 +371,7 @@ export class SentAttack {
         native.forEach((n) => n.parentNode && n.parentNode.removeChild(n));
       });
       updateAllCancel();
-      // copie pour le forum
+      // copy for the forum
       let clipboard = new Clipboard(`#${id}Copier`, {
         text: () => SentAttack.formatForum(target, groupe),
       });
@@ -381,10 +381,10 @@ export class SentAttack {
       clipboard.on("error", () => {
         $.toast({ ...TOAST_ERROR, text: "Une erreur a été rencontrée, la copie a échoué." });
       });
-      // annulation groupée : les liens Annuler du jeu, appelés l'un après
-      // l'autre. Le jeu n'autorise l'annulation que peu de temps après le
-      // lancement : la dernière réponse (page complète) dit quelles attaques
-      // sont encore là, le compte est signalé après rechargement.
+      // grouped cancellation: the game's Annuler links, called one after the
+      // other. The game only allows cancelling shortly after launch; the last
+      // response (a full page) says which attacks are still there, and the
+      // count is reported after the reload.
       $(`#${id}ToutAnnuler`).click(() => {
         let encore = groupe.filter((a) => $(a.cellule).find("a").length);
         if (!encore.length || !confirm(`Annuler les ${encore.length} attaques sur ${target} ?`))
@@ -399,19 +399,20 @@ export class SentAttack {
               echecs = encore.filter((a) => restantes.indexOf(a.ligne.id) != -1).length;
             if (echecs) session.setRaw(KEY_CANCEL_FAILURES, String(echecs));
           })
-          // navigation GET et non reload() : sur la page Attaquer, la page
-          // courante est la réponse du POST de lancement, un reload le rejouerait
+          // a GET navigation rather than reload(): on the Attaquer page the
+          // current page is the response to the launch POST, and reloading
+          // would replay it
           .finally(() => location.replace(location.pathname + location.search));
       });
     });
   }
   /**
-   * Nœuds natifs d'une ligne « Vous allez attaquer » (lus pour le C+, puis
-   * retirés une fois le contenu déplacé dans un tableau) : les frères du span
-   * de compte à rebours, jusqu'au saut de ligne précédent (ou au titre) et
-   * jusqu'au saut de ligne suivant inclus — plus, en C+, le bloc de détail
-   * (troupes, arrivée) qui suit ce saut de ligne jusqu'au suivant. Le span
-   * lui-même et le lien Annuler sont exclus (déplacés, pas supprimés).
+   * The game's own nodes for a « Vous allez attaquer » row (read for
+   * ComptePlus, then removed once the content has moved into a table): the
+   * siblings of the countdown span, back to the previous line break (or the
+   * title) and up to and including the next one — plus, on ComptePlus, the
+   * detail block (troops, arrival) that follows that break up to the next one.
+   * The span itself and the Annuler link are excluded (moved, not deleted).
    *
    * @param {Element} elt span du compte à rebours
    * @return {Array} nœuds à supprimer
@@ -439,20 +440,20 @@ export class SentAttack {
     return nodes;
   }
   /**
-   * Lieu visé d'une attaque : capture, sinon texte du jeu (C+), sinon null.
+   * An attack's targeted place: from our record, else the game's text (ComptePlus), else null.
    */
   static place(a) {
     return a.capture ? a.capture.place : a.ligne.lieuNatif;
   }
   /**
-   * Troupes d'une attaque : capture, sinon texte du jeu (C+), sinon null.
+   * An attack's troops: from our record, else the game's text (ComptePlus), else null.
    */
   static troops(a) {
     return a.capture ? new Army({ unite: a.capture.unite }).toString() : a.ligne.troupesNatif;
   }
   /**
-   * Texte à coller sur le forum : une entrée par attaque au format des lignes
-   * du jeu, puis le terrain estimé de la cible après la dernière.
+   * Text to paste on the forum: one entry per attack in the format of the
+   * game's own rows, then the target's estimated terrain after the last one.
    */
   static formatForum(target, groupe) {
     let texte = groupe

@@ -1,5 +1,5 @@
 /*
- * Commande.ts
+ * Order.ts
  * Hraesvelg
  **********************************************************************/
 
@@ -19,13 +19,13 @@ import { OrderBox } from "~/boxes/Order";
 import { Player } from "~/models/Player";
 
 /**
- * Classe pour creer et gérer une commande
+ * Creates and manages a resource order.
  *
- * @class Commande
+ * @class Order
  */
 export class Order {
-  // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
+  // Fields declared for TypeScript (Phase 2 was a straight conversion; real
+  // typing is deferred — see .claude/plans/wxt-migration-followups.md).
   _id: any;
   _orderDate: any;
   _wantedDate: any;
@@ -39,45 +39,45 @@ export class Order {
   _lastUpdateUnused: any;
   constructor(settings: any = {}) {
     /**
-     * id de la commande
+     * order id
      */
     this._id = settings["id"] || moment().valueOf();
     /**
-     * date de la commande
+     * order date
      */
     this._orderDate = settings["dateCommande"] || moment();
     /**
-     * date à laquelle on souhaite être livré
+     * date the player wants delivery by
      */
     this._wantedDate = settings["dateSouhaite"] || null;
     /**
-     * date à partir de quand livrer
+     * date from which delivery may start
      */
     this._afterDate = settings["dateApres"] || null;
     /**
-     * personne qui fait la commande
+     * who placed the order
      */
     this._requester = settings.hasOwnProperty("demandeur")
       ? new Player(settings["demandeur"])
       : getProfile();
     /**
-     * contruction ou recherche demanndée
+     * requested building or research
      */
     this._upgrade = settings["evolution"] || -1;
     /**
-     * materiaux ou nourriture
+     * materials or food
      */
     this._food = settings["nourriture"] || 0;
     /**
-     * quantité restante à livrer
+     * quantity still to deliver
      */
     this._materials = settings["materiaux"] || 0;
     /**
-     * etat de la commande
+     * order status
      */
     this._status = settings["etat"] || ORDER_STATUS["Nouvelle"];
     /**
-     * date de la derniere mise à jour
+     * date of the last update
      */
     this._lastUpdate = settings["miseAJour"] || moment();
   }
@@ -307,9 +307,9 @@ export class Order {
       }
     } else
       html += `<td><img src="${IMG_CROSS}" alt='supprimer' title='Ne pas livrer avant le ${moment(this._afterDate).format("DD-MM-YYYY")}'/></td>`;
-    // Etat
+    // Status
     html += `<td ${this._status == ORDER_STATUS.Nouvelle ? "title='Un chef doit valider cette commande.'" : ""}>${Object.keys(ORDER_STATUS).find((key) => ORDER_STATUS[key] === this._status)}</td>`;
-    // Temps de trajet
+    // Travel time
     html += `<td>${Utils.intToTime(getProfile().getTravelTimeTo(this._requester))}</td>
             ${after && this._status == ORDER_STATUS["En cours"] ? "<td><a id='o_commande" + this._id + "' href=''><img src='" + IMG_DELIVERY + "' alt='livrer'/></a></td>" : "<td></td>"}
             ${this._requester.pseudo == getProfile().pseudo ? "<td><a id='o_modifierCommande" + this._id + "' href=''><img src='" + IMG_PENCIL + "' alt='modifier'/></a> <a id='o_supprimerCommande" + this._id + "' href=''><img src='" + IMG_CROSS + "' alt='supprimer'/></a></td></tr>" : "<td></td></tr>"}`;
@@ -367,13 +367,13 @@ export class Order {
    *
    */
   addConvoy(convoy) {
-    // on retire la nourrtiure
+    // subtract the food
     this._food -= convoy.nourriture;
     if (this._food < 0) this._food = 0;
-    // on retire les materiaux
+    // subtract the materials
     this._materials -= convoy.materiaux;
     if (this._materials < 0) this._materials = 0;
-    // on met a jour le status
+    // update the status
     if (!this._food && !this._materials) this._status = ORDER_STATUS.Terminée;
     return this;
   }

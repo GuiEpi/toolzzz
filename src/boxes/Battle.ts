@@ -1,5 +1,5 @@
 /*
- * Combat.ts
+ * Battle.ts
  * Hraesvelg
  **********************************************************************/
 
@@ -31,15 +31,15 @@ import { Battle } from "~/models/Battle";
 import { Player } from "~/models/Player";
 
 /**
- * Classe permettant d'analyser simuler et lancer des attaques.
+ * Analyses, simulates and launches attacks.
  *
- * @class BoiteCombat
+ * @class BattleBox
  * @constructor
- * @extends Boite
+ * @extends Box
  */
 export class BattleBox extends Box {
-  // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
+  // Fields declared for TypeScript (Phase 2 was a straight conversion; real
+  // typing is deferred — see .claude/plans/wxt-migration-followups.md).
   _army: any;
   _mfTargets: any;
   _mfAttackerOpts: any;
@@ -59,10 +59,10 @@ export class BattleBox extends Box {
     this._army = null;
   }
   /**
-   * Affiche la boite.
+   * Renders the box.
    *
    * @private
-   * @method afficher
+   * @method render
    */
   override render() {
     if (super.render()) {
@@ -78,7 +78,7 @@ export class BattleBox extends Box {
     return this;
   }
   /**
-   * Applique le style propre à la boite.
+   * Applies the box's own styling.
    *
    * @private
    * @method css
@@ -124,7 +124,7 @@ export class BattleBox extends Box {
     return this;
   }
   /**
-   * Ajoute les evenements propres à la boite.
+   * Wires up the box's own events.
    *
    * @private
    * @method event
@@ -134,10 +134,10 @@ export class BattleBox extends Box {
     return this;
   }
   /**
-   * Formulaire pour analyser une rapport de combat.
+   * Form to analyse a battle report.
    *
    * @private
-   * @method analyse
+   * @method analyze
    */
   analyze() {
     $("#o_tabsCombat1")
@@ -151,7 +151,7 @@ export class BattleBox extends Box {
    *
    */
   analyzerEvents() {
-    // event Analyse
+    // events Analyse
     $("#o_rcCombat").on("input", (e) => {
       let battle = new Battle({ RC: e.currentTarget.value });
       if (battle.analyze()) {
@@ -169,13 +169,14 @@ export class BattleBox extends Box {
     return this;
   }
   /**
-   * Construit la section "Calcul attaque à lancer" sous le RC analysé.
-   * Reproduit la zone B26-K54 du tableur Calystene XP v1.04 (feuille "Auto sur sonde") :
-   * récap multiplicateur/vie/FdF/armes ennemi/défense/réplique + formulaire
-   * d'attaque interactif avec colonne "Nb à ajouter pour FdF" et check JSN réplique.
+   * Builds the "Calcul attaque à lancer" section under the analysed report.
+   * Mirrors range B26-K54 of Calystene's XP v1.04 spreadsheet (sheet "Auto sur
+   * sonde"): a multiplier / hit points / striking power / enemy weapons /
+   * defense / retaliation summary, plus an interactive attack form with the
+   * "Nb à ajouter pour FdF" column and the JSN retaliation check.
    *
    * @private
-   * @method afficherCalcAttaque
+   * @method renderAttackCalc
    * @param {Object} probe résultat de Combat.analyseSonde()
    */
   renderAttackCalc(probe) {
@@ -283,11 +284,11 @@ export class BattleBox extends Box {
     return this.refreshAttackCalc();
   }
   /**
-   * Remplit les inputs "Nb à envoyer" du calc avec l'armée courante du joueur,
-   * ou les vide si elles correspondent déjà à l'armée chargée (toggle).
+   * Fills the calculator's "Nb à envoyer" inputs with the player's current army,
+   * or clears them when they already match the loaded army (a toggle).
    *
    * @private
-   * @method placerArmeeCalc
+   * @method placeArmyCalc
    */
   placeArmyCalc() {
     let armyTmp = new Array();
@@ -301,11 +302,11 @@ export class BattleBox extends Box {
     return this.refreshAttackCalc();
   }
   /**
-   * Recalcule en direct l'attaque par unité, l'attaque totale, la colonne
-   * "Nb à ajouter pour FdF" et le check JSN nécessaires en cas de réplique 10%.
+   * Recomputes live the per-unit attack, the total attack, the "Nb à ajouter
+   * pour FdF" column and the JSN needed to survive a 10% retaliation.
    *
    * @private
-   * @method actualiserCalcAttaque
+   * @method refreshAttackCalc
    */
   refreshAttackCalc() {
     let probe = $("#o_calcSonde").data("sonde");
@@ -406,11 +407,11 @@ export class BattleBox extends Box {
       max: 1,
       change: (e, ui) => {
         if (ui.value) {
-          // si != 0 alors on est defenseur
+          // non-zero means we are defending
           $("#o_positionAtt").removeClass("gras");
           $("#o_positionDef").addClass("gras");
         } else {
-          // sinon on est attaquant
+          // otherwise we are attacking
           $("#o_positionDef").removeClass("gras");
           $("#o_positionAtt").addClass("gras");
         }
@@ -426,7 +427,7 @@ export class BattleBox extends Box {
       let count = numeral(ui ? ui.value : e.currentTarget.value).value();
       let name = $(e.currentTarget).attr("name"),
         army = new Army();
-      // si le name contient 1 c'est l'attaquant sinon la defense
+      // a name containing 1 is the attacker, otherwise the defender
       if (name.includes("1_")) this.refreshStats(name, count);
       else this.refreshStats("", 0, name, count);
       $(e.currentTarget).spinner("value", count);
@@ -463,7 +464,7 @@ export class BattleBox extends Box {
     $("#o_copierDef").click((e) => {
       this.copyPasteArmy("DEF");
     });
-    // event sur les bonus joueurs
+    // events on the player bonuses
     $("#o_bonusAtt").click((e) => {
       $("#o_armes1").spinner(
         "value",
@@ -537,7 +538,7 @@ export class BattleBox extends Box {
         numeral(ui ? ui.value : e.currentTarget.value).value(),
       );
     });
-    // event bonus lieu
+    // events bonus lieu
     $("#o_simulateurNiveau input[name='o_lieu']").change((e) => {
       this.refreshStats();
     });
@@ -596,19 +597,19 @@ export class BattleBox extends Box {
   launchSimulation() {
     let unitATT = {},
       unitDef = {};
-    // données attaquant
+    // attacker data
     $("#o_simulateurArmee tr:gt(1)")
       .find("input:eq(0)")
       .each((i, elt) => {
         unitATT[UNIT_NAMES[i + 1]] = $(elt).spinner("value");
       });
-    // données defenseur
+    // defender data
     $("#o_simulateurArmee tr:gt(1)")
       .find("input:eq(1)")
       .each((i, elt) => {
         unitDef[UNIT_NAMES[i + 1]] = $(elt).spinner("value");
       });
-    // preparation du combat
+    // set the battle up
     let battle = new Battle({
       id: moment().valueOf(),
       lieu: $("input[name='o_lieu']:checked").val(),
@@ -616,23 +617,23 @@ export class BattleBox extends Box {
       defenseur: new Army({ unite: unitDef }),
       pointDeVue: $("#o_positionJoueur").slider("value"),
     });
-    // modification des niveaux des joueurs
+    // adjust the players' levels
     battle.attaquant.niveauRecherche[1] = $("#o_bouclier1").spinner("value");
     battle.attaquant.niveauRecherche[2] = $("#o_armes1").spinner("value");
     battle.defenseur.niveauRecherche[1] = $("#o_bouclier2").spinner("value");
     battle.defenseur.niveauRecherche[2] = $("#o_armes2").spinner("value");
     battle.defenseur.niveauConstruction[9] = $("#o_domeNiveau").spinner("value");
     battle.defenseur.niveauConstruction[10] = $("#o_logeNiveau").spinner("value");
-    // lancement du combat
+    // run the battle
     if (battle.armee1.getTotalUnits() && battle.armee2.getTotalUnits()) {
       battle.simulate().generateBattleReport();
-      // affichage des armées retours dans le formulaire
+      // show the resulting armies in the form
       for (let i = 0; i < 14; i++) {
         $("input[name='o_unite1_" + (i + 1) + "']").spinner("value", battle.armee1Ap.unite[i]);
         $("input[name='o_unite2_" + (i + 1) + "']").spinner("value", battle.armee2Ap.unite[i]);
       }
       this.refreshStats();
-      // ajout de l'event pour switch les armées avant et aprés combat
+      // event that swaps the armies before and after the battle
       $("#o_switchAvantApres")
         .off()
         .click((e) => {
@@ -642,7 +643,7 @@ export class BattleBox extends Box {
             armyAttTmp.push($("input[name='o_unite1_" + (i + 1) + "']").spinner("value"));
             armyDefTmp.push($("input[name='o_unite2_" + (i + 1) + "']").spinner("value"));
           }
-          // si dans le formulaire on a l'armée aprés on plalce l'armée avant sinon l'armée aprés
+          // showing the after army swaps in the before army, and vice versa
           if (
             battle.armee1Ap.unite.every((elt, i) => {
               return elt == armyAttTmp[i];
@@ -684,7 +685,7 @@ export class BattleBox extends Box {
   placeArmy(position) {
     let armyTmp = new Array();
     if (position) {
-      // on prepare un tableau des unités pour savoir si on renseigne l'armée ou on vide des champs
+      // build a unit table to decide between filling the army in and clearing the fields
       for (let i = 0; i < this._army.unite.length; i++)
         armyTmp.push($(`#o_simulateurArmee tr:eq(${i + 1}) input:eq(0)`).spinner("value"));
       if (
@@ -719,7 +720,7 @@ export class BattleBox extends Box {
    *
    */
   swapArmy() {
-    // switch des armées
+    // swap the armies
     for (let i = 0; i < 14; i++) {
       let valueTmp = $("input[name='o_unite1_" + (i + 1) + "']").spinner("value");
       $("input[name='o_unite1_" + (i + 1) + "']").spinner(
@@ -728,14 +729,14 @@ export class BattleBox extends Box {
       );
       $("input[name='o_unite2_" + (i + 1) + "']").spinner("value", valueTmp);
     }
-    // switch des bonus
+    // swap the bonuses
     let tmpBonusArme = $("#o_armes1").spinner("value"),
       tmpBonusShield = $("#o_bouclier1").spinner("value");
     $("#o_armes1").spinner("value", $("#o_armes2").spinner("value"));
     $("#o_bouclier1").spinner("value", $("#o_bouclier2").spinner("value"));
     $("#o_armes2").spinner("value", tmpBonusArme);
     $("#o_bouclier2").spinner("value", tmpBonusShield);
-    // switch de la position
+    // swap the position
     let tmpPosition = $("#o_positionJoueur").slider("option", "value");
     $("#o_positionJoueur").slider("option", "value", 1 - tmpPosition);
     return this;
@@ -772,7 +773,7 @@ export class BattleBox extends Box {
         break;
     }
     let army = new Army();
-    // données attaquant
+    // attacker data
     $("#o_simulateurArmee tr:gt(1)")
       .find("input:eq(0)")
       .each((i, elt) => {
@@ -780,7 +781,7 @@ export class BattleBox extends Box {
       });
     $("#o_vieAtt").text(numeral(army.getTotalHp(shieldAtt)).format());
     $("#o_degatAtt").text(numeral(army.getTotalAtt(weaponsAtt)).format());
-    // données defenseur
+    // defender data
     army = new Army();
     $("#o_simulateurArmee tr:gt(1)")
       .find("input:eq(1)")
@@ -819,7 +820,7 @@ export class BattleBox extends Box {
                     </p>
                 </div>
             </div>`);
-      // event
+      // events
       $("#o_annulerCopie").click((e) => {
         $("#o_divccarmee").hide();
         $("#o_textAreaArmee").val("");
@@ -845,7 +846,7 @@ export class BattleBox extends Box {
     }
   }
   /**
-   * Affiche le simulateur multi-flood (onglet 3).
+   * Renders the multi-flood simulator (tab 3).
    *
    * @private
    * @method multiFlood
@@ -858,14 +859,14 @@ export class BattleBox extends Box {
             <button id="o_mfLancer" class="o_button f_success o_marginT15" type="button" disabled>Lancer ces attaques</button>
         </div>`);
     /**
-     * Cibles sélectionnées par l'utilisateur. Chaque entrée :
+     * Targets picked by the player. Each entry:
      * { pseudo, id, terrain, type, x, y, tempsParcours }
      */
     this._mfTargets = [];
     this._mfAttackerOpts = { terrainFinal: null, priseMax: null };
     this._mfTotalUnits = null; // chargé lazy via Armee.getArmee()
     this._mfRenderForm();
-    // Pré-charge l'armée pour le check garnison ; ne bloque pas l'UI
+    // preload the army for the garrison check; does not block the UI
     if (!this._mfArmy) this._mfArmy = new Army();
     this._mfArmy.getArmy().then((data) => {
       this._mfArmy.loadData(data);
@@ -875,9 +876,9 @@ export class BattleBox extends Box {
     return this;
   }
   /**
-   * Rend le tableau-formulaire au look natif :
+   * Renders the form table in the game's own style:
    * Attaquant | label | cible1 | cible2 | … | "+" (slot d'ajout).
-   * Re-rend complètement à chaque add/remove → re-bind autocomplete derrière.
+   * Fully re-rendered on every add/remove, so the autocomplete is re-bound after.
    *
    * @private
    * @method _mfRenderForm
@@ -1015,12 +1016,12 @@ export class BattleBox extends Box {
       this._mfRenderForm();
       this.simulateMultiFlood();
     });
-    // Spinner sur tous les inputs numériques (Terrain Final / Prise Max par cible et attaquant) — convention Toolzzz
+    // Spinners on every numeric input (Terrain Final / Prise Max, per target and attacker) — Toolzzz convention
     $("#o_mfForm input.o_mfOpt, #o_mfForm input.o_mfAttOpt").spinner({
       min: 0,
       numberFormat: "i",
     });
-    // Options par cible (Terrain Final / Prise Max / Arrondir) — re-simu sur change
+    // Per-target options (Terrain Final / Prise Max / Arrondir) — re-simulate on change
     $("#o_mfForm .o_mfOpt").on("change", (e) => {
       let $el = $(e.currentTarget),
         pseudo = $el.data("pseudo"),
@@ -1031,7 +1032,7 @@ export class BattleBox extends Box {
       cible[opt] = raw === "" || raw === "0" ? null : parseInt(raw);
       this.simulateMultiFlood();
     });
-    // Options globales attaquant (Terrain Final / Prise Max) — re-simu sur change
+    // Global attacker options (Terrain Final / Prise Max) — re-simulate on change
     $("#o_mfForm .o_mfAttOpt").on("change", (e) => {
       let $el = $(e.currentTarget),
         opt = $el.data("opt"),
@@ -1041,14 +1042,14 @@ export class BattleBox extends Box {
     });
   }
   /**
-   * Pipeline d'ajout d'une cible par son pseudo :
-   * 1. Tente d'abord de la trouver dans le radar local (immédiat, pas de réseau).
-   * 2. Sinon, fetch `Membre.php?Pseudo=...` pour extraire id/terrain/x/y.
-   * `classementAlliance.php` (utilisé pour l'autocomplete) ne renvoie que
-   * `{value, url}` — pas assez pour la simulation, d'où l'enrichissement.
+   * How a target is added from its nickname:
+   * 1. look it up in the local radar first (instant, no network);
+   * 2. otherwise fetch `Membre.php?Pseudo=...` to read id/terrain/x/y.
+   * `classementAlliance.php` (used by the autocomplete) only returns
+   * `{value, url}`, which is not enough for the simulation — hence this step.
    *
    * @private
-   * @method _mfAjouterParPseudo
+   * @method _mfAddByPseudo
    * @param {String} pseudo
    */
   _mfAddByPseudo(pseudo) {
@@ -1077,12 +1078,12 @@ export class BattleBox extends Box {
     );
   }
   /**
-   * Fetch et parse la page profil pour extraire les champs nécessaires à la
-   * simulation. Sélecteurs alignés sur ce que fait déjà `Profil.js:30-39` —
+   * Fetches and parses the profile page for the fields the simulation needs.
+   * The selectors match what `PlayerProfile` already does —
    * cf. docs/scenarios/consulter-profil/report.md.
    *
    * @private
-   * @method _mfFetchProfil
+   * @method _mfFetchProfile
    * @param {String} pseudo
    * @return {Promise<Object>}
    */
@@ -1134,23 +1135,23 @@ export class BattleBox extends Box {
     this.simulateMultiFlood();
   }
   /**
-   * Orchestre la simulation multi-cibles : chaîne `Armee.optimiserFlood`
-   * sur chaque cible (triée par distance) en propageant `tdcAtt`.
-   * Détecte les cibles "trop hautes" (terrain > mon terrain × SEUIL_TROP_HAUT).
+   * Drives the multi-target simulation: chains `Army.optimizeFlood` over each
+   * target (sorted by distance), carrying `tdcAtt` along.
+   * Flags targets that are "too high" (terrain > my terrain × SEUIL_TROP_HAUT).
    *
    * @private
-   * @method simulerMultiFlood
+   * @method simulateMultiFlood
    */
   simulateMultiFlood() {
     if (!this._mfArmy) this._mfArmy = new Army();
-    // Seuils alignés sur le natif (Attaquer.js:231 → tdcCible ∈ [tdcAtt × 0.5, tdcAtt × 3])
+    // Thresholds match the game's (tdcCible ∈ [tdcAtt × 0.5, tdcAtt × 3])
     const SEUIL_TROP_HAUT = 3;
     const SEUIL_TROP_BOTTOM = 2;
     const MAX_ATTACKS_BY_TARGET = 10;
     const UNIT_INFINIE = 1e9; // simu purement terrain — la contrainte d'armée est appliquée globalement (recap) pas par cible
     let cibles = [...this._mfTargets].sort((a, b) => a.tempsParcours - b.tempsParcours),
       mfTerrain = Utils.terrain,
-      // map des états cochés précédents (par pseudo+i) pour préserver les choix utilisateur
+      // map of the previously ticked states (by nickname+i) so the player's choices survive
       previous = {};
     (this._mfResults || []).forEach((r) => {
       r.attaques?.forEach((a, i) => {
@@ -1187,17 +1188,17 @@ export class BattleBox extends Box {
       };
       this._mfArmy.optimizeFlood(dataFlood);
       let prises = this._mfArmy.floods.slice();
-      // Post-traitement avec les options (par cible + globales attaquant)
-      // Prise Max : cap par attaque (cible OU attaquant, le plus restrictif)
+      // Post-processing with the options (per target plus the attacker's global ones)
+      // Prise Max: a per-attack cap (target OR attacker, whichever is tighter)
       let captureMax = Math.min(
         cible.priseMax ?? Infinity,
         this._mfAttackerOpts.priseMax ?? Infinity,
       );
       if (captureMax !== Infinity) prises = prises.map((p) => Math.min(p, captureMax));
-      // Arrondir : sur la valeur (par cible)
+      // Arrondir: applied to the value, per target
       if (cible.arrondir)
         prises = prises.map((p) => Math.round(p / cible.arrondir) * cible.arrondir);
-      // Terrain Final cible : faire tomber le terrain de la cible JUSQU'À cette valeur
+      // Target's Terrain Final: bring the target's terrain DOWN TO this value
       if (cible.terrainFinal != null) {
         let cumulTarget = cible.terrain,
           tronquees = [];
@@ -1210,7 +1211,7 @@ export class BattleBox extends Box {
         }
         prises = tronquees.filter((p) => p > 0);
       }
-      // Terrain Final attaquant : stoppe quand mon terrain a atteint le plafond
+      // Attacker's Terrain Final: stop once my terrain reaches the cap
       if (this._mfAttackerOpts.terrainFinal != null) {
         let cumulAtt = mfTerrain,
           plafond = this._mfAttackerOpts.terrainFinal,
@@ -1250,10 +1251,10 @@ export class BattleBox extends Box {
     this.renderMultiFloodResults(results);
   }
   /**
-   * Rend le tableau dynamique des résultats (un sous-tableau par cible).
+   * Renders the live results table (one sub-table per target).
    *
    * @private
-   * @method afficherResultatsMultiFlood
+   * @method renderMultiFloodResults
    * @param {Array} results
    */
   renderMultiFloodResults(results) {
@@ -1288,7 +1289,7 @@ export class BattleBox extends Box {
       html += `</tbody></table>`;
     });
     $("#o_mfResultats").html(html);
-    // Toggle checkbox → màj instantanée du récap (ne re-simule pas, garde l'état utilisateur)
+    // Ticking a checkbox updates the summary instantly (no re-simulation, the player's state is kept)
     $("#o_mfResultats .o_mfAttaqueCheck").on("change", (e) => {
       let $el = $(e.currentTarget),
         pseudo = $el.data("pseudo"),
@@ -1303,12 +1304,12 @@ export class BattleBox extends Box {
     this.css(); // ré-applique couleur2 sur les nouvelles tables
   }
   /**
-   * Récap global : nombre d'attaques, total fourmis, prise totale.
-   * Pas de % de capacité (vitesse d'attaque, garnison) tant qu'on n'a pas
-   * de source fiable pour ces valeurs — à ajouter en v2.
+   * Overall summary: number of attacks, total ants, total capture.
+   * No capacity percentage (attack speed, garrison) until there is a reliable
+   * source for those values — to be added in v2.
    *
    * @private
-   * @method afficherRecapMultiFlood
+   * @method renderMultiFloodRecap
    * @param {Array} results
    */
   renderMultiFloodRecap(results) {
@@ -1344,10 +1345,11 @@ export class BattleBox extends Box {
       $("#o_mfLancer").prop("disabled", true);
       return;
     }
-    // Check capacité armée (garnison). 3 états :
-    //   null  → armée pas encore chargée (Armee.getArmee en cours)
-    //   0     → armée vide → flood impossible
-    //   > 0   → calcul du % (peut largement dépasser 100% — le natif affiche 6595%, etc.)
+    // Army capacity check (garrison). Three states:
+    //   null  → army not loaded yet (Army.getArmy still running)
+    //   0     → empty army → the flood is impossible
+    //   > 0   → compute the percentage (it can far exceed 100% — the game itself
+    //          shows 6595% and the like)
     let pctGarnisonHtml = "",
       armyOk = true;
     if (this._mfTotalUnits === 0) {
@@ -1367,15 +1369,15 @@ export class BattleBox extends Box {
       .one("click", () => this._mfLaunch());
   }
   /**
-   * Lance la séquence multi-flood : pour chaque cible (dans l'ordre de distance),
-   * GET `ennemie.php?Attaquer=<id>` pour récupérer le token de sécurité, puis POST
-   * chaque attaque cochée séquentiellement avec 1s d'intervalle.
-   * Implémentation parallèle à `Armee.envoyerFlood` parce que celui-ci finit par
-   * `location.reload()` (incompatible multi-cible) et lit `pseudoCible` depuis le
-   * DOM de `ennemie.php` (que nous n'avons pas dans la BoiteCombat).
+   * Runs the multi-flood sequence: for every target (in distance order), GET
+   * `ennemie.php?Attaquer=<id>` to pick up the security token, then POST each
+   * ticked attack one after the other, one second apart.
+   * This exists alongside `Army.sendFlood` because that one ends with
+   * `location.reload()` (incompatible with multiple targets) and reads
+   * `pseudoCible` from the `ennemie.php` DOM, which the BattleBox does not have.
    *
    * @private
-   * @method _mfLancer
+   * @method _mfLaunch
    */
   _mfLaunch() {
     let totalAttacks = 0,
@@ -1401,7 +1403,7 @@ export class BattleBox extends Box {
     )
       return;
     $("#o_mfLancer").prop("disabled", true).text("Lancement…");
-    // S'assurer que l'armée est chargée (sinon `repartirUniteFlood` n'aura rien à distribuer)
+    // make sure the army is loaded, otherwise `distributeFloodUnits` has nothing to spread
     let prep =
       this._mfArmy && this._mfArmy.unite.some((u) => u > 0)
         ? Promise.resolve()
@@ -1431,11 +1433,11 @@ export class BattleBox extends Box {
           return;
         }
         let securite = tInput.attr("name") + "=" + tInput.attr("value");
-        // Construit la répartition pour les SEULES attaques cochées de cette cible
+        // Build the split for ONLY the ticked attacks of this target
         this._mfArmy.floods = prises.slice();
         this._mfArmy.distributeFloodUnits();
         this._mfSendNextAttack(cible, securite, indices, 0, () => {
-          // Décompte local des unités envoyées (pour les cibles suivantes)
+          // Local tally of the units sent, for the targets that follow
           this._mfArmy.repartition.forEach((rep) => {
             rep.forEach((n, j) => {
               this._mfArmy.unite[j] = Math.max(0, this._mfArmy.unite[j] - n);
@@ -1474,10 +1476,11 @@ export class BattleBox extends Box {
     );
   }
   /**
-   * Construit le payload `application/x-www-form-urlencoded` attendu par `ennemie.php`.
-   * Le mapping unite11/12/13/14 ↔ index 12/13/11/6 du tableau `repartition` reproduit
-   * exactement celui de `Armee.envoyerFlood:1010-1023` (ordre non-séquentiel hérité du
-   * jeu, où Concierge d'élite/Tank d'élite/Tueuse[E] ont été ajoutés a posteriori).
+   * Builds the `application/x-www-form-urlencoded` payload `ennemie.php` expects.
+   * The unite11/12/13/14 ↔ index 12/13/11/6 mapping of the `repartition` array
+   * reproduces `Army.sendFlood` exactly (a non-sequential order inherited from
+   * the game, where Concierge d'élite / Tank d'élite / Tueuse[E] were added
+   * later).
    *
    * @private
    * @method _mfBuildPayload
@@ -1515,10 +1518,10 @@ export class BattleBox extends Box {
       .addClass(ok ? "green" : "red");
   }
   /**
-   * Affiche une calculatrice pour calculer les temps de trajets, les horraires.
+   * Renders a calculator for travel times and schedules.
    *
    * @private
-   * @method calculatrice
+   * @method calculator
    */
   calculator() {
     let html = `<table id="o_calculatriceCombat" class="centre">
@@ -1546,7 +1549,7 @@ export class BattleBox extends Box {
    */
   calculatorEvents() {
     $("#o_placementJ").click(() => {
-      // si les infos sont deja renseigné on vide
+      // already filled in: clear it
       if ($("#o_pseudoTemps").val() == getProfile().pseudo) {
         $("#o_pseudoTemps").val("");
         $("#o_vaTemps").spinner("value", 0);
@@ -1603,7 +1606,7 @@ export class BattleBox extends Box {
     $("#o_calculerTemps").click(() => {
       let ref = new Player({ pseudo: $("#o_pseudoTemps").val() });
       ref.niveauRecherche[6] = $("#o_vaTemps").val();
-      // si pas de referentiel on ne peut rien calculer
+      // without a reference player nothing can be computed
       if (!ref.pseudo) {
         $.toast({
           ...TOAST_ERROR,
@@ -1611,7 +1614,7 @@ export class BattleBox extends Box {
         });
         return false;
       }
-      // preparation des joueurs
+      // prepare the players
       let players = new Array();
       for (let i = 0, tmp = $("#o_cibleJoueurTemps").val().split(", "); i < tmp.length; i++)
         if (tmp[i]) players.push(new Player({ pseudo: tmp[i] }));
@@ -1688,9 +1691,10 @@ export class BattleBox extends Box {
     return Utils.intToTime(Math.pow(0.9, attackSpeed) * 637200);
   }
   /**
-   * Estime la vitesse d'attaque d'un joueur via 2 attaques successives.
-   * Hypothèse : entre l'arrivée sur cible 1 et l'arrivée sur cible 2, le joueur fait
-   * le retour cible1→loge puis loge→cible2, soit T2−T1 = t(va,d1) + tempsLoge + t(va,d2).
+   * Estimates a player's attack speed from two successive attacks.
+   * Assumption: between landing on target 1 and landing on target 2 the player
+   * travels target1→lodge then lodge→target2, so T2−T1 = t(va,d1) + tempsLoge +
+   * t(va,d2).
    */
   estimateAttackSpeed(pseudoEnn, pseudoC1, pseudoC2, t1, t2, timeLodge) {
     let ennemi = new Player({ pseudo: pseudoEnn });
@@ -1760,24 +1764,24 @@ export class BattleBox extends Box {
    */
   computeTime(ref, players, lastMvt = "", delayCaptureSec = 60) {
     let promise = new Array();
-    // promise qui recup le profil du ref
+    // promise fetching the reference player's profile
     if (!ref.isCurrentPlayer()) promise.push(ref.getProfile());
-    // promise pour recup les joueurs
+    // promise fetching the players
     for (let player of players) promise.push(player.getProfile());
-    // Execution des requetes
+    // run the requests
     Promise.all(promise).then((values) => {
       let rows = new Array(),
         ind = 0;
-      // charge les donnes du ref
+      // load the reference player's data
       if (!ref.isCurrentPlayer()) {
         ref.loadProfile(values[ind]);
         ind++;
       }
-      // si on peut calculer une heure de lancement (ref = ennemi à chopper, pas moi)
+      // a launch time can be computed when the reference is the enemy to catch, not me
       const captureAllowed = lastMvt && !ref.isCurrentPlayer();
       const timeMoiVersRef = captureAllowed ? getProfile().getTravelTimeTo(ref) : 0;
       const maintenant = moment();
-      // on calcule les temps de trajet vers les joueurs
+      // compute the travel times to the players
       for (let i = 0; i < players.length; i++) {
         players[i].loadProfile(values[i + ind]);
         let timeP = ref.getTravelTimeTo(players[i]);
@@ -1797,7 +1801,7 @@ export class BattleBox extends Box {
           )[0],
         );
       }
-      // affichage du tableau des distances
+      // render the distance table
       $("#o_infosTemps").DataTable().clear().rows.add(rows).draw();
     });
     return this;

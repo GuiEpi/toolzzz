@@ -1,4 +1,4 @@
-// Libellés français pour moment / Highcharts / le datepicker jQuery UI.
+// French labels for moment, Highcharts and the jQuery UI datepicker.
 export const MONTHS_FR = [
   "Janvier",
   "Février",

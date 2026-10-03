@@ -17,18 +17,18 @@ import { Utils } from "~/lib/Utils";
 import { getProfile } from "~/models/currentPlayer";
 
 /**
- * Classe de fonction pour les chats.
+ * Enriches the chat pages.
  *
- * @class PageChat
+ * @class ChatPage
  * @constructor
  */
 export class ChatPage {
-  // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
+  // Fields declared for TypeScript (Phase 2 was a straight conversion; real
+  // typing is deferred — see .claude/plans/wxt-migration-followups.md).
   _timeoutChat: any;
   constructor() {
     /**
-     * Compteur pour l'autoactualisation
+     * auto-refresh counter
      */
     this._timeoutChat = -1;
   }
@@ -36,13 +36,13 @@ export class ChatPage {
    *
    */
   run() {
-    // fonction plus
+    // extra features
     if (!Utils.comptePlus) this.plus();
-    // Couleur du texte
+    // text colour
     this.color();
     // Reaffichage message
     this.showMessage();
-    // Modification pour l'envoie du formulaire
+    // tweak the form submission
     $("#message").on("keypress", (e) => {
       let code = e.keyCode || e.which;
       if (code == 13) this.parseMessage();
@@ -53,13 +53,13 @@ export class ChatPage {
     return this;
   }
   /**
-   * Change l'apparance de l'affichage des messages, "Pseudo (datetime) :" au lieu de "datetime pseudo :"
+   * Changes how messages read: "Pseudo (datetime) :" instead of "datetime pseudo :"
    *
    * @private
-   * @method afficheMessage
+   * @method showMessage
    */
   showMessage() {
-    // ajoute du cite sur les anciens messages
+    // add the quote button to the older messages
     $("#anciensMessages p, #nouveauxMessages p").each((i, elt) => {
       $(elt).html((i, html) => {
         let nth = 0;
@@ -71,12 +71,12 @@ export class ChatPage {
         });
       });
     });
-    // event sur les anciens message
+    // events on the older messages
     $("span[id^='o_cite']").click((e) => {
       let texte = this.quoteMessage(e);
       texte.length && $("#message").val(`[i]${texte}[/i] // `).focus();
     });
-    // ajotu du cite pour les nouveaux messages
+    // add the quote button to the new messages
     $("#nouveauxMessages").on("DOMNodeInserted", (e) => {
       let element = $(e.target);
       if (element.is("p") && !element.hasClass("o_parsed")) {
@@ -96,7 +96,7 @@ export class ChatPage {
         });
       }
     });
-    // ajout de l'event lorsqu'on actualise et que les nouveaux messages passent en anciens messages
+    // event for when a refresh turns new messages into old ones
     $("#anciensMessages").on("DOMNodeInserted", (e) => {
       $("span[id^='o_cite']")
         .off()
@@ -119,7 +119,7 @@ export class ChatPage {
     });
   }
   /**
-   * Ajoute la Couleur, options de chat.
+   * Adds the colour and the chat options.
    *
    * @private
    * @method plus
@@ -133,7 +133,7 @@ export class ChatPage {
       if ($("#o_autoActualiser").prop("checked")) this.refreshMessage();
       else clearTimeout(this._timeoutChat);
     });
-    // Ajout des fonctions de mise en forme
+    // add the formatting buttons
     $("#formulaireChat")
       .append(`<div class='o_group_bouton o_group_bouton_chat'><span id='o_msgUp' class='option_gestion'>aA</span><span id='o_msgDown' class='option_gestion'>Aa</span></div>
             <div class='o_group_bouton o_group_bouton_chat'><span id='o_msgB' class='option_gestion gras' onclick="miseEnForme('message','gras');">B</span><span id='o_msgI' class='option_gestion' onclick="miseEnForme('message','italic');"><em>I</em></span><span id='o_msgU' class='option_gestion' onclick="miseEnForme('message','souligne');" style='text-decoration:underline'>U</span></div>
@@ -157,7 +157,7 @@ export class ChatPage {
     $("#o_msgB, #o_msgI, #o_msgU, #o_msgImg, #o_msgLink, #o_msgPlay, #o_msgAlly").click((e) => {
       e.preventDefault();
     });
-    // Ajout des emoticone
+    // add the smileys
     $("#listeSmiley20").html(SMILEYS_1);
     $("#listeSmiley30").html(SMILEYS_2);
     $("#listeSmiley40").html(SMILEYS_3);
@@ -199,10 +199,10 @@ export class ChatPage {
     return texte;
   }
   /**
-   * Parse le message pour convertir les smiley par le bbcode correspondant.
+   * Parses the message to turn smileys into their bbcode.
    *
    * @private
-   * @method parserMessage
+   * @method parseMessage
    */
   parseMessage() {
     let color = $("#inputCouleur").val();
@@ -211,10 +211,10 @@ export class ChatPage {
     return this;
   }
   /**
-   * Ajoute/modifie le color picker.
+   * Adds or updates the colour picker.
    *
    * @private
-   * @method couleur
+   * @method color
    */
   color() {
     $("#inputCouleur").val(getProfile().parametre["couleurChat"].valeur.substring(1));
@@ -230,7 +230,7 @@ export class ChatPage {
     });
   }
   /**
-   * Ajoute les emoticones de base pour les non compte+.
+   * Adds the basic smileys for free accounts.
    *
    * @private
    * @method emoticone

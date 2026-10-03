@@ -1,5 +1,5 @@
 /*
- * Compte.ts
+ * Account.ts
  **********************************************************************/
 
 import { $ } from "~/vendor";
@@ -8,28 +8,28 @@ import { QUICK_MENU, QUICK_MENU_KEY } from "~/data/quickMenu";
 import * as storage from "~/storage";
 
 /**
- * Hook sur /compte.php pour capter / configurer les préférences du
+ * Hooks into /compte.php to capture and configure the preferences of the
  * « menu rapide » (checkboxes `menuRapide*`).
  *
- * - C+ : on capte le formulaire natif et on en sauvegarde un snapshot
- *   en localStorage à chaque submit. Le natif continue à sauver côté
- *   serveur en parallèle.
- * - non-C+ : le formulaire natif n'est pas rendu côté serveur. On en
- *   injecte une copie (sections Fourmilière / Alliance / Communauté)
- *   avec ses propres handlers, en lecture/écriture sur localStorage.
+ * - ComptePlus: the game's own form is captured and a snapshot is saved to
+ *   localStorage on every submit. The game keeps saving server-side in
+ *   parallel.
+ * - free accounts: the game does not render that form at all, so a copy is
+ *   injected (Fourmilière / Alliance / Communauté sections) with its own
+ *   handlers, reading and writing localStorage.
  *
- * @class PageCompte
+ * @class AccountPage
  * @constructor
  */
 export class AccountPage {
-  // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
+  // Fields declared for TypeScript (Phase 2 was a straight conversion; real
+  // typing is deferred — see .claude/plans/wxt-migration-followups.md).
   _comptePlusBox: any;
   constructor(boxComptePlus) {
     this._comptePlusBox = boxComptePlus;
   }
   /**
-   * @method executer
+   * @method run
    */
   run() {
     if (Utils.comptePlus) this._hookNative();
@@ -37,11 +37,11 @@ export class AccountPage {
     return this;
   }
   /**
-   * Pré-coche les checkboxes natives selon les prefs sauvegardées et
-   * snapshot l'état à la soumission.
+   * Pre-ticks the game's checkboxes from the saved preferences and snapshots
+   * the state on submit.
    *
    * @private
-   * @method _hookNatif
+   * @method _hookNative
    */
   _hookNative() {
     let prefs = this._readPrefs();
@@ -57,11 +57,11 @@ export class AccountPage {
       .on("submit", () => this._savePrefs());
   }
   /**
-   * Injecte un formulaire « menu rapide » Toolzzz pour les non-C+ qui
-   * n'ont pas le natif. Persistance en localStorage uniquement.
+   * Injects a Toolzzz "menu rapide" form for free accounts, which do not get
+   * the game's own. Persisted to localStorage only.
    *
    * @private
-   * @method _injecterFormulaire
+   * @method _injectForm
    */
   _injectForm() {
     if ($("#o_menuRapideForm").length) return;
@@ -102,7 +102,7 @@ export class AccountPage {
   }
   /**
    * @private
-   * @method _lirePrefs
+   * @method _readPrefs
    * @returns {Object}
    */
   _readPrefs() {
@@ -114,7 +114,7 @@ export class AccountPage {
   }
   /**
    * @private
-   * @method _sauverPrefs
+   * @method _savePrefs
    */
   _savePrefs() {
     let snapshot = {};

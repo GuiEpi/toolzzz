@@ -1,11 +1,11 @@
 /*
- * main.ts — démarrage du content script principal (ex-content.js).
+ * main.ts — start-up of the main content script (formerly content.js).
  *
- * Tout ce qui s'exécutait au chargement de content.js (locale, tris
- * DataTables, garde « page de connexion », profil du joueur, Promise.all,
- * routage) vit ici, dans `main(ctx)`, appelé par WXT une fois le DOM prêt.
- * Rien ne doit toucher au DOM ni à `browser.*` au niveau module : WXT
- * importe l'entrypoint sous Node au build pour lire ses options.
+ * Everything that used to run when content.js loaded (locales, DataTables sort
+ * plugins, the login-page guard, the player profile, the Promise.all, the
+ * routing) lives here in `main(ctx)`, which WXT calls once the DOM is ready.
+ * Nothing may touch the DOM or `browser.*` at module level: WXT imports the
+ * entrypoint under Node at build time to read its options.
  */
 
 import { $, Highcharts, moment, numeral } from "~/vendor";
@@ -24,17 +24,17 @@ import * as storage from "~/storage";
  * @param {import("#imports").ContentScriptContext} ctx
  */
 export function main(ctx) {
-  // Classe `o_chrome` posée sur <html> pour scoper les règles CSS qui doivent
-  // uniquement s'appliquer sous Chromium (cf. radar du Compte+ — Firefox et
-  // Chrome divergent sur la distribution de largeur en `table-layout: auto`).
+  // The `o_chrome` class on <html> scopes the CSS rules that must only apply
+  // under Chromium (see the ComptePlus radar — Firefox and Chrome disagree on
+  // how width is distributed with `table-layout: auto`).
   if (!navigator.userAgent.includes("Firefox")) document.documentElement.classList.add("o_chrome");
 
-  // si l'utilisateur est identifié
+  // the player is signed in
   if ($(".boite_connexion_titre:first").text() != "Connexion") {
-    // Le thème jQuery UI « humanity » n'est plus chargé depuis code.jquery.com :
-    // il est embarqué (src/assets/jquery-ui-humanity.css) et injecté par le
-    // manifest avec les autres feuilles de l'extension.
-    // Chargement du language francais
+    // The jQuery UI "humanity" theme is no longer fetched from code.jquery.com:
+    // it is vendored (src/assets/jquery-ui-humanity.css) and injected by the
+    // manifest alongside the extension's other stylesheets.
+    // load the French locale
     numeral.locale("fr");
     moment.locale("fr");
     Highcharts.setOptions({
@@ -46,7 +46,7 @@ export function main(ctx) {
         thousandsSep: " ",
       },
     });
-    // Ajout du tri pour les nombres
+    // add number sorting
     $.fn.dataTable.ext.type.order["quantite-grade-pre"] = (d) => {
       return parseInt(d.replace(/\s/g, ""));
     };
@@ -57,36 +57,36 @@ export function main(ctx) {
       return Utils.timeToInt(d);
     };
 
-    // Initialisation du profil du joueur en cours
+    // set up the current player's profile
     const monProfile = new Player({ pseudo: $("#pseudo").text() });
     setProfile(monProfile);
-    // chargement des parametre
+    // load the settings
     monProfile.getSetting();
-    // des qu'on les inos constructions/recherches et profil on affiches les outils
+    // once buildings, researches and profile are known, show the tools
     Promise.all([
       monProfile.getBuildings(),
       monProfile.getResearches(),
       monProfile.getCurrentProfile(),
     ]).then((values) => {
-      // chargement des données du joueur
+      // load the player's data
       if (values[0]) monProfile.loadBuildings(values[0]);
       if (values[1]) monProfile.loadResearches(values[1]);
       if (values[2]) monProfile.loadProfile(values[2]);
 
-      // Ajout des outils
+      // add the tools
       let box = new Dock();
       box.render();
-      // boite compte plus
+      // ComptePlus box
       let boxComptePlus = new ComptePlusBox();
       boxComptePlus.render();
       // Boite radar
       let boxRadar = new RadarBox();
       boxRadar.render();
 
-      // Onglet "Carte" dans le menu d'alliance — injecté sur toutes les pages
-      // tant que le joueur a une alliance (présence du lien Membres = preuve).
-      // Lien réel vers ?Membres#carte : sur cette page, PageAlliance intercepte
-      // le clic pour un toggle client-side ; depuis ailleurs, navigation normale.
+      // "Carte" tab in the alliance menu — injected on every page as long as the
+      // player has an alliance (the Membres link proves it). It is a real link to
+      // ?Membres#carte: on that page AllianceMembersPage intercepts the click for
+      // a client-side toggle, from anywhere else it is a normal navigation.
       if ($("#menuAlliance .boutonMembres").length) {
         $("#menuAlliance .boutonMembres")
           .parent()
@@ -95,27 +95,27 @@ export function main(ctx) {
           );
       }
 
-      // Onglet "Coûts" dans le menu colonie (Fourmilière) — injecté en bout de
-      // liste, sur toutes les pages où le menu existe. La feature vit sur
-      // construction.php (#cout) ; PageConstruction intercepte le hash pour
-      // masquer la simulation native et n'afficher que les courbes. Classe
-      // `boutonDescription` réutilisée pour le look graphique cohérent.
+      // "Coûts" tab in the colony menu (Fourmilière) — appended at the end of the
+      // list on every page where the menu exists. The feature itself lives on
+      // construction.php (#cout), where BuildingsPage intercepts the hash to hide
+      // the game's own simulation and show only the curves. The
+      // `boutonDescription` class is reused so it looks consistent.
       if ($("#menuFourmiliere").length && !$("#o_ongletCouts").length) {
         $("#menuFourmiliere").append(
           `<li><a id='o_ongletCouts' class='boutonDescription' href='construction.php#cout'><span></span>Coûts</a></li>`,
         );
       }
 
-      // Notification "Nouveautés" — toast sticky au 1er chargement après une mise à jour.
-      // hideAfter: false → reste visible tant que l'user ne ferme pas / ne clique pas le lien.
-      // La version est marquée vue dans les deux cas (close X ou clic lien) pour ne pas
-      // ré-apparaître. Si la clé est absente (install avant cette feature), on montre quand
-      // même : un nouvel utilisateur a aussi intérêt à voir le changelog une fois.
+      // "Nouveautés" notice — a sticky toast on the first load after an update.
+      // hideAfter: false keeps it up until the player closes it or clicks the
+      // link. The version is marked as seen either way (close X or link click) so
+      // it does not come back. When the key is missing (installed before this
+      // feature existed) it is shown anyway: a new user also benefits from seeing
+      // the changelog once.
       const LAST_SEEN_VERSION_KEY = "outiiil_lastSeenVersion";
       if (storage.getRaw(LAST_SEEN_VERSION_KEY) !== VERSION) {
-        // Pointe sur la page des releases (la dernière est en haut), histoire que
-        // l'utilisateur puisse aussi parcourir les versions précédentes qu'il aurait
-        // potentiellement ratées.
+        // Points at the releases page (the latest is on top) so the player can
+        // also browse the previous versions they may have missed.
         const releaseUrl = `https://github.com/GuiEpi/toolzzz/releases`;
         const markSeen = () => storage.setRaw(LAST_SEEN_VERSION_KEY, VERSION);
         $.toast({
@@ -131,25 +131,27 @@ export function main(ctx) {
         $(document).on("click", "#o_changelogLink", markSeen);
       }
 
-      // Enrichit les tooltips Nourriture / Matériaux du bandeau d'info avec la capacité
-      // max estimée et la place libre — répond directement à "il me reste combien pour
-      // un convoi". Le serveur expose juste le % rempli (arrondi entier) et la valeur
-      // courante ; on remonte le max via current / (percent/100), précis à ±0.5%.
+      // Enriches the Nourriture / Matériaux tooltips of the info banner with the
+      // estimated maximum capacity and the free space — which answers "how much
+      // room is left for a convoy". The server only exposes the fill percentage
+      // (rounded to an integer) and the current value, so the maximum is derived
+      // from current / (percent/100), accurate to ±0.5%.
       //
-      // Approche : on vide le `title` du td (le tooltip natif de la page lit ce title
-      // via une content function par défaut, qui retournera donc une chaîne vide → pas
-      // de tooltip rendu côté page) et on attache notre propre popover sur mouseenter
-      // pour afficher le HTML riche. Tout reste dans l'isolated world, pas d'injection
+      // How: the td's `title` is emptied (the page's own tooltip reads that title
+      // through a default content function, which then returns an empty string, so
+      // nothing is rendered by the page) and our own popover is attached on
+      // mouseenter to show the rich HTML. Everything stays in the isolated world,
+      // with no injection
       // de script main-world.
-      // On réutilise les classes du widget jQuery UI tooltip + warning-tooltip de la
-      // page pour hériter automatiquement de leur style (couleur, bordure, ombre).
+      // The page's jQuery UI tooltip and warning-tooltip classes are reused so the
+      // styling (colour, border, shadow) comes for free.
       const $tip = $(
         `<div id='o_boiteInfoTooltip' class='ui-tooltip ui-corner-all ui-widget-shadow ui-widget ui-widget-content warning-tooltip' role='tooltip' style='position:absolute;display:none;z-index:99999;pointer-events:none;'><div class='ui-tooltip-content'></div></div>`,
       ).appendTo("body");
-      // Capacité d'entrepôt = 500 + 1200 × 2^niveau (formule identique pour
-      // Nourriture et Matériaux, vérifiée sur s1/s2/s3/test via la table de
-      // référence toolzzz.fr/couts.php). On préfère la formule au ratio
-      // current/percent, qui est inutilisable à 0% affiché et imprécis à
+      // Warehouse capacity = 500 + 1200 × 2^level (the same formula for
+      // Nourriture and Matériaux, checked on s1/s2/s3/test against the reference
+      // table at toolzzz.fr/couts.php). The formula is preferred over the
+      // current/percent ratio, which is unusable at a displayed 0% and imprecise
       // bas niveau de remplissage.
       const maxWarehouse = (level) => 500 + 1200 * Math.pow(2, level);
       const levelWarehouse = (type) => {
@@ -180,16 +182,16 @@ export function main(ctx) {
           const percentReel = max > 0 ? Math.round((value / max) * 1000) / 10 : 0;
           html = `<b>${type}</b><br/>Actuel : ${numeral(value).format()}<br/>Maximum : ${numeral(max).format()} (${percentReel}%)<br/><b style="color:#27ae60">Place libre : ${numeral(restant).format()}</b>`;
         } else if (percentShow > 0 && value > 0) {
-          // Fallback : type non reconnu (ni Nourriture ni Matériaux) ou
-          // niveauConstruction non chargé. On retombe sur l'ancien ratio.
+          // Fallback: unrecognised type (neither Nourriture nor Matériaux) or
+          // building levels not loaded. Back to the old ratio.
           const max = Math.round(value / (percentShow / 100));
           const restant = Math.max(0, max - value);
           html = `<b>${type}</b><br/>Actuel : ${numeral(value).format()}<br/>Maximum : ${numeral(max).format()} (${percentShow}%)<br/><b style="color:#27ae60">Place libre : ${numeral(restant).format()}</b>`;
         } else {
           html = `<b>${type}</b><br/>Actuel : ${numeral(value).format()}`;
         }
-        // Vide le title pour neutraliser le tooltip jQuery UI de la page (sa content
-        // fn par défaut retourne attr("title") = "" → pas de rendu).
+        // Empty the title to neutralise the page's jQuery UI tooltip (its default
+        // content function then returns attr("title") = "" → nothing rendered).
         $td.attr("title", "");
         $td.attr("data-tooltip-original-title", "");
         $td

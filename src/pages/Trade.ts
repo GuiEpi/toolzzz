@@ -1,5 +1,5 @@
 /*
- * Commerce.ts
+ * Trade.ts
  * Hraesvelg
  **********************************************************************/
 
@@ -14,23 +14,23 @@ import { Player } from "~/models/Player";
 import { ForumPage } from "~/pages/Forum";
 
 /**
- * Classe de fonction pour la page /commerce.php.
+ * Enriches the /commerce.php page.
  *
- * @class PageCommerce
+ * @class TradePage
  * @constructor
  */
 export class TradePage {
-  // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
+  // Fields declared for TypeScript (Phase 2 was a straight conversion; real
+  // typing is deferred — see .claude/plans/wxt-migration-followups.md).
   _comptePlusBox: any;
   _tools: any;
   constructor(boxComptePlus) {
     /**
-     * Accés à la boite compte+
+     * access to the ComptePlus box
      */
     this._comptePlusBox = boxComptePlus;
     /**
-     * Connexion à l'utilitaire.
+     * connection to the alliance tools
      */
     this._tools = new ForumPage();
   }
@@ -42,7 +42,7 @@ export class TradePage {
     $("form table").append(
       `<tr class='centre'><td colspan=6>Info : Niveau d'étable <strong>${getProfile().niveauConstruction[11]}</strong>, 1 ouvrière peut transporter : <strong>${10 + getProfile().niveauConstruction[11] / 2}</strong> ressources.</td></tr>`,
     );
-    // ajout des boutons pour arrondir les quantités
+    // add the buttons that round the quantities
     $("#bouton_nourriture_max").html(
       `Nourriture donnée <span id="o_arrondirNou" class="gras small">arrondir...</span>`,
     );
@@ -53,7 +53,7 @@ export class TradePage {
         newValue = Utils.roundQuantity(value);
       $("#input_nbNourriture").val(numeral(newValue).format());
       $("#nbNourriture").val(newValue);
-      // mise à jour des ouvrieres
+      // update the workers
       $("#input_nbOuvriere").val(
         numeral(
           Math.floor((newValue + countMaterials) / (10 + getProfile().niveauConstruction[11] / 2)),
@@ -75,7 +75,7 @@ export class TradePage {
         newValue = Utils.roundQuantity(value);
       $("#input_nbMateriaux").val(numeral(newValue).format());
       $("#nbMateriaux").val(newValue);
-      // mise à jour des ouvrieres
+      // update the workers
       $("#input_nbOuvriere").val(
         numeral(
           Math.floor((newValue + countNou) / (10 + getProfile().niveauConstruction[11] / 2)),
@@ -88,9 +88,9 @@ export class TradePage {
     });
     // option c+
     if (!Utils.comptePlus) this.plus();
-    // Si on dispose d'un utilitaire pour le commerce on affiche les outils
+    // show the tools when the alliance tools cover trading
     if (getProfile().parametre["forumCommande"].valeur) {
-      // recuperation des commandes sur l'utilitaire
+      // read the orders from the alliance tools
       this._tools.viewSection(getProfile().parametre["forumCommande"].valeur).then(
         (data) => {
           if (this._tools.loadOrder(data)) this.renderOrder();
@@ -107,16 +107,16 @@ export class TradePage {
     return this;
   }
   /**
-   * Affiche les retours, et sauvegarde les convois en cours pour la boite compte plus.
+   * Shows the returns and saves the running convoys for the ComptePlus box.
    *
    * @private
    * @method plus
    */
   plus() {
-    // autocomplete sur le champs pseudo
+    // autocomplete on the nickname field
     $("#pseudo_convoi").autocomplete({
       source: (request, response) => {
-        // requete pour autocomplete
+        // autocomplete request
         Player.search(request.term).then((data) => {
           response(Utils.extractResearch(data, true, false));
         });
@@ -125,11 +125,11 @@ export class TradePage {
       delay: 0,
       minLength: 3,
     });
-    // sauvegarde des convois
+    // save the convoys
     let listConvoy = new Array(),
       nombres = new Array();
     $("#centre > strong").each((i, elt) => {
-      // Affichage du retour des convois
+      // show when the convoys come back
       if ($(elt).next().text().indexOf("Retour") == -1)
         $(elt).after(
           `<span class='small'>- Retour le ${Utils.roundMinute(Utils.timeToInt($(elt).text().split("dans")[1].trim())).format("D MMM YYYY à HH[h]mm")}</span>`,
@@ -147,19 +147,19 @@ export class TradePage {
         exp: moment().add(Utils.timeToInt($(elt).text().split("dans")[1].trim()), "s"),
       });
     });
-    // tri les convois par ordre d'arrivée
+    // sort the convoys by arrival
     listConvoy.sort((a, b) => {
       return moment(a.exp).diff(moment(b.exp));
     });
-    // Verification si les données sont deja enregistrées
+    // check whether the data is already recorded
     if (listConvoy.length) this.saveConvoys(listConvoy);
     return this;
   }
   /**
-   * Sauvegarde les convois en cours.
+   * Saves the running convoys.
    *
    * @private
-   * @method saveConvoi
+   * @method saveConvoys
    * @param {Array} list des convois en cours.
    */
   saveConvoys(list) {
@@ -178,10 +178,10 @@ export class TradePage {
     return this;
   }
   /**
-   * Affiche les commandes en cours issu de l'utilitaire.
+   * Shows the running orders from the alliance tools.
    *
    * @private
-   * @method afficherCommande
+   * @method renderOrder
    * @param {Object} liste des lignes de commandes.
    */
   renderOrder() {
@@ -199,9 +199,9 @@ export class TradePage {
           totalRouge += parseInt(this._tools.commande[id].materiaux);
         tabOrderAff.push(id);
       }
-      // ajout des commandes à verifier pour vois les convois
-      // on affiche les convois pour nos commandes en cours
-      // on affiche les conboi pour les commandes terminés de moins de 1 jour
+      // collect the orders whose convoys must be checked
+      // show the convoys of our running orders
+      // show the convoys of orders finished less than a day ago
       if (this._tools.commande[id].demandeur.pseudo == getProfile().pseudo)
         if (
           this._tools.commande[id].etat == ORDER_STATUS["En cours"] ||
@@ -212,7 +212,7 @@ export class TradePage {
     }
     contenu += `<tfoot><tr class='gras ${tabOrderAff.length % 2 ? "ligne_paire" : ""}'><td colspan='9'>${tabOrderAff.length} commande(s) : ${numeral(total).format("0.00 a")} ~ <span class='red'>${numeral(totalRouge).format("0.00 a")}</span> en retard !</td></tr></tfoot></table></div><br/>`;
     $("#centre .Bas").before(contenu);
-    // event
+    // events
     for (let id of tabOrderAff) this._tools.commande[id].addEvent(this, this._tools);
     $("#o_tableListeCommande").DataTable({
       bInfo: false,
@@ -244,7 +244,7 @@ export class TradePage {
       let boxOrder = new OrderBox(new Order(), this._tools, this);
       boxOrder.render();
     });
-    // récuperation des convois sur l'utilitaire
+    // read the convoys from the alliance tools
     this.renderConvoy(tabOrderPersoInCours);
     return this;
   }
@@ -267,17 +267,17 @@ export class TradePage {
     }
     $("#o_tableListeCommande").DataTable().clear().rows.add(data).draw();
     for (let id of tabOrderAff) this._tools.commande[id].addEvent(this, this._tools);
-    // mise à jour du tfoot
+    // update the tfoot
     $("#o_tableListeCommande tfoot").html(
       `<tr class='gras ${tabOrderAff.length % 2 ? "ligne_paire" : ""}'><td colspan='9'>${tabOrderAff.length} commande(s) : ${numeral(total).format("0.00 a")} ~ <span class='red'>${numeral(totalRouge).format("0.00 a")}</span> en retard !</td></tr>`,
     );
     return this;
   }
   /**
-   * Afficher les convois en cours.
+   * Shows the running convoys.
    *
    * @private
-   * @method afficherConvoi
+   * @method renderConvoy
    */
   renderConvoy(tabOrder) {
     if (!Utils.comptePlus) {
@@ -312,7 +312,7 @@ export class TradePage {
                       idCommande: id,
                       dateArrivee: moment(message.split("Retour le ")[1], "D MMM YYYY à HH[h]mm"),
                     });
-                    // si la commande est toujours en cours et que je suis le destinaitaire et que le convoi est n'est pas encore arrivée
+                    // order still running, I am the recipient, and the convoy has not arrived yet
                     if (!convoy.isDone())
                       convoy.toHtml(
                         $("h3:contains('Convois en cours:')").length ? "h3" : ".simulateur:first",
@@ -335,10 +335,10 @@ export class TradePage {
     return this;
   }
   /**
-   * Modifie le bouton d'envoie des convois pour prendre ne compte l'utilitaire.
+   * Reworks the convoy send button so it takes the alliance tools into account.
    *
    * @private
-   * @method formulaireConvoi
+   * @method convoyForm
    */
   convoyForm() {
     $("input[name='convoi']")
@@ -347,7 +347,7 @@ export class TradePage {
       .click((e) => {
         let idOrder = $("#o_idCommande").val();
         if (idOrder != -1) {
-          // Enrengistrement du convoi
+          // record the convoy
           e.preventDefault();
           let monConvoy = new Convoy({
             expediteur: getProfile().pseudo,
@@ -363,13 +363,13 @@ export class TradePage {
           // enregistrement
           this._tools.sendMessage(idOrder, monConvoy.toToolsFormat()).then(
             (data) => {
-              // Mise a jour des commandes
+              // update the orders
               this._tools.commande[idOrder].addConvoy(monConvoy);
               this._tools
                 .editTopic(this._tools.commande[idOrder].toToolsFormat(), " ", idOrder)
                 .then(
                   (data) => {
-                    // si la commande est terminé on passe la suivante en attente en cours si il n'y a pas d'autres en cours
+                    // once an order is done, the next waiting one starts unless another is already running
                     let cmdNext: any = 99999999999999999;
                     for (let id in this._tools.commande) {
                       if (this._tools.commande[id].etat == ORDER_STATUS["En cours"]) {
@@ -401,7 +401,7 @@ export class TradePage {
                           },
                         );
                     }
-                    // Lancement du convoi dans fourmizzz
+                    // send the convoy in Fourmizzz
                     $("input[name='convoi']").trigger("click");
                   },
                   (jqXHR, textStatus, errorThrown) => {

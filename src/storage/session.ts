@@ -1,12 +1,11 @@
 /*
- * Point de passage unique pour `sessionStorage`.
+ * The single entry point for `sessionStorage`.
  *
- * Six drapeaux « une fois, dans cet onglet, jusqu'à la prochaine navigation »
- * (flood → replacer, échec d'annulation, tentative d'affectation, dédoublonnage
- * de toast, restauration du scroll). Ils restent sur `sessionStorage` pour de
- * bon : l'aire `session:` de WXT est partagée par toute l'extension, pas
- * limitée à l'onglet, elle ne peut pas les remplacer. La Phase 4 ne touche pas
- * à ce fichier.
+ * Six flags of the "once, in this tab, until the next navigation" kind (flood →
+ * reposition, cancellation failure, assignment attempt, toast de-duplication,
+ * scroll restore). They stay on `sessionStorage` for good: WXT's `session:`
+ * area is shared by the whole extension rather than scoped to the tab, so it
+ * cannot replace them. Phase 4 leaves this file alone.
  */
 
 export function getRaw(key: string): string | null {

@@ -1,5 +1,5 @@
 /*
- * Alliance.ts
+ * AllianceMembers.ts
  * Hraesvelg
  **********************************************************************/
 
@@ -21,14 +21,14 @@ import { ForumPage } from "~/pages/Forum";
 import * as storage from "~/storage";
 
 /**
- * Classe de fonction pour la page /alliance.php.
+ * Enriches the /alliance.php page.
  *
- * @class PageAlliance
+ * @class AllianceMembersPage
  * @constructor
  */
 export class AllianceMembersPage {
-  // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
+  // Fields declared for TypeScript (Phase 2 was a straight conversion; real
+  // typing is deferred — see .claude/plans/wxt-migration-followups.md).
   _alliance: any;
   _tools: any;
   _nativeGrades: any;
@@ -37,20 +37,20 @@ export class AllianceMembersPage {
   _filterValues: any;
   constructor() {
     /**
-     * Creation du modele Alliance
+     * builds the Alliance model
      */
     this._alliance = new Alliance({ tag: Utils.alliance });
     /**
-     * Connexion à l'utilitaire.
+     * connection to the alliance tools
      */
     this._tools = new ForumPage();
     /**
-     * Grade natif du jeu par pseudo, relevé avant tout écrasement par un rang
-     * SDC : la carte propose les deux comme filtres distincts.
+     * the game's own grade per nickname, captured before any SDC rank overwrites
+     * it: the map offers both as separate filters
      */
     this._nativeGrades = {};
     /**
-     * Dernière liste complète de membres passée à la carte (avant filtrage).
+     * last full member list handed to the map (before filtering)
      */
     this._memberMap = null;
   }
@@ -58,11 +58,11 @@ export class AllianceMembersPage {
    *
    */
   run() {
-    // Si le tableau des membres est déjà rendu, on enrichit directement.
-    // Sinon, on observe `#alliance` pour réagir dès que le tableau apparaît
-    // (rendu async sur certaines variantes de la page). Si aucun des deux
-    // n'existe — page sans UI alliance, mobile, ou DOM atypique —, on skip
-    // proprement plutôt que de crasher sur `observe(undefined)`.
+    // When the member table is already rendered, enrich it straight away.
+    // Otherwise watch `#alliance` and react as soon as the table shows up (it
+    // renders asynchronously on some variants of the page). When neither
+    // exists — a page without the alliance UI, mobile, or an unusual DOM —
+    // skip cleanly rather than crash on `observe(undefined)`.
     if ($("#tabMembresAlliance").length) {
       this.processMember();
       this.map();
@@ -79,10 +79,10 @@ export class AllianceMembersPage {
     return this;
   }
   /**
-   * Affiche les modifications du tableau des membres.
+   * Renders the changes made to the member table.
    *
    * @private
-   * @method traitementMembre
+   * @method processMember
    */
   processMember() {
     $("#tabMembresAlliance td:eq(5)").css("white-space", "nowrap");
@@ -104,7 +104,7 @@ export class AllianceMembersPage {
     $(".simulateur table[class='ligne_paire'] tr:eq(2) td:eq(3)").append(
       ` (${$("img[alt='Colonisé']").length})`,
     );
-    // ajout des totaux de l'alliance
+    // add the alliance totals
     let tmpPlayers = {};
     $("#tabMembresAlliance tr:gt(0)").each((i, elt) => {
       let pseudo = $(elt).find("td:eq(3)").text(),
@@ -114,9 +114,9 @@ export class AllianceMembersPage {
         terrain: terrain,
         fourmiliere: ~~$(elt).find("td:eq(8)").text(),
         technologie: ~~$(elt).find("td:eq(7)").text(),
-        // grade natif du jeu — fallback affiché tant qu'aucun rang SDC n'est saisi,
-        // et backfillé dans les sujets créés par « Actualiser l'alliance ».
-        // Les "/" sont remplacés : le titre du sujet forum est parsé avec " / ".
+        // the game's own grade — shown as a fallback until an SDC rank is set,
+        // and backfilled into the topics created by « Actualiser l'alliance ».
+        // "/" is replaced because the forum topic title is parsed on " / ".
         rang: $(elt).find("td:eq(2)").text().trim().replace(/\//g, "-"),
       });
       this._nativeGrades[pseudo] = tmpPlayers[pseudo].rang;
@@ -130,15 +130,15 @@ export class AllianceMembersPage {
     $("#tabMembresAlliance").append(
       `<tfoot class='${Object.keys(this._alliance.joueurs).length % 2 ? "ligne_paire" : ""}'><tr class='gras centre'><td colspan='12'>Terrain : <span id='totalTerrain'>${numeral(this._alliance.computeTerrain()).format()}</span> cm² | Fourmilière : ${numeral(this._alliance.computeColony()).format()} | Technologie : ${numeral(this._alliance.computeTechnology()).format()}.</td></tr></tfoot>`,
     );
-    // Recupération des données de l'utilitaire sinon on met en forme le tableau directement
+    // read the alliance tools data, otherwise format the table directly
     $("#tabMembresAlliance tr:first").remove();
     $("#tabMembresAlliance").prepend(
       `<thead><tr class='alt'><th></th><th></th><th>Rang</th><th>Pseudo</th><th></th><th>Terrain</th><th></th><th><span style='padding-right:10px'>Technologie</span></th><th><span style='padding-right:10px'>Fourmiliere</span></th><th colspan='2'>Etat</th><th></th></tr></thead>`,
     );
 
-    // Si on dispose d'un utilitaire pour la gestion des membres
+    // when the alliance tools handle members
     if (getProfile().parametre["forumMembre"].valeur) {
-      // recuperation des commandes sur l'utilitaire
+      // read the orders from the alliance tools
       this._tools.viewSection(getProfile().parametre["forumMembre"].valeur).then(
         (data) => {
           if (this._tools.loadPlayer(data)) this.processTools();
@@ -154,12 +154,12 @@ export class AllianceMembersPage {
     return this;
   }
   /**
-   * Variante de tableau() qui utilise le cache local de la Carte de l'alliance
-   * (rempli via le bouton "Charger / Actualiser") pour ajouter les colonnes
-   * Tdt + Retour aux alliances qui n'ont pas le SDC chef-bootstrappé.
-   * Si pas de cache → fallback sur tableau() basique.
+   * Variant of table() that uses the alliance map's local cache (filled by the
+   * "Charger / Actualiser" button) to add the Tdt + Retour columns for
+   * alliances whose SDC has not been bootstrapped by a leader. With no cache it
+   * falls back to the plain table().
    *
-   * @method tableauAvecCarteCache
+   * @method tableWithCachedMap
    */
   tableWithCachedMap() {
     const cacheKey = `outiiil_carteAlliance_${Utils.serveur}_${Utils.alliance}`;
@@ -171,7 +171,7 @@ export class AllianceMembersPage {
     }
     const hasCache = cached && cached.members && cached.members.length;
     if (hasCache) {
-      // Hydrate les coords depuis le cache
+      // hydrate the coordinates from the cache
       const coordsByPseudo = new Map();
       cached.members.forEach((m) => coordsByPseudo.set(m.pseudo, { x: m.x, y: m.y }));
       for (const pseudo in this._alliance.joueurs) {
@@ -179,7 +179,7 @@ export class AllianceMembersPage {
           Object.assign(this._alliance.joueurs[pseudo], coordsByPseudo.get(pseudo));
         }
       }
-      // Ajoute les colonnes Tdt + Retour entre Fourmilière et Etat
+      // add the Tdt + Retour columns between Fourmilière and Etat
       $("#tabMembresAlliance th:eq(8)").after(`<th>Tdt</th><th>Retour</th>`);
       $("#tabMembresAlliance tfoot td:eq(0)").attr("colspan", 14);
       $("#tabMembresAlliance tr:gt(0):lt(-1)").each((i, elt) => {
@@ -190,15 +190,15 @@ export class AllianceMembersPage {
         if (has) {
           const tdt = getProfile().getTravelTimeTo(j);
           const retour = Utils.roundMinute(tdt);
-          // data-order : DataTable trie sur l'attribut (entier brut) plutôt que sur
-          // le texte affiché ("22h 31m" sinon trié en alphabétique).
+          // data-order: DataTables sorts on the attribute (a raw integer) rather
+          // than on the displayed text ("22h 31m" would sort alphabetically).
           tdHtml = `<td data-order='${tdt}'>${Utils.intToTime(tdt)}</td><td data-order='${retour.unix()}'>${retour.format("D MMM à HH[h]mm")}</td>`;
         } else {
           tdHtml = `<td data-order='-1'>N/C</td><td data-order='-1'>N/C</td>`;
         }
         $(elt).find("td:eq(8)").after(tdHtml);
       });
-      // DataTable — targets ajustés vs tableau() : Etat-2 et last passent de 10/11 à 12/13
+      // DataTables — targets shifted vs table(): Etat-2 and last move from 10/11 to 12/13
       $("#tabMembresAlliance th:eq(7), #tabMembresAlliance th:eq(8)").css({
         maxWidth: "50px",
         textOverflow: "ellipsis",
@@ -228,8 +228,8 @@ export class AllianceMembersPage {
     } else {
       this.table();
     }
-    // Bouton Synchroniser — disponible dans tous les cas (bootstrap si pas de cache,
-    // refresh sinon). Recharge la page après sync pour que le tableau pick up les coords.
+    // Synchronise button — always available (bootstrap without a cache, refresh
+    // otherwise). Reloads the page afterwards so the table picks the coordinates up.
     $("#tabMembresAlliance_wrapper .dt-buttons").prepend(
       `<a id='o_syncCarteAlliance' class='dt-button' href='#'><span>Synchroniser</span></a>`,
     );
@@ -251,10 +251,10 @@ export class AllianceMembersPage {
     return this;
   }
   /**
-   * Ajoute le tri.
+   * Adds sorting.
    *
    * @private
-   * @method tableau
+   * @method table
    */
   table() {
     $("#tabMembresAlliance th:eq(7), #tabMembresAlliance th:eq(8)").css({
@@ -286,34 +286,34 @@ export class AllianceMembersPage {
     return this;
   }
   /**
-   * Ajout des infos du SDC.
+   * Adds the SDC information.
    *
    * @private
-   * @method traitementUtilitaire
+   * @method processTools
    */
   processTools() {
     for (let pseudo in this._tools.alliance.joueurs) {
-      // si la clé est une clé du tableau des memres
+      // the key belongs to the member table
       if (this._alliance.joueurs.hasOwnProperty(pseudo)) {
         this._alliance.joueurs[pseudo].x = this._tools.alliance.joueurs[pseudo].x;
         this._alliance.joueurs[pseudo].y = this._tools.alliance.joueurs[pseudo].y;
         this._alliance.joueurs[pseudo].id = this._tools.alliance.joueurs[pseudo].id;
         this._alliance.joueurs[pseudo].sujetForum = this._tools.alliance.joueurs[pseudo].sujetForum;
-        // on ne remplace le grade natif que si un rang SDC a réellement été saisi
+        // only override the game's grade when an SDC rank was actually set
         if (this._tools.alliance.joueurs[pseudo].rang) {
           this._alliance.joueurs[pseudo].rang = this._tools.alliance.joueurs[pseudo].rang;
           this._alliance.joueurs[pseudo].ordreRang = this._tools.alliance.joueurs[pseudo].ordreRang;
         }
       }
     }
-    // On retraicie les colonnes des niveaux
+    // redraw the level columns
     $("#tabMembresAlliance th:eq(1)").after(`<th>Grade</th>`);
     $("#tabMembresAlliance th:eq(9)").after(`<th>Tdt</th><th>Retour</th>`);
     $("#tabMembresAlliance tfoot td:eq(0)").attr("colspan", 15);
-    // On compléte les données
+    // fill in the remaining data
     $("#tabMembresAlliance tr:gt(0):lt(-1)").each((i, elt) => {
       let pseudo = $(elt).find("td:eq(3)").text();
-      // si nous avons les coordonnées on affiche les tempts de trajet
+      // with coordinates known, show the travel times
       $(elt)
         .find("td:eq(1)")
         .after(
@@ -326,7 +326,7 @@ export class AllianceMembersPage {
             ? `<td>${Utils.intToTime(getProfile().getTravelTimeTo(this._alliance.joueurs[pseudo]))}</td><td>${Utils.roundMinute(getProfile().getTravelTimeTo(this._alliance.joueurs[pseudo])).format("D MMM à HH[h]mm")}</td>`
             : `<td>N/C</td><td>N/C</td>`,
         );
-      // si on est chef de l'alliance on peut modifier les rangs et que le joueur est dans l'utilitaire
+      // alliance leaders can edit the ranks of players known to the tools
       if (
         $("img[src='images/crayon.gif']").length &&
         this._alliance.joueurs.hasOwnProperty(pseudo)
@@ -350,7 +350,7 @@ export class AllianceMembersPage {
    *
    */
   optionAdmin() {
-    // si on est chef de l'alliance on peut mettre à jour les membres
+    // alliance leaders can refresh the members
     if ($("img[src='images/crayon.gif']").length) {
       $("#tabMembresAlliance_wrapper .dt-buttons").prepend(
         `<a id="o_actualiserAlliance" class="dt-button" href="#"><span>Actualiser l'alliance</span></a>`,
@@ -358,12 +358,12 @@ export class AllianceMembersPage {
       $("#o_actualiserAlliance").click((e) => {
         let promisePlayer = new Array(),
           pseudoPlayer = new Array();
-        // si coordonnée inconnu on va les chercher
+        // fetch the coordinates when they are unknown
         for (let player in this._alliance.joueurs) {
-          // si le joueur n'est pas connu dans l'utilitaire
+          // player unknown to the alliance tools
           if (!this._tools.alliance.joueurs.hasOwnProperty(player))
             this._tools.alliance.joueurs[player] = this._alliance.joueurs[player];
-          // si ses coordonnées ne sont pas connu
+          // coordinates still unknown
           if (
             this._tools.alliance.joueurs[player].x == -1 &&
             this._tools.alliance.joueurs[player].y == -1
@@ -372,14 +372,14 @@ export class AllianceMembersPage {
             pseudoPlayer.push(player);
           }
         }
-        // on recup les profils de tout les joueurs
+        // fetch every player's profile
         Promise.all(promisePlayer).then((values) => {
           let promiseForum = new Array(),
             player = null;
           for (let i = 0; i < values.length; i++) {
             player = this._tools.alliance.joueurs[pseudoPlayer[i]];
             player.loadProfile(values[i]);
-            // on enregistre
+            // save
             if (!player.sujetForum)
               promiseForum.push(
                 this._tools.createTopic(
@@ -389,7 +389,7 @@ export class AllianceMembersPage {
                 ),
               );
           }
-          // on creer les sujets pour les membres qui n'en disposent pas
+          // create topics for the members that have none
           Promise.all(promiseForum).then((values) => {
             $.toast({ ...TOAST_SUCCESS, text: "la mise à jour c'est correctement effectuée." });
             this.refreshMember();
@@ -405,14 +405,14 @@ export class AllianceMembersPage {
    */
   refreshMember() {
     $("#tabMembresAlliance").DataTable().destroy();
-    // mise à jour de l'alliance
+    // update the alliance
     for (let pseudo in this._tools.alliance.joueurs) {
-      // si la clé est une clé du tableau des membres
+      // the key belongs to the member table
       if (this._alliance.joueurs.hasOwnProperty(pseudo)) {
         this._alliance.joueurs[pseudo].x = this._tools.alliance.joueurs[pseudo].x;
         this._alliance.joueurs[pseudo].y = this._tools.alliance.joueurs[pseudo].y;
         this._alliance.joueurs[pseudo].id = this._tools.alliance.joueurs[pseudo].id;
-        // on ne remplace le grade natif que si un rang SDC a réellement été saisi
+        // only override the game's grade when an SDC rank was actually set
         if (this._tools.alliance.joueurs[pseudo].rang) {
           this._alliance.joueurs[pseudo].rang = this._tools.alliance.joueurs[pseudo].rang;
           this._alliance.joueurs[pseudo].ordreRang = this._tools.alliance.joueurs[pseudo].ordreRang;
@@ -443,10 +443,10 @@ export class AllianceMembersPage {
     return this;
   }
   /**
-   * Ajoute le tri.
+   * Adds sorting.
    *
    * @private
-   * @method tableauUtilitaire
+   * @method toolsTable
    */
   toolsTable() {
     $("#tabMembresAlliance th:eq(8), #tabMembresAlliance th:eq(9)").css({
@@ -480,10 +480,10 @@ export class AllianceMembersPage {
     return this;
   }
   /**
-   * Injecte la section "Carte de l'alliance" en bas de la page.
-   * Charge depuis localStorage si dispo ; refresh manuel via bouton.
+   * Injects the "Carte de l'alliance" section at the bottom of the page.
+   * Loads from localStorage when available; refreshed manually by the button.
    *
-   * @method carte
+   * @method map
    */
   map() {
     if ($("#o_carteAlliance").length) return this; // déjà rendue
@@ -516,12 +516,12 @@ export class AllianceMembersPage {
     return this;
   }
   /**
-   * Active l'onglet "Carte" du menu Alliance (injecté par content.js sur toutes
-   * les pages) : intercepte le clic pour un toggle client-side, et bascule
-   * automatiquement si la page est chargée avec le hash #carte (cas où on
-   * arrive depuis une autre page d'alliance).
+   * Wires up the "Carte" tab of the Alliance menu (injected on every page by the
+   * content script): intercepts the click for a client-side toggle, and switches
+   * automatically when the page is loaded with the #carte hash (i.e. arriving
+   * from another alliance page).
    *
-   * @method ongletCarte
+   * @method mapTab
    */
   mapTab() {
     if (!$("#o_ongletCarte").length) return this;
@@ -537,8 +537,8 @@ export class AllianceMembersPage {
     return this;
   }
   /**
-   * Fetch des coords pour tous les membres + persistance localStorage.
-   * Ne touche pas à l'UI — résolveurs (Carte / tableau Membres) gèrent leur propre feedback.
+   * Fetches every member's coordinates and persists them to localStorage.
+   * Touches no UI — the callers (map / member table) handle their own feedback.
    *
    * @private
    * @method _fetchAndCacheCoords
@@ -580,10 +580,10 @@ export class AllianceMembersPage {
     });
   }
   /**
-   * Refresh de la Carte (UI Carte + render Highcharts).
+   * Refreshes the map (map UI plus the Highcharts render).
    *
    * @private
-   * @method _actualiserCarte
+   * @method _refreshMap
    */
   _refreshMap() {
     const pseudos = Object.keys(this._alliance.joueurs);
@@ -610,14 +610,14 @@ export class AllianceMembersPage {
       });
   }
   /**
-   * Génère un PNG simple dessiné sur canvas, avec les vraies proportions du jeu
-   * (1 case = 5 unités X × 50 unités Y, donc pxPerY = pxPerX / 10). Image étroite
-   * et haute, sans grille ni axes — pensée pour partager dans le forum d'alliance.
-   * Utilise directement le cache des coords (pas besoin que le chart Highcharts
+   * Draws a plain PNG on a canvas with the game's real proportions (one cell is
+   * 5 X units by 50 Y units, hence pxPerY = pxPerX / 10). A tall, narrow image
+   * without grid or axes, meant for sharing on the alliance forum. It reads the
+   * coordinate cache directly (the Highcharts chart does not need to
    * soit rendu).
    *
    * @private
-   * @method _exporterCarteForumPng
+   * @method _exportMapForumPng
    */
   _exportMapForumPng() {
     const cacheKey = `outiiil_carteAlliance_${Utils.serveur}_${Utils.alliance}`;
@@ -634,7 +634,7 @@ export class AllianceMembersPage {
       });
       return;
     }
-    // même sélection que la carte à l'écran
+    // same selection as the on-screen map
     if (!this._filters) this._filters = this._loadFilters();
     const members = this._filterMembers(this._memberMap || cached.members);
     if (!members.length) {
@@ -650,23 +650,23 @@ export class AllianceMembersPage {
     const xMax = Math.max(...xs);
     const yMin = Math.min(...ys);
     const yMax = Math.max(...ys);
-    // Échelle : 1 case du jeu = 5 X × 50 Y → pxPerY = pxPerX / 10 pour rendre les
-    // cellules visuellement carrées (proportions réelles).
+    // Scale: one game cell is 5 X by 50 Y → pxPerY = pxPerX / 10 so the cells
+    // look square (the game's real proportions).
     const PX_PER_X = 14;
     const PX_PER_Y = PX_PER_X / 10;
-    // Padding suffisant pour les graduations d'axes (X en haut, Y à gauche)
+    // enough padding for the axis ticks (X on top, Y on the left)
     const PAD_LEFT = 38;
     const PAD_TOP = 26;
     const PAD_BOTTOM = 16;
     const PAD_RIGHT_MIN = 16;
     const LABEL_LINE_H = 13;
     const LABEL_GAP = 8;
-    // Pré-mesure des largeurs de label sur un canvas temporaire pour calculer les
-    // collisions avant de dimensionner le vrai canvas.
+    // Measure label widths on a scratch canvas first, so collisions are known
+    // before the real canvas is sized.
     const tmp = document.createElement("canvas").getContext("2d");
     tmp.font = "bold 11px sans-serif";
-    // Tri haut→bas, gauche→droite : algo glouton qui décale les labels vers le bas
-    // dès qu'ils chevaucheraient un label déjà placé.
+    // Sorted top→bottom, left→right: a greedy pass that pushes a label down as
+    // soon as it would overlap one already placed.
     const sorted = [...members].sort((a, b) => a.y - b.y || a.x - b.x);
     const placed = [];
     const positions = sorted.map((m) => {
@@ -688,9 +688,9 @@ export class AllianceMembersPage {
       placed.push({ x: labelX, y: labelY, w: labelW });
       return { m, dotX, dotY, labelX, labelY, labelW };
     });
-    // Dimensions du canvas en fonction des positions finales (labels potentiellement
-    // décalés vers le bas en cas de cluster dense). On étend aussi pour couvrir le
-    // tick supérieur arrondi (ceil) afin que le 50 / 1900 / etc. soit toujours visible.
+    // Canvas size from the final positions (labels may have been pushed down in
+    // dense clusters). It is also extended to cover the rounded-up top tick, so
+    // 50 / 1900 / etc. always remain visible.
     const maxRight = Math.max(...positions.map((p) => p.labelX + p.labelW));
     const maxBottom = Math.max(...positions.map((p) => Math.max(p.labelY + 6, p.dotY + 4)));
     const yRange = yMax - yMin;
@@ -708,12 +708,12 @@ export class AllianceMembersPage {
     const ctx = canvas.getContext("2d");
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    // Graduations d'axes — yStep et xStep déjà calculés plus haut.
+    // Axis ticks — yStep and xStep were computed above.
     ctx.strokeStyle = "#eee";
     ctx.lineWidth = 0.5;
     ctx.fillStyle = "#888";
     ctx.font = "10px sans-serif";
-    // Grille verticale (X) + labels en haut. Ceil sur la borne sup pour inclure 50, etc.
+    // Vertical grid (X) and labels on top. The upper bound is rounded up to include 50, etc.
     ctx.textAlign = "center";
     ctx.textBaseline = "alphabetic";
     const xGridStart = Math.floor(xMin / xStep) * xStep;
@@ -726,7 +726,7 @@ export class AllianceMembersPage {
       ctx.stroke();
       ctx.fillText(x.toString(), px, PAD_TOP - 6);
     }
-    // Grille horizontale (Y) + labels à gauche. Ceil sur la borne sup pour inclure 1900, etc.
+    // Horizontal grid (Y) and labels on the left. Upper bound rounded up to include 1900, etc.
     ctx.textAlign = "right";
     ctx.textBaseline = "middle";
     const yGridStart = Math.floor(yMin / yStep) * yStep;
@@ -744,8 +744,8 @@ export class AllianceMembersPage {
     ctx.textAlign = "left";
     for (const pos of positions) {
       const { m, dotX, dotY, labelX, labelY } = pos;
-      // Connecteur fin gris si le label a été décalé pour éviter une collision —
-      // sinon on ne sait plus quel label appartient à quel dot.
+      // A thin grey connector when the label was moved to avoid a collision,
+      // otherwise it is no longer clear which label belongs to which dot.
       if (Math.abs(labelY - dotY) > 1) {
         ctx.strokeStyle = "#bbb";
         ctx.lineWidth = 0.5;
@@ -754,8 +754,8 @@ export class AllianceMembersPage {
         ctx.lineTo(labelX - 1, labelY);
         ctx.stroke();
       }
-      // Toutes les fourmilières en rouge — l'image est destinée au forum (partage),
-      // pas de raison de mettre en évidence l'auteur.
+      // Every colony in red: the image is meant for the forum, so there is no
+      // reason to single the author out.
       ctx.fillStyle = "#c0392b";
       ctx.beginPath();
       ctx.arc(dotX, dotY, 4, 0, 2 * Math.PI);
@@ -779,10 +779,10 @@ export class AllianceMembersPage {
     }, "image/png");
   }
   /**
-   * Affiche le timestamp en texte humain à côté du bouton.
+   * Shows the timestamp in plain words next to the button.
    *
    * @private
-   * @method _afficherAge
+   * @method _renderAge
    */
   _renderAge(timestamp) {
     const minutes = Math.floor((Date.now() - timestamp) / 60000);
@@ -794,21 +794,21 @@ export class AllianceMembersPage {
     $("#o_carteAllianceStatus").text(`Données ${age}`);
   }
   /**
-   * Clé de persistance de la sélection des filtres (par serveur et alliance).
+   * Storage key for the filter selection (per server and alliance).
    *
    * @private
-   * @method _cleFiltres
+   * @method _filtersKey
    */
   _filtersKey() {
     return `outiiil_carteFiltres_${Utils.serveur}_${Utils.alliance}`;
   }
   /**
-   * Sélection courante. On mémorise ce qui est *masqué* et non ce qui est
-   * affiché : un membre ou un grade apparu depuis la dernière visite est
-   * visible par défaut, au lieu d'être silencieusement absent de la carte.
+   * Current selection. What is stored is what is *hidden*, not what is shown: a
+   * member or a grade that appeared since the last visit is visible by default
+   * instead of being silently missing from the map.
    *
    * @private
-   * @method _chargerFiltres
+   * @method _loadFilters
    */
   _loadFilters() {
     let f: any = {};
@@ -826,7 +826,7 @@ export class AllianceMembersPage {
   /**
    *
    * @private
-   * @method _sauverFiltres
+   * @method _saveFilters
    */
   _saveFilters() {
     try {
@@ -837,35 +837,35 @@ export class AllianceMembersPage {
     return this;
   }
   /**
-   * Grade natif du jeu d'un membre.
+   * A member's own grade, as the game gives it.
    *
    * @private
-   * @method _gradeDe
+   * @method _gradeOf
    */
   _gradeOf(pseudo) {
     return this._nativeGrades[pseudo] || "Sans grade";
   }
   /**
-   * Rang SDC d'un membre, ou une chaîne vide si l'alliance n'utilise pas le
-   * SDC ou si rien n'a été saisi pour lui.
+   * A member's SDC rank, or an empty string when the alliance does not use the
+   * SDC or nothing was entered for them.
    *
    * @private
-   * @method _rangSdcDe
+   * @method _sdcRankOf
    */
   _sdcRankOf(pseudo) {
-    // `alliance` vaut null tant que la section SDC n'a pas été chargée, et le
-    // reste si l'alliance n'utilise pas l'utilitaire
+    // `alliance` stays null until the SDC section has loaded, and keeps that
+    // value when the alliance does not use the tools
     let alliance = this._tools.alliance,
       player = alliance && alliance.joueurs ? alliance.joueurs[pseudo] : null;
     return (player && player.rang) || "";
   }
   /**
-   * Applique la sélection à une liste de membres. Un membre sans rang SDC
-   * n'est jamais masqué par le filtre des rangs — sinon toute alliance
-   * n'utilisant pas le SDC verrait sa carte se vider.
+   * Applies the selection to a member list. A member without an SDC rank is
+   * never hidden by the rank filter — otherwise every alliance not using the
+   * SDC would see its map go empty.
    *
    * @private
-   * @method _filtrerMembres
+   * @method _filterMembers
    */
   _filterMembers(membres) {
     let f = this._filters;
@@ -879,20 +879,20 @@ export class AllianceMembersPage {
     });
   }
   /**
-   * Construit le bloc de filtres : une case par grade, une par rang SDC quand
-   * l'alliance en a, et la liste dépliable des joueurs.
+   * Builds the filter block: one checkbox per grade, one per SDC rank when the
+   * alliance has them, and the collapsible list of players.
    *
    * @private
-   * @method _construireFiltres
+   * @method _buildFilters
    */
   _buildFilters(membres) {
     const esc = (t) => $("<div>").text(t).html();
-    // Un grade d'alliance est du texte libre : chaque chef y met ce qu'il veut,
-    // souvent long et décoré. On n'essaie pas de deviner sa mise en forme, on
-    // se contente de retirer les remplisseurs invisibles (U+3164, espaces
-    // insécables…) qui creusent des trous dans la liste, et de tronquer pour
-    // que les cases restent alignées. Le libellé complet est en infobulle et
-    // la valeur filtrée reste le grade brut.
+    // An alliance grade is free text: every leader puts whatever they like in
+    // it, often long and decorated. No attempt is made to guess its formatting;
+    // only the invisible fillers (U+3164, non-breaking spaces…) that punch holes
+    // in the list are stripped, and the text is truncated so the checkboxes stay
+    // aligned. The full label lives in the tooltip and the filtered value stays
+    // the raw grade.
     const lisible = (t) => {
       let net = t
         .replace(/[\u3164\u00a0\u200b\u2800]+/g, " ")
@@ -900,12 +900,12 @@ export class AllianceMembersPage {
         .trim();
       return esc(net.length > 34 ? net.slice(0, 34) + "…" : net || t);
     };
-    // valeurs passées par index : un grade peut contenir n'importe quel caractère
+    // values passed by index: a grade may contain any character
     let account = (valeur, accesseur) =>
         membres.filter((m) => accesseur.call(this, m.pseudo) == valeur).length,
-      // grades les plus portés en tête : dans beaucoup d'alliances chaque
-      // membre a son grade décoratif à lui, et les rares grades partagés
-      // (VIP, passeurs…) sont justement ceux sur lesquels on veut filtrer
+      // most-worn grades first: in many alliances every member has their own
+      // decorative grade, and the few shared ones (VIP, passeurs…) are exactly
+      // the ones worth filtering on
       byEffectif = (accesseur) => (a, b) =>
         account(b, accesseur) - account(a, accesseur) || a.localeCompare(b),
       grades = [...new Set(membres.map((m) => this._gradeOf(m.pseudo)))].sort(
@@ -923,12 +923,12 @@ export class AllianceMembersPage {
           )
           .join("");
     this._filterValues = { grades: grades, rangs: rangs, joueurs: pseudos };
-    // un grade unique par membre ne regroupe rien : on le signale plutôt que
-    // d'afficher une liste de grades qui double celle des joueurs
+    // one unique grade per member groups nothing: say so rather than show a
+    // grade list that merely duplicates the player list
     let partages = grades.filter((g) => account(g, this._gradeOf) > 1).length;
-    // Chaque section est repliée par défaut pour ne pas alourdir la page. Le
-    // titre indique combien d'entrées sont masquées, pour qu'un filtre actif
-    // reste visible même section fermée.
+    // Every section is collapsed by default to keep the page light. The title
+    // says how many entries are hidden, so an active filter stays visible even
+    // when the section is closed.
     let section = (id, titre, contenu) =>
       `<p class='left reduce gras'>${titre} <span id='${id}Masques' class='reduce' style='font-weight:normal;'></span> <span class='o_filtreVoir cliquable2 cursor' data-cible='${id}' style='font-size:0.8em;font-weight:normal;'>Afficher la liste</span></p>
       <div id='${id}' style='display:none;'>${contenu}</div>`;
@@ -951,7 +951,7 @@ export class AllianceMembersPage {
         <div>${cases(pseudos, "o_filtreJoueur", null)}</div>`,
     );
     $("#o_carteFiltres").html(html).show();
-    // état initial des cases depuis la sélection mémorisée
+    // initial checkbox state from the stored selection
     let poser = (classe, valeurs, exclus) =>
       $("." + classe).each((i, elt) => {
         $(elt).prop("checked", exclus.indexOf(valeurs[$(elt).data("i")]) == -1);
@@ -998,11 +998,11 @@ export class AllianceMembersPage {
     return this;
   }
   /**
-   * Point d'entrée de la carte : mémorise la liste complète, (re)construit les
-   * filtres, puis dessine la carte filtrée.
+   * Map entry point: keeps the full list, (re)builds the filters, then draws the
+   * filtered map.
    *
    * @private
-   * @method _renderCarte
+   * @method _renderMap
    */
   _renderMap(membres) {
     this._memberMap = membres;
@@ -1011,20 +1011,20 @@ export class AllianceMembersPage {
     return this._drawMap(this._filterMembers(membres), membres.length);
   }
   /**
-   * Render Highcharts dans #o_carteAllianceChart.
-   * Regroupe les membres par case (x,y), trace les liens en-dessous d'un seuil,
-   * affiche le tooltip avec temps de trajet (sans / avec bonus Vitesse d'attaque).
+   * Highcharts render into #o_carteAllianceChart.
+   * Groups members by cell (x,y), draws the links below a threshold, and shows a
+   * tooltip with the travel time (without / with the attack-speed bonus).
    *
    * @private
-   * @method _dessinerCarte
+   * @method _drawMap
    * @param {Array} members membres à tracer (déjà filtrés)
    * @param {Integer} total effectif avant filtrage, pour le titre
    */
   _drawMap(members, total) {
     $("#o_carteAllianceChart").show();
-    // Désactive le warning Highcharts #15 : nos séries `line` représentent des arêtes
-    // arbitraires entre cases (a→b dans n'importe quelle direction), donc les x ne
-    // sont pas monotonement croissants. Le rendu marche, c'est juste un warning console.
+    // Silences Highcharts warning #15: our `line` series are arbitrary edges
+    // between cells (a→b in any direction), so the x values are not monotonically
+    // increasing. The render is fine, it is only a console warning.
     Highcharts.seriesTypes.line.prototype.requireSorting = false;
     const K_NEIGHBORS = 3; // chaque case reliée à ses K cases les plus proches
     const levelSpeedAttack = getProfile().niveauRecherche[6] || 0;
@@ -1049,7 +1049,7 @@ export class AllianceMembersPage {
       ...s,
       isMyGroup: s.members.some((m) => m.isMe),
     }));
-    // Liens : K plus proches voisins (s'adapte à l'étalement de l'alliance)
+    // Links: K nearest neighbours (adapts to how spread out the alliance is)
     const edgeSet = new Set<string>();
     for (let i = 0; i < spots.length; i++) {
       const others = spots
@@ -1066,7 +1066,7 @@ export class AllianceMembersPage {
       const [i, j] = key.split("-").map(Number);
       return [spots[i], spots[j]];
     });
-    // Split en deux séries : liens vers moi (vert) vs entre autres membres (gris)
+    // Two series: links to me (green) versus links between other members (grey)
     const myLineData = [];
     const otherLineData = [];
     edges.forEach(([a, b]) => {
@@ -1112,7 +1112,7 @@ export class AllianceMembersPage {
       credits: { enabled: false },
       legend: { enabled: false },
       tooltip: {
-        // Semi-transparent pour ne pas masquer le rectangle de drag-zoom derrière
+        // Semi-transparent so the drag-zoom rectangle behind stays visible
         backgroundColor: "rgba(255,255,255,0.7)",
         borderColor: "#888",
         useHTML: true,
@@ -1168,8 +1168,9 @@ export class AllianceMembersPage {
           point: {
             events: {
               click: function () {
-                // Clic sur un point → zoom 4× autour (utile pour explorer les clusters denses).
-                // Cap : on stop si le viewport descendrait sous 1 unité de jeu (sinon clic infini).
+                // Clicking a point zooms 4× around it (handy in dense clusters).
+                // Capped: stop once the viewport would drop below 1 game unit,
+                // otherwise clicking never ends.
                 const chart = this.series.chart;
                 const xExt = chart.xAxis[0].getExtremes();
                 const yExt = chart.yAxis[0].getExtremes();
@@ -1178,8 +1179,8 @@ export class AllianceMembersPage {
                 if (xR < 1 || yR < 1) return;
                 chart.xAxis[0].setExtremes(this.x - xR / 2, this.x + xR / 2);
                 chart.yAxis[0].setExtremes(this.y - yR / 2, this.y + yR / 2);
-                // Force l'apparition du bouton natif "Reset zoom" (sinon il n'apparaît
-                // que quand le zoom est déclenché par drag-select, pas via setExtremes).
+                // Forces Highcharts' own "Reset zoom" button to appear (it only
+                // shows up for drag-select zooms, not for setExtremes).
                 chart.showResetZoom();
               },
             },
@@ -1187,7 +1188,7 @@ export class AllianceMembersPage {
         },
       },
       series: [
-        // Liens entre autres membres (gris discret, en arrière-plan)
+        // Links between other members (discreet grey, in the background)
         {
           type: "line",
           name: "Liens",
@@ -1200,7 +1201,7 @@ export class AllianceMembersPage {
           showInLegend: false,
           animation: false,
         },
-        // Liens vers moi (vert plus marqué, par-dessus les autres)
+        // Links to me (stronger green, drawn on top)
         {
           type: "line",
           name: "Liens vers toi",
@@ -1234,8 +1235,8 @@ export class AllianceMembersPage {
             if (n === 1) label = s.members[0].pseudo;
             else if (s.isMyGroup) label = `Toi +${n - 1}`;
             else label = `${[...s.members].map((m) => m.pseudo).sort()[0]} +${n - 1}`;
-            // Radius modeste : log(terrain) compressé pour limiter le stack visuel dans
-            // les clusters denses (alliances de 30+ membres souvent groupés).
+            // Modest radius: log(terrain), compressed to limit visual stacking in
+            // dense clusters (alliances of 30+ members are often grouped).
             const radiusBase = terrainMax > 0 ? 2 + Math.log10(terrainMax) / 2 : 4;
             return {
               x: s.x,

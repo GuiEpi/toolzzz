@@ -1,4 +1,4 @@
-// Options par défaut des toasts ($.toast), par niveau.
+// Default toast options ($.toast), per level.
 export const TOAST_ERROR = {
   heading: "Erreur",
   hideAfter: 3500,

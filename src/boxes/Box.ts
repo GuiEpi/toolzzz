@@ -1,5 +1,5 @@
 /*
- * Boite.ts
+ * Box.ts
  * Hraesvelg
  **********************************************************************/
 
@@ -8,20 +8,20 @@ import { EFFECTS } from "~/constants";
 import { getProfile } from "~/models/currentPlayer";
 
 /**
- * Classe abstraite pour la creation de boite.
+ * Base class for the floating boxes.
  *
- * @class Boite
+ * @class Box
  * @constructor
  */
 export class Box {
-  // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
+  // Fields declared for TypeScript (Phase 2 was a straight conversion; real
+  // typing is deferred — see .claude/plans/wxt-migration-followups.md).
   _id: any;
   _title: any;
   _content: any;
   constructor(idBox, title, content = "") {
     /**
-     * id de la boite.
+     * box id.
      *
      * @private
      * @property titre
@@ -29,7 +29,7 @@ export class Box {
      */
     this._id = idBox;
     /**
-     * titre de la boite.
+     * box title.
      *
      * @private
      * @property titre
@@ -37,7 +37,7 @@ export class Box {
      */
     this._title = title;
     /**
-     * Contenue html de la boite.
+     * box HTML content.
      *
      * @private
      * @property content
@@ -46,7 +46,7 @@ export class Box {
     this._content = content;
   }
   /**
-   * Supprime la boite.
+   * Removes the box.
    *
    * @private
    * @method desctructor
@@ -55,13 +55,13 @@ export class Box {
     $("#" + this._id).remove();
   }
   /**
-   * Affiche la boite.
+   * Renders the box.
    *
    * @private
-   * @method afficher
+   * @method render
    */
-  // Retour volontairement `any` : la base renvoie un booléen (boîte créée ?),
-  // les sous-classes renvoient `this` ou rien.
+  // Return type is deliberately `any`: the base returns a boolean (was the box
+  // created?) while subclasses return `this` or nothing.
   render(): any {
     let bCreate = false;
     if (!$("#" + this._id).length) {
@@ -81,8 +81,8 @@ export class Box {
           "border-color": getProfile().parametre["couleur3"].valeur,
         });
         if (bCreate) {
-          // À la 1ʳᵉ apparition, si l'aléatoire de top/left a placé la boîte hors
-          // viewport (cas mobile / petit écran), on la replace dans la fenêtre.
+          // On first display, if the random top/left put the box outside the
+          // viewport (mobile or small screen), move it back into view.
           const $box = $("#" + this._id);
           const rect = $box[0].getBoundingClientRect();
           if (rect.right > window.innerWidth) {
@@ -97,17 +97,17 @@ export class Box {
     return bCreate;
   }
   /**
-   * Cache la boite avec un effet de slide.
+   * Hides the box with a slide effect.
    *
    * @private
-   * @method masquer
+   * @method hide
    */
   hide() {
     $("#" + this._id).hide(EFFECTS[getProfile().parametre["boiteHide"].valeur].toLowerCase());
     return this;
   }
   /**
-   * Applique le style propre à la boite.
+   * Applies the box's own styling.
    *
    * @private
    * @method css
@@ -155,7 +155,7 @@ export class Box {
     return this;
   }
   /**
-   * Ajoute les evenements propres à la boite.
+   * Wires up the box's own events.
    *
    * @private
    * @method event

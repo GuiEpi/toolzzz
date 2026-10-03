@@ -1,5 +1,5 @@
 /*
- * Description.ts
+ * AllianceProfile.ts
  * Hraesvelg
  **********************************************************************/
 
@@ -10,23 +10,23 @@ import { Alliance } from "~/models/Alliance";
 import { Player } from "~/models/Player";
 
 /**
- * Classe de fonction pour la page /classementAlliance.php?alliance=?.
+ * Enriches the /classementAlliance.php?alliance= page.
  *
- * @class PageDescription
+ * @class AllianceProfilePage
  * @constructor
  */
 export class AllianceProfilePage {
-  // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
+  // Fields declared for TypeScript (Phase 2 was a straight conversion; real
+  // typing is deferred — see .claude/plans/wxt-migration-followups.md).
   _alliance: any;
   _radarBox: any;
   constructor(boxRadar) {
     /**
-     * Creation de la classe modele d'une alliance
+     * builds the alliance model
      */
     this._alliance = new Alliance({ tag: Utils.extractUrlParams()["alliance"] });
     /**
-     * Accés au radar
+     * access to the radar
      */
     this._radarBox = boxRadar;
   }
@@ -37,7 +37,7 @@ export class AllianceProfilePage {
    * @return
    */
   run() {
-    // Suppression du cadre classement
+    // remove the leaderboard frame
     $("#centre center:first").remove();
     // construction de l'alliance
     let tmpPlayers = {};
@@ -98,10 +98,10 @@ export class AllianceProfilePage {
     return this;
   }
   /**
-   * Ajoute le tri sur le tableau des membres.
+   * Adds sorting to the member table.
    *
    * @private
-   * @method tableau
+   * @method table
    */
   table() {
     $("#tabMembresAlliance").DataTable({

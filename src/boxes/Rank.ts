@@ -1,5 +1,5 @@
 /*
- * Rang.ts
+ * Rank.ts
  * Hraesvelg
  **********************************************************************/
 
@@ -8,15 +8,15 @@ import { TOAST_ERROR, TOAST_INFO } from "~/constants";
 import { Box } from "~/boxes/Box";
 
 /**
- * Classe permettant de modifier le rang d'un membre sur l'utilitaire.
+ * Lets a member's rank be changed in the alliance tools.
  *
- * @class BoiteRang
+ * @class RankBox
  * @constructor
- * @extends Boite
+ * @extends Box
  */
 export class RankBox extends Box {
-  // Champs déclarés pour TypeScript (Phase 2 : conversion telle quelle, le
-  // typage fin est reporté — cf. .claude/plans/wxt-migration-followups.md).
+  // Fields declared for TypeScript (Phase 2 was a straight conversion; real
+  // typing is deferred — see .claude/plans/wxt-migration-followups.md).
   _player: any;
   _tools: any;
   _page: any;
@@ -45,17 +45,17 @@ export class RankBox extends Box {
     this._page = page;
   }
   /**
-   * Affiche la boite.
+   * Renders the box.
    *
    * @private
-   * @method afficher
+   * @method render
    */
   override render() {
     if (super.render()) this.css().event();
     return this;
   }
   /**
-   * Applique le style propre à la boite.
+   * Applies the box's own styling.
    *
    * @private
    * @method css
@@ -65,7 +65,7 @@ export class RankBox extends Box {
     return this;
   }
   /**
-   * Ajoute les evenements propres à la boite.
+   * Wires up the box's own events.
    *
    * @private
    * @method event
@@ -74,7 +74,7 @@ export class RankBox extends Box {
     super.event();
     $("#o_form" + this._player.id + " button[name='o_btnRang']").click((e) => {
       e.preventDefault();
-      // on sauvegarde le rang du joueur
+      // save the player's rank
       this._player.rang = $("#o_libRang" + this._player.id).val();
       this._player.ordreRang = $("#o_ordRang" + this._player.id).val();
       this._tools.alliance.joueurs[this._player.pseudo] = this._player;
