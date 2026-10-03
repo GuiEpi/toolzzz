@@ -67,10 +67,11 @@ export class PlayerProfilePage {
 
     // Adds the "watch on the radar" option plus a link to AntLeaks
     // (https://antleaks.guics.st) with the nickname in the path — a community
-    // tool for browsing a Fourmizzz player's public history.
+    // tool for browsing a Fourmizzz player's public history. s4 only: AntLeaks
+    // indexes no other server.
     let antleaksUrl = `https://antleaks.guics.st/player/${encodeURIComponent(this._profile.pseudo)}`;
     $(".boite_membre:eq(1) table tr td:eq(0)").append(
-      `${Utils.comptePlus ? "<br/>" : ""}- <span id='o_surveiller' class='cursor gras'>${this._radarBox.joueurs.hasOwnProperty(this._profile.pseudo) ? "Supprimer la surveillance" : "Surveiller ce joueur"}</span><br/>- <a class='gras' href='${antleaksUrl}' target='_blank' rel='noopener'>Voir sur AntLeaks</a>`,
+      `${Utils.comptePlus ? "<br/>" : ""}- <span id='o_surveiller' class='cursor gras'>${this._radarBox.joueurs.hasOwnProperty(this._profile.pseudo) ? "Supprimer la surveillance" : "Surveiller ce joueur"}</span>${Utils.antleaksAvailable ? `<br/>- <a class='gras' href='${antleaksUrl}' target='_blank' rel='noopener'>Voir sur AntLeaks</a>` : ""}`,
     );
 
     $("#o_surveiller").click((e) => {

@@ -126,7 +126,7 @@ export class Army {
    * @method getArmy
    */
   getArmy() {
-    return $.ajax({ url: "http://" + Utils.server + ".fourmizzz.fr/Armee.php" });
+    return $.ajax({ url: location.origin + "/Armee.php" });
   }
   /**
    *
@@ -823,7 +823,7 @@ export class Army {
       donnees["unite13"] = this._distribution[indice][11];
       donnees["unite14"] = this._distribution[indice][6];
       // Requete
-      $.post("http://" + Utils.server + ".fourmizzz.fr/AcquerirTerrain.php", donnees, (data) => {
+      $.post(location.origin + "/AcquerirTerrain.php", donnees, (data) => {
         if (data.indexOf("La chasse est lancée.") > -1)
           $("#o_simulationChasse tr:eq(" + (indice + 1) + ")").html(
             `<td class='green'>${indice + 1}</td><td colspan='14' class='green'>La chasse est lancée.</td>`,
@@ -1073,31 +1073,27 @@ export class Army {
         donnees["unite13"] = this._distribution[indice][11];
         donnees["unite14"] = this._distribution[indice][6];
         // Requete
-        $.post(
-          "http://" + Utils.server + ".fourmizzz.fr/ennemie.php?Attaquer=" + idTarget,
-          donnees,
-          (data) => {
-            let res = Utils.parseHtml(data).find("center:last").text();
-            $("#o_simulationFlood tr:eq(" + (indice + 2) + ")").addClass(
-              res.indexOf("Vos troupes sont en marche") == -1 ? "red" : "green",
-            );
-            // record the confirmed attack for the per-target summary
-            // (the place is always the ground: a flood sends lieu=1)
-            if (res.indexOf("Vos troupes sont en marche") != -1 && SentAttack.contexteFlood) {
-              let unite = {};
-              this._distribution[indice].forEach((count, ind) => {
-                if (count) unite[UNIT_NAMES[ind + 1]] = count;
-              });
-              SentAttack.record(SentAttack.contexteFlood.cible, "Terrain de chasse", unite, {
-                html: data,
-                terrain: SentAttack.contexteFlood.terrain,
-              });
-            }
-            setTimeout(() => {
-              this.sendFlood(idTarget, ++indice, securite);
-            }, 1000);
-          },
-        );
+        $.post(location.origin + "/ennemie.php?Attaquer=" + idTarget, donnees, (data) => {
+          let res = Utils.parseHtml(data).find("center:last").text();
+          $("#o_simulationFlood tr:eq(" + (indice + 2) + ")").addClass(
+            res.indexOf("Vos troupes sont en marche") == -1 ? "red" : "green",
+          );
+          // record the confirmed attack for the per-target summary
+          // (the place is always the ground: a flood sends lieu=1)
+          if (res.indexOf("Vos troupes sont en marche") != -1 && SentAttack.contexteFlood) {
+            let unite = {};
+            this._distribution[indice].forEach((count, ind) => {
+              if (count) unite[UNIT_NAMES[ind + 1]] = count;
+            });
+            SentAttack.record(SentAttack.contexteFlood.cible, "Terrain de chasse", unite, {
+              html: data,
+              terrain: SentAttack.contexteFlood.terrain,
+            });
+          }
+          setTimeout(() => {
+            this.sendFlood(idTarget, ++indice, securite);
+          }, 1000);
+        });
       } else // move on to the next attack
       this.sendFlood(idTarget, ++indice, securite);
     } else {

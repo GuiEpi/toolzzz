@@ -81,7 +81,7 @@ export class ForumPage {
   createSection(nameSection) {
     return $.ajax({
       type: "post",
-      url: "http://" + Utils.server + ".fourmizzz.fr/alliance.php?forum_menu",
+      url: location.origin + "/alliance.php?forum_menu",
       data: {
         xajax: "ajoutCategorie",
         "xajaxargs[]": `<xjxquery><q>nom=${nameSection}</q></xjxquery>`,
@@ -95,7 +95,7 @@ export class ForumPage {
   editSection(nameSection, id, categorie) {
     return $.ajax({
       type: "post",
-      url: "http://" + Utils.server + ".fourmizzz.fr/alliance.php?forum_menu",
+      url: location.origin + "/alliance.php?forum_menu",
       data: {
         xajax: "renommerCategorie",
         "xajaxargs[]": `<xjxquery><q>nom=${nameSection}&type=${categorie}&ID_cat=${id}&del=Supprimer</q></xjxquery>`,
@@ -109,7 +109,7 @@ export class ForumPage {
   viewSection(id) {
     return $.ajax({
       type: "post",
-      url: "http://" + Utils.server + ".fourmizzz.fr/alliance.php?forum_menu",
+      url: location.origin + "/alliance.php?forum_menu",
       data: {
         xajax: "callGetForum",
         "xajaxargs[]": id,
@@ -123,7 +123,7 @@ export class ForumPage {
   createTopic(nameTopic, contenu, id, type = "normal") {
     return $.ajax({
       type: "post",
-      url: "http://" + Utils.server + ".fourmizzz.fr/alliance.php?forum_menu",
+      url: location.origin + "/alliance.php?forum_menu",
       data: {
         xajax: "envoiNouveauSujet",
         "xajaxargs[]": `<xjxquery><q>cat=${id}&sujet=${nameTopic}&message=${encodeURIComponent(contenu)}&type=${type}&modifiable=envoyer&send=Envoyer&question=&reponse[]=&reponse[]=&reponse[]=</q></xjxquery>`,
@@ -137,7 +137,7 @@ export class ForumPage {
   editTopic(nameTopic, contenu, id) {
     return $.ajax({
       type: "post",
-      url: "http://" + Utils.server + ".fourmizzz.fr/alliance.php?forum_menu",
+      url: location.origin + "/alliance.php?forum_menu",
       data: {
         xajax: "envoiEditTopic",
         "xajaxargs[]": `<xjxquery><q>IDTopic=${id}&sujet=${nameTopic}&message=${encodeURIComponent(contenu)}&modifiable=envoyer&send=Envoyer</q></xjxquery>`,
@@ -151,7 +151,7 @@ export class ForumPage {
   viewTopic(id) {
     return $.ajax({
       type: "post",
-      url: "http://" + Utils.server + ".fourmizzz.fr/alliance.php?forum_menu",
+      url: location.origin + "/alliance.php?forum_menu",
       data: {
         xajax: "callGetTopic",
         "xajaxargs[]": id,
@@ -165,7 +165,7 @@ export class ForumPage {
   sendMessage(id, message) {
     return $.ajax({
       type: "post",
-      url: "http://" + Utils.server + ".fourmizzz.fr/alliance.php?forum_menu",
+      url: location.origin + "/alliance.php?forum_menu",
       data: {
         xajax: "envoiNouveauMessage",
         "xajaxargs[]": `<xjxquery><q>topic=${id}&message=${message}&send=Envoyer</q></xjxquery>`,

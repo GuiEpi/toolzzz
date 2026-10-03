@@ -3,7 +3,7 @@
  * Hraesvelg
  **********************************************************************/
 
-import { $, Highcharts, numeral } from "~/vendor";
+import { $, Clipboard, Highcharts, numeral } from "~/vendor";
 import {
   IMG_ATT,
   IMG_DEF,
@@ -21,6 +21,17 @@ import { ForumPage } from "~/pages/Forum";
 import { hasAllianceItems, store } from "~/storage";
 
 /**
+/**
+ * The members table's "Copie simple" DataTables button. It has no action of its
+ * own: the copying is done by Clipboard, delegated on the class (see run()).
+ */
+const PLAIN_COPY_BUTTON = {
+  text: "Copie simple",
+  className: "o_copieMembresSimple",
+  action: () => {},
+};
+
+/**
  * Enriches the /alliance.php page.
  *
  * @class AllianceMembersPage
@@ -29,6 +40,7 @@ import { hasAllianceItems, store } from "~/storage";
 export class AllianceMembersPage {
   // Fields declared for TypeScript (Phase 2 was a straight conversion; real
   // typing is deferred — see .claude/plans/wxt-migration-followups.md).
+  _plainCopyRows: string[];
   _alliance: any;
   _tools: any;
   _nativeGrades: any;
@@ -58,6 +70,17 @@ export class AllianceMembersPage {
    *
    */
   run() {
+    // Delegated on the document: DataTables creates the button later, sometimes
+    // after the alliance tools have answered.
+    let plainCopy = new Clipboard(".o_copieMembresSimple", {
+      text: () => this.plainCopyText(),
+    });
+    plainCopy.on("success", () => {
+      $.toast({ ...TOAST_SUCCESS, text: "Les membres ont été copiés dans le presse papier." });
+    });
+    plainCopy.on("error", () => {
+      $.toast({ ...TOAST_ERROR, text: "Une erreur a été rencontrée, la copie a échoué." });
+    });
     // When the member table is already rendered, enrich it straight away.
     // Otherwise watch `#alliance` and react as soon as the table shows up (it
     // renders asynchronously on some variants of the page). When neither
@@ -77,6 +100,23 @@ export class AllianceMembersPage {
       observer.observe($("#alliance")[0], { childList: true });
     }
     return this;
+  }
+  /**
+   * Text behind "Copie simple": a title, a blank line, the header, then one
+   * line per member, columns separated by tabs and lines by CRLF.
+   *
+   * @method plainCopyText
+   * @return {String}
+   */
+  plainCopyText() {
+    return [
+      `${Utils.server} | Membres ${Utils.alliance}`,
+      "",
+      ["", "", "Rang", "Pseudo", "", "Terrain", "", "Technologie", "Fourmiliere", "", "", ""].join(
+        "\t",
+      ),
+      ...this._plainCopyRows,
+    ].join("\r\n");
   }
   /**
    * Renders the changes made to the member table.
@@ -104,6 +144,21 @@ export class AllianceMembersPage {
     $(".simulateur table[class='ligne_paire'] tr:eq(2) td:eq(3)").append(
       ` (${$("img[alt='Colonisé']").length})`,
     );
+    // Raw rows for "Copie simple", taken before the table is enriched (icons,
+    // SDC rank, Tdt/Retour columns).
+    this._plainCopyRows = $("#tabMembresAlliance tr:gt(0)")
+      .map((i, elt) => {
+        const cell = (n) =>
+          $(elt)
+            .find(`td:eq(${n})`)
+            .text()
+            .replace(/\u00a0/g, " ")
+            .trim();
+        return ["", cell(1), cell(2), cell(3), "", cell(5), "", cell(7), cell(8), "", "", ""].join(
+          "\t",
+        );
+      })
+      .get();
     // add the alliance totals
     let tmpPlayers = {};
     $("#tabMembresAlliance tr:gt(0)").each((i, elt) => {
@@ -208,7 +263,7 @@ export class AllianceMembersPage {
         bPaginate: false,
         bAutoWidth: false,
         dom: "Bfrti",
-        buttons: ["colvis", "copyHtml5", "csvHtml5", "excelHtml5"],
+        buttons: ["colvis", "copyHtml5", PLAIN_COPY_BUTTON, "csvHtml5", "excelHtml5"],
         order: [],
         stripeClasses: ["", "alt"],
         responsive: true,
@@ -217,7 +272,7 @@ export class AllianceMembersPage {
           infoEmpty: "Aucun enregistrement",
           infoFiltered: "(Filtré par _MAX_ enregistrements)",
           search: "Rechercher : ",
-          buttons: { colvis: "Colonne" },
+          buttons: { colvis: "Colonne", copy: "Copier" },
         },
         columnDefs: [
           { type: "quantite-grade", targets: 5 },
@@ -266,7 +321,7 @@ export class AllianceMembersPage {
       bPaginate: false,
       bAutoWidth: false,
       dom: "Bfrti",
-      buttons: ["colvis", "copyHtml5", "csvHtml5", "excelHtml5"],
+      buttons: ["colvis", "copyHtml5", PLAIN_COPY_BUTTON, "csvHtml5", "excelHtml5"],
       order: [],
       stripeClasses: ["", "alt"],
       responsive: true,
@@ -275,7 +330,7 @@ export class AllianceMembersPage {
         infoEmpty: "Aucun enregistrement",
         infoFiltered: "(Filtré par _MAX_ enregistrements)",
         search: "Rechercher : ",
-        buttons: { colvis: "Colonne" },
+        buttons: { colvis: "Colonne", copy: "Copier" },
       },
       columnDefs: [
         { type: "quantite-grade", targets: 5 },
@@ -460,7 +515,7 @@ export class AllianceMembersPage {
       dom: "Bfrti",
       order: [],
       stripeClasses: ["", "alt"],
-      buttons: ["colvis", "copyHtml5", "csvHtml5", "excelHtml5"],
+      buttons: ["colvis", "copyHtml5", PLAIN_COPY_BUTTON, "csvHtml5", "excelHtml5"],
       responsive: true,
       language: {
         zeroRecords: "Aucun joueur trouvé",
@@ -468,7 +523,7 @@ export class AllianceMembersPage {
         infoEmpty: "Aucun enregistrement",
         infoFiltered: "(Filtré par _MAX_ enregistrements)",
         search: "Rechercher : ",
-        buttons: { colvis: "Colonne" },
+        buttons: { colvis: "Colonne", copy: "Copier" },
       },
       columnDefs: [
         { type: "quantite-grade", targets: 6 },

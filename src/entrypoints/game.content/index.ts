@@ -25,7 +25,7 @@ import { defineContentScript } from "#imports";
 import { main } from "./main";
 
 export default defineContentScript({
-  matches: ["http://*.fourmizzz.fr/*"],
+  matches: ["*://*.fourmizzz.fr/*"],
   async main(ctx) {
     await main(ctx);
   },

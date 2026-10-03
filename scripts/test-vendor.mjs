@@ -57,7 +57,7 @@ function load(html, url) {
             Object.fromEntries(demande.filter((k) => k in memoire).map((k) => [k, memoire[k]])),
           );
         },
-        set: (entrees) => Object.assign(memoire, entrees) && Promise.resolve(),
+        set: (entrees) => Object.assign(memoire, structuredClone(entrees)) && Promise.resolve(),
         remove: (keys) => {
           for (const k of Array.isArray(keys) ? keys : [keys]) delete memoire[k];
           return Promise.resolve();

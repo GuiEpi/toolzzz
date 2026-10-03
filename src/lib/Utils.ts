@@ -30,6 +30,17 @@ export class Utils {
     return location.hostname.split(".")[0].toUpperCase();
   }
   /**
+   * AntLeaks only indexes server s4: anywhere else its links would land on
+   * players or alliances of the same name from another server.
+   *
+   * @static
+   * @method antleaksAvailable
+   * @return {Boolean}
+   */
+  static get antleaksAvailable() {
+    return Utils.server === "S4";
+  }
+  /**
    *
    */
   static get alliance() {

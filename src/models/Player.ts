@@ -513,7 +513,7 @@ export class Player {
    */
   getProfile() {
     return $.ajax({
-      url: "http://" + Utils.server + ".fourmizzz.fr/Membre.php?Pseudo=" + this._pseudo,
+      url: location.origin + "/Membre.php?Pseudo=" + this._pseudo,
     });
   }
   /**
@@ -577,7 +577,7 @@ export class Player {
         return elt == -1;
       })
     )
-      return $.ajax({ url: "http://" + Utils.server + ".fourmizzz.fr/construction.php" });
+      return $.ajax({ url: location.origin + "/construction.php" });
     return null;
   }
   /**
@@ -624,7 +624,7 @@ export class Player {
         return elt == -1;
       })
     )
-      return $.ajax({ url: "http://" + Utils.server + ".fourmizzz.fr/laboratoire.php" });
+      return $.ajax({ url: location.origin + "/laboratoire.php" });
     return null;
   }
   /**
@@ -758,7 +758,7 @@ export class Player {
   static search(elt) {
     return $.ajax({
       type: "post",
-      url: "http://" + Utils.server + ".fourmizzz.fr/classementAlliance.php",
+      url: location.origin + "/classementAlliance.php",
       data: {
         requete: elt,
         recherche: 1,

@@ -68,7 +68,7 @@ export class AllianceProfilePage {
         `<thead><tr class='alt'><th></th><th>Rang</th><th>Pseudo</th><th></th><th>Terrain</th><th></th><th><span style='padding-right:10px'>Technologie</span></th><th><span style='padding-right:10px'>Fourmiliere</span></th></tr></thead>`,
       )
       .after(
-        `<div id='o_bouton_alliance' class='o_group_bouton'><span id='o_surveiller' class='option_gestion'><img src="${IMG_RADAR}" alt="surveiller"/>${this._radarBox.alliances.hasOwnProperty(this._alliance.tag) ? " Ignorer" : " Surveiller"}</span><span id='o_antleaks' class='option_gestion cursor' title='Voir sur AntLeaks'><img src="${IMG_HISTORY}" alt="AntLeaks"/> Voir sur AntLeaks</span></div><div id='o_separation_graph' class='clear'></div>`,
+        `<div id='o_bouton_alliance' class='o_group_bouton'><span id='o_surveiller' class='option_gestion'><img src="${IMG_RADAR}" alt="surveiller"/>${this._radarBox.alliances.hasOwnProperty(this._alliance.tag) ? " Ignorer" : " Surveiller"}</span>${Utils.antleaksAvailable ? `<span id='o_antleaks' class='option_gestion cursor' title='Voir sur AntLeaks'><img src="${IMG_HISTORY}" alt="AntLeaks"/> Voir sur AntLeaks</span>` : ""}</div><div id='o_separation_graph' class='clear'></div>`,
       );
     this.table();
 

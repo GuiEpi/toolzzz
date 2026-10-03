@@ -13,7 +13,7 @@
 import { defineContentScript } from "#imports";
 
 export default defineContentScript({
-  matches: ["http://*.fourmizzz.fr/*"],
+  matches: ["*://*.fourmizzz.fr/*"],
   runAt: "document_start",
   main(ctx) {
     // The hiding CSS is injected inline: the manifest's content_scripts.css

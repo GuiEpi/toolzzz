@@ -1088,7 +1088,7 @@ export class BattleBox extends Box {
    * @return {Promise<Object>}
    */
   _mfFetchProfile(pseudo) {
-    let url = `http://${Utils.server}.fourmizzz.fr/Membre.php?Pseudo=${encodeURIComponent(pseudo)}`;
+    let url = `${location.origin}/Membre.php?Pseudo=${encodeURIComponent(pseudo)}`;
     return $.get(url).then((html) => {
       let $page = Utils.parseHtml(html),
         coords = $page.find(".boite_membre a[href^='carte2.php?']").text(),
@@ -1420,7 +1420,7 @@ export class BattleBox extends Box {
       return;
     }
     let { cible, prises, indices } = aLaunch[idx];
-    $.get(`http://${Utils.server}.fourmizzz.fr/ennemie.php?Attaquer=${cible.id}`)
+    $.get(`${location.origin}/ennemie.php?Attaquer=${cible.id}`)
       .then((html) => {
         let $page = Utils.parseHtml(html),
           tInput = $page.find("input#t").last();
@@ -1464,16 +1464,12 @@ export class BattleBox extends Box {
     }
     let i = indices[k],
       donnees = this._mfBuildPayload(securite, this._mfArmy.repartition[k], cible.pseudo);
-    $.post(
-      `http://${Utils.server}.fourmizzz.fr/ennemie.php?Attaquer=${cible.id}`,
-      donnees,
-      (data) => {
-        let txt = Utils.parseHtml(data).find("center:last").text(),
-          ok = txt.indexOf("Vos troupes sont en marche") !== -1;
-        this._mfMarkAttack(cible.pseudo, i, ok);
-        setTimeout(() => this._mfSendNextAttack(cible, securite, indices, k + 1, onComplete), 1000);
-      },
-    );
+    $.post(`${location.origin}/ennemie.php?Attaquer=${cible.id}`, donnees, (data) => {
+      let txt = Utils.parseHtml(data).find("center:last").text(),
+        ok = txt.indexOf("Vos troupes sont en marche") !== -1;
+      this._mfMarkAttack(cible.pseudo, i, ok);
+      setTimeout(() => this._mfSendNextAttack(cible, securite, indices, k + 1, onComplete), 1000);
+    });
   }
   /**
    * Builds the `application/x-www-form-urlencoded` payload `ennemie.php` expects.

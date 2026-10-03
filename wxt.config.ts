@@ -108,11 +108,11 @@ export default defineConfig({
     // `storage` : persistance des réglages, du radar et des caches dans
     // browser.storage.local (les données restent locales, aucune collecte).
     permissions: ["storage"],
-    host_permissions: ["http://*.fourmizzz.fr/*"],
+    host_permissions: ["*://*.fourmizzz.fr/*"],
     web_accessible_resources: [
       {
         resources: ["images/*", "images/**"],
-        matches: ["http://*.fourmizzz.fr/*"],
+        matches: ["*://*.fourmizzz.fr/*"],
       },
     ],
   },

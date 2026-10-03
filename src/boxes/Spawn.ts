@@ -165,7 +165,7 @@ export class SpawnBox extends Box {
       let correspondanceFzzz = new Array<any>("", 1, 2, 3, 4, 5, 6, -1, 7, 8, 9, 10, -1, 11, 12);
       if (count) {
         // grab a token
-        $.ajax({ url: "http://" + Utils.server + ".fourmizzz.fr/Reine.php" }).then((data) => {
+        $.ajax({ url: location.origin + "/Reine.php" }).then((data) => {
           let parsed = Utils.parseHtml(data);
           securite = parsed.find("#t").attr("name") + "=" + parsed.find("#t").attr("value");
           // prepare and launch the spawn
@@ -176,7 +176,7 @@ export class SpawnBox extends Box {
           donnees["input_cout_nombre" + (unite ? correspondanceFzzz[unite] : "")] = count;
           donnees["nombre_de_ponte"] = count;
           donnees["" + securite.split("=")[0]] = securite.split("=")[1];
-          $.post("http://" + Utils.server + ".fourmizzz.fr/Reine.php", donnees, (data) => {
+          $.post(location.origin + "/Reine.php", donnees, (data) => {
             let parsed = Utils.parseHtml(data);
             $("#boiteInfo").fadeOut("slow").html(parsed.find("#boiteInfo").html()).fadeIn("slow");
             if (Utils.comptePlus)
