@@ -22,7 +22,7 @@
     "lint-staged": "^17.0.0",
     "oxfmt": "^0.55.0",
     "typescript": "^6.0.0",
-    "wxt": "^0.20.25"
+    "wxt": "^0.21.0"
   },
   "lint-staged": {
     "*.{js,mjs,cjs,ts,tsx,jsx,css,scss,less,html,json,jsonc,md,mdx,yml,yaml}": "oxfmt --no-error-on-unmatched-pattern"
