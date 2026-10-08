@@ -339,7 +339,8 @@ export class SentAttack {
       // the game's launch form, and a bare <button> would submit it
       html += `<tr class="reduce"><td colspan="7"><em>* : terrain estimé après l'attaque, si elle réussit et que rien d'autre ne le fait varier entre-temps.${groupe.some((a) => !SentAttack.troops(a)) ? " « ? » : attaque lancée depuis un autre navigateur, détails inconnus." : ""}</em></td></tr>
           </tbody></table>
-          <button type="button" id="${id}Copier" class="o_marginT15 o_button">Copier pour le forum</button>
+          <button type="button" id="${id}Copier" class="o_marginT15 o_button" title="Une ligne : cible, heure d'arrivée, terrain estimé">Copier pour le forum</button>
+          <button type="button" id="${id}CopierDetail" class="o_marginT15 o_button" title="Chaque attaque, avec ses troupes">Copier le détail</button>
           ${annulables.length > 1 ? `<button type="button" id="${id}ToutAnnuler" class="o_marginT15 o_button f_error">Tout annuler</button>` : ""}
           </div>`;
       conteneur.append(html);
@@ -370,15 +371,21 @@ export class SentAttack {
         native.forEach((n) => n.parentNode && n.parentNode.removeChild(n));
       });
       updateAllCancel();
-      // copy for the forum
-      let clipboard = new Clipboard(`#${id}Copier`, {
-        text: () => SentAttack.formatForum(target, groupe),
-      });
-      clipboard.on("success", () => {
-        $.toast({ ...TOAST_SUCCESS, text: "Les attaques ont été copiées dans le presse papier." });
-      });
-      clipboard.on("error", () => {
-        $.toast({ ...TOAST_ERROR, text: "Une erreur a été rencontrée, la copie a échoué." });
+      // copy for the forum: a one-line summary, or every attack in detail
+      [
+        [`#${id}Copier`, () => SentAttack.formatForumShort(target, groupe)],
+        [`#${id}CopierDetail`, () => SentAttack.formatForum(target, groupe)],
+      ].forEach(([selector, text]: [string, () => string]) => {
+        let clipboard = new Clipboard(selector, { text });
+        clipboard.on("success", () => {
+          $.toast({
+            ...TOAST_SUCCESS,
+            text: "Les attaques ont été copiées dans le presse papier.",
+          });
+        });
+        clipboard.on("error", () => {
+          $.toast({ ...TOAST_ERROR, text: "Une erreur a été rencontrée, la copie a échoué." });
+        });
       });
       // grouped cancellation: the game's Annuler links, called one after the
       // other. The game only allows cancelling shortly after launch; the last
@@ -449,6 +456,35 @@ export class SentAttack {
    */
   static troops(a) {
     return a.capture ? new Army({ unite: a.capture.unite }).toString() : a.ligne.troupesNatif;
+  }
+  /**
+   * One line to paste on the forum: target, attack count, arrival (always with
+   * the date, the message is read later; a range when the arrivals span several
+   * minutes) and the target's estimated terrain after the last attack, left out
+   * when unknown.
+   */
+  static formatForumShort(target, groupe) {
+    let arrivals = groupe.map((a) =>
+        Utils.roundMinute(Math.max(0, a.ligne.arrivee.diff(moment(), "s"))),
+      ),
+      first = arrivals[0],
+      last = arrivals[arrivals.length - 1],
+      when = first.isSame(last, "minute")
+        ? `le ${first.format("DD/MM [à] HH[h]mm")}`
+        : first.isSame(last, "day")
+          ? `le ${first.format("DD/MM")} entre ${first.format("HH[h]mm")} et ${last.format("HH[h]mm")}`
+          : `entre le ${first.format("DD/MM [à] HH[h]mm")} et le ${last.format("DD/MM [à] HH[h]mm")}`,
+      texte =
+        groupe.length > 1
+          ? `Flood lancé sur ${target} (${groupe.length} attaques), touche ${when}`
+          : `Attaque lancée sur ${target}, touche ${when}`,
+      estimate = groupe
+        .filter((a) => a.capture && a.capture.terrainCible != null)
+        .sort((a, b) => a.capture.lancee - b.capture.lancee)
+        .pop();
+    if (estimate)
+      texte += `, TdC de ${target} à l'arrivée : ${numeral(estimate.capture.terrainCible).format()} cm²`;
+    return texte;
   }
   /**
    * Text to paste on the forum: one entry per attack in the format of the
