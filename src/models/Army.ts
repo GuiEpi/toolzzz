@@ -11,17 +11,12 @@ import {
   PLACE,
   UNIT_NAMES,
   UNIT_NAMES_PLURAL,
-  HUNT_UNIT_ORDER,
-  HUNT_XP_ORDER,
-  HUNT_LOSS_MAX,
-  HUNT_LOSS_MIN,
-  HUNT_LOSS_AVG,
-  HUNT_RATIO,
   UNIT_TIME,
   UNIT_HP,
 } from "~/constants";
 import { Utils } from "~/lib/Utils";
 import { getProfile } from "~/models/currentPlayer";
+import { simulateHunts, type HuntInput } from "~/models/HuntSimulation";
 // Deliberate import cycle (used inside methods only, never at module level): Army ↔ SentAttack.
 import { SentAttack } from "~/models/SentAttack";
 import * as session from "~/storage/session";
@@ -518,281 +513,44 @@ export class Army {
   /* ------------------------------------------------------------------ */
 
   /**
-   * Computes how many hunts to run and how much terrain each takes, from the difficulty of the starting terrain and the number of hunts left.
-   *
-   * @private
-   * @method computeHunt
-   * @param {Integer} huntingGroundDep
-   * @param {Float} diffHunt
-   * @param {Integer} fixCount
-   * @param {Integer} fixHF
-   * @param {Integer} reste
-   * @return {Object} Objet avec le nombre de chasse et le terrain par chasse.
-   */
-  computeHunt(huntingGroundDep, diffHunt, fixCount, fixHF, reste) {
-    let iHuntCm2 = fixHF ? fixHF : Math.round((huntingGroundDep * 3) / 10);
-    let iHuntCount = fixCount ? fixCount : 1;
-    // Try to set the number of hunt.
-    if (!fixCount)
-      while (
-        this.computeRatio(huntingGroundDep, iHuntCount + 1, iHuntCm2) >= diffHunt &&
-        iHuntCount < reste
-      )
-        iHuntCount += 1;
-    // If the hunt is too difficult, try to reduce hunted amount.
-    if (!fixHF) {
-      let bBoucle = iHuntCm2 > 5000000000000;
-      for (let j = 5000000000000; j > 4; j = j / 10) {
-        bBoucle = iHuntCm2 > j;
-        if (bBoucle)
-          bBoucle =
-            this.computeRatio(huntingGroundDep, iHuntCount, iHuntCm2 - j) < diffHunt &&
-            iHuntCm2 > 1;
-        while (bBoucle) {
-          iHuntCm2 -= j;
-          bBoucle = iHuntCm2 > j;
-          if (bBoucle)
-            bBoucle =
-              this.computeRatio(huntingGroundDep, iHuntCount, iHuntCm2 - j) < diffHunt &&
-              iHuntCm2 > 1;
-        }
-      }
-      bBoucle = iHuntCm2 > 1;
-      if (bBoucle)
-        bBoucle =
-          this.computeRatio(huntingGroundDep, iHuntCount, iHuntCm2 - 1) < diffHunt && iHuntCm2 > 1;
-      while (bBoucle) {
-        iHuntCm2 -= 1;
-        bBoucle = iHuntCm2 > 1;
-        if (bBoucle)
-          bBoucle =
-            this.computeRatio(huntingGroundDep, iHuntCount, iHuntCm2 - 1) < diffHunt &&
-            iHuntCm2 > 1;
-      }
-      // if the hunt is easier than specified, try to increase hunt amount.
-      for (let j = 5000000000000; j > 4; j = j / 10)
-        while (this.computeRatio(huntingGroundDep, iHuntCount, iHuntCm2 + j) >= diffHunt)
-          iHuntCm2 += j;
-      while (this.computeRatio(huntingGroundDep, iHuntCount, iHuntCm2 + 1) >= diffHunt)
-        iHuntCm2 += 1;
-    }
-    return { NB: iHuntCount, HF: iHuntCm2 };
-  }
-  /**
-   * Computes the ratio between striking power and difficulty.
-   *
-   * @private
-   * @method computeRatio
-   * @param {Integer} huntingGroundDep
-   * @param {Integer} countHunt
-   * @param {Integer} terrainHunt
-   * @return {Float} ratio de la chasse
-   */
-  computeRatio(huntingGroundDep, countHunt, terrainHunt) {
-    return (
-      this.getTotalAtt(getProfile().niveauRecherche[2]) /
-      this.computeDifficulty(huntingGroundDep, countHunt, terrainHunt)
-    );
-  }
-  /**
-   * Computes the reference for the given ratio when the hunt is set up by hand.
-   *
-   * @private
-   * @method computeRatioRef
-   * @param {Float} ratio
-   * @return {Float} indice du ratio
-   */
-  computeRatioRef(ratio) {
-    return HUNT_RATIO.reduce((prev, curr) => {
-      return Math.abs(curr - ratio) < Math.abs(prev - ratio) ? curr : prev;
-    });
-  }
-  /**
-   * Computes the hunt's difficulty.
-   *
-   * @private
-   * @method computeDifficulty
-   * @param {Integer} huntingGroundDep
-   * @param {Integer} countHunt
-   * @param {Integer} terrainHunt
-   * @return {Float} Difficulté de la chasse.
-   */
-  computeDifficulty(huntingGroundDep, countHunt, terrainHunt) {
-    let dDiff = 0,
-      dStart;
-    for (let iIter = 0; iIter < countHunt; iIter++) {
-      dStart = huntingGroundDep + terrainHunt * iIter;
-      dDiff +=
-        (terrainHunt + dStart * 0.01) *
-        Math.pow(1.04, Math.round(Math.log(dStart / 50) / Math.log(Math.pow(10, 0.1)))) *
-        3;
-    }
-    return dDiff;
-  }
-  /**
-   * Computes the difficulty of each hunt.
-   *
-   * @private
-   * @method computeDifficulties
-   * @param {Integer} huntingGroundDep
-   * @param {Integer} countHunt
-   * @param {Integer} terrainHunt
-   * @return {Array}
-   */
-  computeDifficulties(huntingGroundDep, countHunt, terrainHunt) {
-    let dTabDiff = new Array(),
-      dStart;
-    for (let iIter = 0; iIter < countHunt; iIter++) {
-      dStart = huntingGroundDep + terrainHunt * iIter;
-      dTabDiff[iIter] =
-        (terrainHunt + dStart * 0.01) *
-        Math.pow(1.04, Math.round(Math.log(dStart / 50) / Math.log(Math.pow(10, 0.1)))) *
-        3;
-    }
-    return dTabDiff;
-  }
-  /**
-   * Computes the minimum, maximum and average losses for the hunt's difficulty.
-   *
-   * @private
-   * @method computeLoss
-   * @param {Float} ratioIndex
-   * @param {Float} diff
-   * @return {Object} les pertes MIN, MAX et AVG
-   */
-  computeLoss(ratioIndex, diff) {
-    return {
-      MIN: ((HUNT_LOSS_MIN[ratioIndex] * diff) / (10 + getProfile().niveauRecherche[1])) * 10,
-      MAX: ((HUNT_LOSS_MAX[ratioIndex] * diff) / (10 + getProfile().niveauRecherche[1])) * 10,
-      AVG: ((HUNT_LOSS_AVG[ratioIndex] * diff) / (10 + getProfile().niveauRecherche[1])) * 10,
-    };
-  }
-  /**
-   * Spreads the army across the requested hunts.
-   *
-   * @private
-   * @method distributeHuntUnits
-   * @param {Integer} countHunt
-   * @param {Float} diff
-   * @param {Array} tabDiff
-   * @param {Float} refMaxLoss
-   * @param {Float} securityFactor
-   * @return
-   */
-  distributeHuntUnits(countHunt, diff, tabDiff, refMaxLoss, securityFactor) {
-    this._distribution = new Array();
-    // Available units.
-    let iTabAvailableUnits = this._unit.slice();
-
-    for (let iHuntNum = countHunt - 1; iHuntNum >= 0; iHuntNum--) {
-      // Initialise unit array for this hunt.
-      this._distribution[iHuntNum] = new Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-      // Base attack of units to send for this hunt.
-      let iHuntBaseAtt = (tabDiff[iHuntNum] / diff) * this.getBaseAtt();
-      // Check for available Xp-able units.
-      let bXp = false;
-      for (let j = 0; j < HUNT_XP_ORDER.length; j++)
-        bXp = bXp || iTabAvailableUnits[HUNT_XP_ORDER[j]] > 0;
-      // compute YD number. If Xp : Max * factor, Else dispatch
-      // between lasting hunts according to difficulty.
-      if (bXp)
-        this._distribution[iHuntNum][0] = Math.round(
-          ((refMaxLoss * tabDiff[iHuntNum]) / (10 + getProfile().niveauRecherche[1])) *
-            10 *
-            securityFactor,
-        );
-      else {
-        let iDiffLet = tabDiff[iHuntNum];
-        for (let iHL = iHuntNum - 1; iHL >= 0; iHL--) iDiffLet += tabDiff[iHL];
-        this._distribution[iHuntNum][0] = Math.round(
-          (iTabAvailableUnits[0] * tabDiff[iHuntNum]) / iDiffLet,
-        );
-      }
-      // Deal with last hunt and check the round do not give more unit
-      // than available.
-      if (
-        !iHuntNum ||
-        this._distribution[iHuntNum][0] > iTabAvailableUnits[0] ||
-        this._distribution[iHuntNum][0] < 0
-      )
-        this._distribution[iHuntNum][0] = iTabAvailableUnits[0];
-      // Decrease lasting YD by the amount allocated to this hunt.
-      iTabAvailableUnits[0] -= this._distribution[iHuntNum][0];
-      // Decrease also required Att for this hunt
-      iHuntBaseAtt -= this._distribution[iHuntNum][0] * UNIT_ATTACK[1];
-      // Dispatch other units.
-      for (let j = 0; j < 13; j++) {
-        // Get unit index in dispatch order.
-        let u = HUNT_UNIT_ORDER[j];
-        if (iTabAvailableUnits[u] > 0 && iHuntBaseAtt > 0) {
-          if (iTabAvailableUnits[u] * UNIT_ATTACK[u + 1] > iHuntBaseAtt)
-            this._distribution[iHuntNum][u] = Math.round(iHuntBaseAtt / UNIT_ATTACK[u + 1]);
-          else this._distribution[iHuntNum][u] = iTabAvailableUnits[u];
-          // Deal with last hunt and check the round do not give
-          // more unit than available.
-          if (
-            !iHuntNum ||
-            this._distribution[iHuntNum][u] > iTabAvailableUnits[u] ||
-            this._distribution[iHuntNum][u] < 0
-          )
-            this._distribution[iHuntNum][u] = iTabAvailableUnits[u];
-          // Decrease lasting units
-          iTabAvailableUnits[u] -= this._distribution[iHuntNum][u];
-          // Decrease also required Att for this hunt
-          iHuntBaseAtt -= this._distribution[iHuntNum][u] * UNIT_ATTACK[u + 1];
-        }
-      }
-      // If striking power is still short after placing the units, fall back to JSN
-      //			if(iHuntBaseAtt > 0){
-      //				this._repartition[iHuntNum][0] += Math.round(iHuntBaseAtt / ATT_UNITE[1]);
-      //                if(!iHuntNum || this._repartition[iHuntNum][0] > iTabAvailableUnits[0] || this._repartition[iHuntNum][0] < 0)
-      //				    this._repartition[iHuntNum][0] = iTabAvailableUnits[0];
-      //				iTabAvailableUnits[0] -= this._repartition[iHuntNum][0];
-      //			}
-    }
-  }
-  /**
-   * Returns the unit split for the requested hunt.
+   * Runs the hunt simulator on this army and keeps the unit split for
+   * sendHunt. See models/HuntSimulation.ts.
    *
    * @private
    * @method simulateHunt
-   * @param {Integer} huntingGroundDep
-   * @param {Integer} countHunt
-   * @param {Integer} terrainHunt
-   * @param {Float} diffHunt
-   * @param {Integer} fixCount
-   * @param {Integer} fixHF
-   * @param {Integer} reste
-   * @return
+   * @param {Object} input everything simulateHunts needs but the army and levels
+   * @return {Object} the simulation result
    */
-  simulateHunt(huntingGroundDep, countHunt, terrainHunt, diffHunt, fixCount, fixHF, reste) {
-    let iTabHunt = this.computeHunt(huntingGroundDep, diffHunt, fixCount, fixHF, reste),
-      dDiff = this.computeDifficulty(huntingGroundDep, iTabHunt["NB"], iTabHunt["HF"]),
-      iTabLoss = this.computeLoss(HUNT_RATIO.indexOf(parseFloat(diffHunt)), dDiff);
-    if ($("#o_chasseNbrAuto").is(":checked")) {
-      $("#o_chasseNbr").spinner("value", iTabHunt["NB"]);
-      countHunt = iTabHunt["NB"];
-    }
-    if ($("#o_chasseTDCRepAuto").is(":checked")) {
-      $("#o_chasseTDCRep").spinner("value", iTabHunt["HF"]);
-      terrainHunt = iTabHunt["HF"];
-    }
-    let ratio = this.computeRatio(huntingGroundDep, countHunt, terrainHunt);
-    this.distributeHuntUnits(
-      countHunt,
-      this.computeDifficulty(huntingGroundDep, countHunt, terrainHunt),
-      this.computeDifficulties(huntingGroundDep, countHunt, terrainHunt),
-      HUNT_LOSS_MAX[HUNT_RATIO.indexOf(this.computeRatioRef(ratio))],
-      1.0,
+  simulateHunt(input: Omit<HuntInput, "units" | "weapons" | "shield">) {
+    let result = simulateHunts({
+      ...input,
+      units: this._unit,
+      weapons: getProfile().niveauRecherche[2],
+      shield: getProfile().niveauRecherche[1],
+    });
+    this._distribution = result.hunts.map((h) => h.units);
+    return result;
+  }
+  /**
+   * Form fields of AcquerirTerrain.php for one hunt. The game numbers its units
+   * in its own order, not the UNIT_NAMES one used by Army.unite.
+   *
+   * @static
+   * @method huntPayload
+   * @param {Integer} terrainHunt
+   * @param {Array} units unit counts, Army.unite order
+   * @param {String} securite the form's token, as "name=value"
+   * @return {Object}
+   */
+  static huntPayload(terrainHunt, units, securite) {
+    let donnees = {};
+    donnees["" + securite.split("=")[0]] = securite.split("=")[1];
+    donnees["ChoixArmee"] = "1";
+    donnees["AcquerirTerrain"] = terrainHunt;
+    [0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 12, 13, 11, 6].forEach(
+      (u, i) => (donnees["unite" + (i + 1)] = units[u]),
     );
-    return {
-      repartition: this._distribution,
-      nbChasse: countHunt,
-      terrainChasse: terrainHunt,
-      ratio: ratio,
-      ratioRef: this.computeRatioRef(ratio).toFixed(1),
-      iTabPerte: iTabLoss,
-    };
+    return donnees;
   }
   /**
    * Sends a hunt.
@@ -804,24 +562,7 @@ export class Army {
    */
   sendHunt(terrainHunt, countHunt, indice, intervalle, securite) {
     if (indice < countHunt) {
-      let donnees = {};
-      donnees["" + securite.split("=")[0]] = securite.split("=")[1];
-      donnees["ChoixArmee"] = "1";
-      donnees["AcquerirTerrain"] = terrainHunt;
-      donnees["unite1"] = this._distribution[indice][0];
-      donnees["unite2"] = this._distribution[indice][1];
-      donnees["unite3"] = this._distribution[indice][2];
-      donnees["unite4"] = this._distribution[indice][3];
-      donnees["unite5"] = this._distribution[indice][4];
-      donnees["unite6"] = this._distribution[indice][5];
-      donnees["unite7"] = this._distribution[indice][7];
-      donnees["unite8"] = this._distribution[indice][8];
-      donnees["unite9"] = this._distribution[indice][9];
-      donnees["unite10"] = this._distribution[indice][10];
-      donnees["unite11"] = this._distribution[indice][12];
-      donnees["unite12"] = this._distribution[indice][13];
-      donnees["unite13"] = this._distribution[indice][11];
-      donnees["unite14"] = this._distribution[indice][6];
+      let donnees = Army.huntPayload(terrainHunt, this._distribution[indice], securite);
       // Requete
       $.post(location.origin + "/AcquerirTerrain.php", donnees, (data) => {
         if (data.indexOf("La chasse est lancée.") > -1)

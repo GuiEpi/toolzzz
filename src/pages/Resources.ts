@@ -14,6 +14,7 @@ import {
 import { Utils } from "~/lib/Utils";
 import { getProfile } from "~/models/currentPlayer";
 import { Army } from "~/models/Army";
+import { huntDuration, otherHFLosses } from "~/models/HuntSimulation";
 import * as session from "~/storage/session";
 
 /**
@@ -29,6 +30,7 @@ export class ResourcesPage {
   _comptePlusBox: any;
   _huntCount: any;
   _army: any;
+  _simu: any;
   constructor(boxComptePlus) {
     /**
      * access to the ComptePlus box
@@ -280,35 +282,30 @@ export class ResourcesPage {
    * @method prepareHunt
    */
   prepareHunt() {
-    let huntingGroundDep = $("#o_chasseTDCDep").spinner("value"),
-      diffHunt = $("#o_chasseDiff").val(),
+    let endHF = $("#o_chasseTDCDep").spinner("value"),
       countHunt = $("#o_chasseNbr").spinner("value"),
-      fixCount = countHunt && !$("#o_chasseNbrAuto").is(":checked") ? countHunt : 0,
       terrainHunt = $("#o_chasseTDCRep").spinner("value"),
-      fixHF = terrainHunt && !$("#o_chasseTDCRepAuto").is(":checked") ? terrainHunt : 0;
+      autoCount = $("#o_chasseNbrAuto").is(":checked"),
+      autoAmount = $("#o_chasseTDCRepAuto").is(":checked");
     // a hunt can be computed
-    if (huntingGroundDep) {
-      let simu = this._army.simulateHunt(
-        huntingGroundDep,
-        countHunt,
-        terrainHunt,
-        diffHunt,
-        fixCount,
-        fixHF,
-        this._huntCount,
-      );
-      this.updateSimulation(simu.repartition);
-      this.updateSummary(
-        simu.nbChasse,
-        simu.terrainChasse,
-        simu.ratio,
-        simu.ratioRef,
-        simu.iTabPerte,
-      );
-      // Sync the Difficulté dropdown with the ratio that is actually reachable
-      // (computeRatioRef can return a lower one when the army cannot sustain the
-      // selected value).
-      let computed = parseFloat(simu.ratioRef).toString();
+    if (endHF) {
+      let simu = this._army.simulateHunt({
+        launchHF: Utils.terrain,
+        endHF: endHF,
+        ratio: parseFloat($("#o_chasseDiff").val()),
+        maxCount: this._huntCount,
+        fixedCount: autoCount ? 0 : countHunt,
+        fixedAmount: autoAmount ? 0 : terrainHunt,
+      });
+      if (autoCount) $("#o_chasseNbr").spinner("value", simu.count);
+      if (autoAmount) $("#o_chasseTDCRep").spinner("value", simu.amount);
+      this._simu = simu;
+      this.updateSimulation(this._army.repartition);
+      this.updateSummary(simu);
+      // Sync the Difficulté dropdown with the reference ratio actually reached
+      // (lower than the selected one when the army cannot sustain it, or when
+      // the count and amount are set by hand).
+      let computed = String(HUNT_RATIO[simu.refIndex]);
       if ($("#o_chasseDiff").val() !== computed) {
         $("#o_chasseDiff").val(computed);
         this._updateDiffColor();
@@ -368,14 +365,20 @@ export class ResourcesPage {
    * @method updateHuntingGroundLosses
    */
   updateHuntingGroundLosses() {
-    let count = $("#o_chasseNbr").spinner("value"),
-      hf = $("#o_chasseTDCRep").spinner("value"),
-      diff = parseFloat($("#o_chasseDiff").val()),
-      huntingGroundCurrent = $("#o_chasseTDCDep").spinner("value"),
-      ratioIdx = HUNT_RATIO.indexOf(diff);
-    if (!count || !hf || ratioIdx < 0) return;
-    let curDDiff = this._army.computeDifficulty(huntingGroundCurrent, count, hf),
-      curLosses = this._army.computeLoss(ratioIdx, curDDiff);
+    let simu = this._simu,
+      huntingGroundCurrent = $("#o_chasseTDCDep").spinner("value");
+    if (!simu) return;
+    let lossesAt = (hf) =>
+        otherHFLosses(
+          simu.armyAtt,
+          huntingGroundCurrent,
+          hf,
+          simu.amount,
+          simu.count,
+          simu.refIndex,
+          getProfile().niveauRecherche[1],
+        ),
+      curLosses = simu.losses;
     // Row 0 is the reference (current TdC, mirroring #o_chasseTDCDep live)
     $("#o_otherHfRefValue").text(numeral(huntingGroundCurrent).format());
     $(".o_otherHfMin[data-idx='0']").text(numeral(Math.round(curLosses.MIN)).format());
@@ -385,9 +388,7 @@ export class ResourcesPage {
     $(".o_otherHfInputAlt").each((_, el) => {
       let $el = $(el),
         i = $el.data("idx"),
-        huntingGround = $el.spinner("value") || 0,
-        dDiff = this._army.computeDifficulty(huntingGround, count, hf),
-        p = this._army.computeLoss(ratioIdx, dDiff);
+        p = lossesAt($el.spinner("value") || 0);
       $(`.o_otherHfMin[data-idx='${i}']`).text(numeral(Math.round(p.MIN)).format());
       $(`.o_otherHfAvg[data-idx='${i}']`).text(numeral(Math.round(p.AVG)).format());
       $(`.o_otherHfMax[data-idx='${i}']`).text(numeral(Math.round(p.MAX)).format());
@@ -444,13 +445,11 @@ export class ResourcesPage {
    *
    * @private
    * @method updateSummary
-   * @param {Integer} countHunt
-   * @param {Integer} terrainHunt
-   * @param {Float} ratio
-   * @param {Float} ratioRef
-   * @param {Array} iTabLoss
+   * @param {Object} simu result of Army.simulateHunt
    */
-  updateSummary(countHunt, terrainHunt, ratio, ratioRef, iTabLoss) {
+  updateSummary(simu) {
+    let countHunt = simu.count,
+      terrainHunt = simu.amount;
     $("#o_chasseTotal").html(
       countHunt +
         " x " +
@@ -459,20 +458,20 @@ export class ResourcesPage {
         numeral(countHunt * terrainHunt).format() +
         "</span> cm²",
     );
-    let time = Math.round(
-      (Utils.terrain + terrainHunt) * Math.pow(0.9, getProfile().niveauRecherche[5]),
-    );
+    let time = huntDuration(Utils.terrain, terrainHunt, getProfile().niveauRecherche[5]);
     $("#o_chasseTemps").text(Utils.intToTime(time));
     let dateLong = Utils.roundMinute(time).format("dddd D MMM YYYY [à] HH[h]mm");
     $("#o_chasseRetour").text(dateLong.charAt(0).toUpperCase() + dateLong.slice(1));
     $("#o_chasseRentabilite").text(
       numeral(Math.round(((countHunt * terrainHunt) / time) * 86400)).format() + " cm² / jour",
     );
-    $("#o_chasseRefDiff").text(ratio.toFixed(1) + " ~ " + ratioRef);
+    $("#o_chasseRefDiff").text(
+      numeral(simu.ratio).format("0.00") + " ~ " + HUNT_RATIO[simu.refIndex].toFixed(1),
+    );
     $("#o_chassePerte").text(
-      numeral(Math.round(iTabLoss["AVG"])).format() +
+      numeral(Math.round(simu.losses.AVG)).format() +
         " JSN (max : " +
-        numeral(Math.round(iTabLoss["MAX"])).format() +
+        numeral(Math.round(simu.losses.MAX)).format() +
         ")",
     );
   }

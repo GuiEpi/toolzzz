@@ -12,8 +12,11 @@ export const HUNT_LOSS_MAX = [
   0.33333334, 0.176739357, 0.113191158, 0.08245817, 0.051342954, 0.036955988, 0.03395735,
   0.032083615, 0.026461955, 0.024588162, 0.021774264, 0.018960366, 0.017190797,
 ];
-export const HUNT_UNIT_ORDER = [10, 3, 4, 1, 12, 7, 5, 13, 11, 9, 8, 6, 2];
-export const HUNT_XP_ORDER = [10, 3, 4, 1, 12, 7, 5];
+// Hunt dispatch order (Army.unite indices, i.e. UNIT_NAMES minus one): the
+// units that gain XP first — Tu, Tk, A, C, S, JS, SN — then the others, JSN
+// last to fill whatever attack is still missing (Calystene 2.00.38).
+export const HUNT_XP_ORDER = [12, 10, 7, 5, 4, 3, 1];
+export const HUNT_UNIT_ORDER = [...HUNT_XP_ORDER, 13, 11, 9, 8, 6, 2, 0];
 // Wildlife (hunt targets) — per-species stats, source:
 // http://alliancead2.free.fr/Bestiaire.html (2017). `slug` is the image file
 // name in public/images/faune/, `fdf` the striking power (i.e. attack), `vie`
