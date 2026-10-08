@@ -235,6 +235,30 @@ class PageReine {
     }
     // Verification si les données sont deja enregistré
     if (listePonte.length) this.savePonte(listePonte);
+    return this;
+  }
+  /**
+   * Affiche le nombre d'unités possédées à côté de leur nom (dans un span
+   * après le <h2>, pas dedans, pour qu'il reste petit), en version courte
+   * (12,3k, 1,5M, 2G… cf. Utils.nombreCourt) avec le nombre exact au survol.
+   * Les ouvrières viennent de l'entête, l'armée d'Armee.php.
+   * @method nombreUnites
+   */
+  nombreUnites() {
+    let afficher = (index, nombre) => {
+      $("h2")
+        .filter((i, elt) => $(elt).text().trim() == NOM_UNITE[index])
+        .after(
+          `<span class="o_nbUnite" title="${numeral(nombre).format()} ${nombre > 1 ? NOM_UNITES[index] : NOM_UNITE[index]}">${Utils.nombreCourt(nombre)}</span>`,
+        );
+    };
+    afficher(0, Utils.ouvrieres || 0);
+    let armee = new Armee();
+    armee.getArmee().then((data) => {
+      armee.chargeData(data);
+      armee.unite.forEach((nombre, i) => afficher(i + 1, nombre));
+    });
+    return this;
   }
   /**
    * Sauvegarde la ponte en cours.

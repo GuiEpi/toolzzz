@@ -598,7 +598,9 @@ const DATEPICKER_OPTION = {
       switch (true) {
         case uri == "/Reine.php":
           page = new PageReine(boiteComptePlus);
-          if (!Utils.comptePlus) page.plus();
+          // Le Compte+ affiche déjà le nombre d'unités. nombreUnites() passe
+          // après plus(), qui lit le texte brut des <h2>.
+          if (!Utils.comptePlus) page.plus().nombreUnites();
           break;
         case uri == "/construction.php":
           page = new PageConstruction(boiteComptePlus);

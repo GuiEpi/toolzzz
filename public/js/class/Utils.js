@@ -128,7 +128,20 @@ class Utils {
     if (val > 1000) return Math.floor(val / 1000) * 1000;
     return val;
   }
-
+  /**
+   * Formate un nombre en version courte : 950, 12,3k, 1,5M, 2G, 3,2T, puis P et
+   * E, que numeral ne connaît pas (il afficherait 1000T).
+   *
+   * @static
+   * @method nombreCourt
+   * @param {Number} val
+   * @return {String} La chaine formatée.
+   */
+  static nombreCourt(val) {
+    if (Math.abs(val) >= 1e18) return numeral(val / 1e18).format("0.[0]") + "E";
+    if (Math.abs(val) >= 1e15) return numeral(val / 1e15).format("0.[0]") + "P";
+    return numeral(val).format("0.[0]a");
+  }
   /**
    * Formate un nombre entier en temps.
    *
