@@ -101,6 +101,7 @@ export default defineConfig({
           "js/boite/Radar.js",
           "js/boite/Dock.js",
           "js/boite/Boite.js",
+          "js/boite/ImportArmee.js",
           "js/boite/Ponte.js",
           "js/boite/Chasse.js",
           "js/boite/Combat.js",
