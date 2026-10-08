@@ -327,7 +327,8 @@ class AttaqueLancee {
       // formulaire de lancement du jeu, un <button> nu le soumettrait
       html += `<tr class="reduce"><td colspan="7"><em>* : terrain estimé après l'attaque, si elle réussit et que rien d'autre ne le fait varier entre-temps.${groupe.some((a) => !AttaqueLancee.troupes(a)) ? " « ? » : attaque lancée depuis un autre navigateur, détails inconnus." : ""}</em></td></tr>
           </tbody></table>
-          <button type="button" id="${id}Copier" class="o_marginT15 o_button">Copier pour le forum</button>
+          <button type="button" id="${id}Copier" class="o_marginT15 o_button" title="Une ligne : cible, heure d'arrivée, terrain estimé">Copier pour le forum</button>
+          <button type="button" id="${id}CopierDetail" class="o_marginT15 o_button" title="Chaque attaque, avec ses troupes">Copier le détail</button>
           ${annulables.length > 1 ? `<button type="button" id="${id}ToutAnnuler" class="o_marginT15 o_button f_error">Tout annuler</button>` : ""}
           </div>`;
       conteneur.append(html);
@@ -358,15 +359,21 @@ class AttaqueLancee {
         natifs.forEach((n) => n.parentNode && n.parentNode.removeChild(n));
       });
       majToutAnnuler();
-      // copie pour le forum
-      let clipboard = new Clipboard(`#${id}Copier`, {
-        text: () => AttaqueLancee.formatForum(cible, groupe),
-      });
-      clipboard.on("success", () => {
-        $.toast({ ...TOAST_SUCCESS, text: "Les attaques ont été copiées dans le presse papier." });
-      });
-      clipboard.on("error", () => {
-        $.toast({ ...TOAST_ERROR, text: "Une erreur a été rencontrée, la copie a échoué." });
+      // copie pour le forum : un résumé d'une ligne, ou chaque attaque en détail
+      [
+        [`#${id}Copier`, () => AttaqueLancee.formatForumCourt(cible, groupe)],
+        [`#${id}CopierDetail`, () => AttaqueLancee.formatForum(cible, groupe)],
+      ].forEach(([selecteur, texte]) => {
+        let clipboard = new Clipboard(selecteur, { text: texte });
+        clipboard.on("success", () => {
+          $.toast({
+            ...TOAST_SUCCESS,
+            text: "Les attaques ont été copiées dans le presse papier.",
+          });
+        });
+        clipboard.on("error", () => {
+          $.toast({ ...TOAST_ERROR, text: "Une erreur a été rencontrée, la copie a échoué." });
+        });
       });
       // annulation groupée : les liens Annuler du jeu, appelés l'un après
       // l'autre. Le jeu n'autorise l'annulation que peu de temps après le
@@ -436,6 +443,35 @@ class AttaqueLancee {
    */
   static troupes(a) {
     return a.capture ? new Armee({ unite: a.capture.unite }).toString() : a.ligne.troupesNatif;
+  }
+  /**
+   * Une ligne à coller sur le forum : cible, nombre d'attaques, arrivée
+   * (toujours avec la date, le message est lu plus tard ; une plage quand les
+   * arrivées s'étalent sur plusieurs minutes) et le terrain estimé de la cible
+   * après la dernière attaque, omis s'il est inconnu.
+   */
+  static formatForumCourt(cible, groupe) {
+    let arrivees = groupe.map((a) =>
+        Utils.roundMinute(Math.max(0, a.ligne.arrivee.diff(moment(), "s"))),
+      ),
+      premiere = arrivees[0],
+      derniere = arrivees[arrivees.length - 1],
+      quand = premiere.isSame(derniere, "minute")
+        ? `le ${premiere.format("DD/MM [à] HH[h]mm")}`
+        : premiere.isSame(derniere, "day")
+          ? `le ${premiere.format("DD/MM")} entre ${premiere.format("HH[h]mm")} et ${derniere.format("HH[h]mm")}`
+          : `entre le ${premiere.format("DD/MM [à] HH[h]mm")} et le ${derniere.format("DD/MM [à] HH[h]mm")}`,
+      texte =
+        groupe.length > 1
+          ? `Flood lancé sur ${cible} (${groupe.length} attaques), touche ${quand}`
+          : `Attaque lancée sur ${cible}, touche ${quand}`,
+      estimation = groupe
+        .filter((a) => a.capture && a.capture.terrainCible != null)
+        .sort((a, b) => a.capture.lancee - b.capture.lancee)
+        .pop();
+    if (estimation)
+      texte += `, TdC de ${cible} à l'arrivée : ${numeral(estimation.capture.terrainCible).format()} cm²`;
+    return texte;
   }
   /**
    * Texte à coller sur le forum : une entrée par attaque au format des lignes
