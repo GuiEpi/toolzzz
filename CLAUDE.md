@@ -103,12 +103,12 @@ To regenerate credentials locally without committing them, run `bun run wxt subm
 
 Required GitHub Secrets:
 
-**Chrome Web Store** — OAuth client of type "Desktop" in Google Cloud Console → APIs & Services → Credentials. The OAuth consent screen must have your developer Google account on the test users list (or the app published) for the refresh-token flow to succeed.
+**Chrome Web Store** — API **v2**, with a service account (Google Cloud Console → IAM → Service accounts, JSON key), added to the publisher in the Chrome Web Store developer dashboard.
 
 - `CHROME_EXTENSION_ID` — the public store ID (visible in the store URL)
-- `CHROME_CLIENT_ID`
-- `CHROME_CLIENT_SECRET`
-- `CHROME_REFRESH_TOKEN`
+- `CHROME_PUBLISHER_ID`
+- `CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL`
+- `CHROME_SERVICE_ACCOUNT_PRIVATE_KEY` — multi-line PEM, keep the quotes in `.env.submit`
 
 **AMO** — from https://addons.mozilla.org/developers/addon/api/key/.
 
@@ -118,7 +118,7 @@ Required GitHub Secrets:
 
 (Secret names match the env-var names that `publish-extension` expects, and what `wxt submit init` writes to `.env.submit`.)
 
-Note: the Chrome secrets above are the CWS **v1** API (refresh-token flow). Google shuts v1 down on **15 October 2026**; `publish-extension` v5 (bundled with WXT 0.21) supports the v2 API (service account). Switching is a credential change — `wxt submit init`, choose v2, replace the `CHROME_*` secrets and the env block in `release-chrome.yml` — and must be done deliberately by the maintainer, not as a side effect of another change.
+Note: the release moved from the CWS v1 API (OAuth refresh token, shut down on 15 October 2026) to v2 in October 2026. `CHROME_API_VERSION: v2` is set in the workflow's env block. To set every secret from `.env.submit` at once: `gh secret set -f .env.submit`.
 
 ## Project-specific Claude skills
 
