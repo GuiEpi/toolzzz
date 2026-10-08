@@ -3,7 +3,7 @@
  * Hraesvelg
  **********************************************************************/
 
-import { $, moment } from "~/vendor";
+import { $, moment, numeral } from "~/vendor";
 import {
   BUILDING_COSTS,
   RESEARCH_MATERIALS_COST,
@@ -146,16 +146,18 @@ export class Utils {
    * @return {String} La chaine formatée.
    */
   static intToTime(val) {
-    return val
-      ? moment
-          .duration(val, "s")
-          .format("Y[A ]d[J ]h[h ]m[m ]s[s]")
-          .split(" ")
-          .filter((elt) => {
-            return parseInt(elt);
-          })
-          .join(" ")
-      : "0 sec";
+    if (!val) return "0 sec";
+    let time = moment
+      .duration(val, "s")
+      .format("Y[A ]d[J ]h[h ]m[m ]s[s]")
+      .split(" ")
+      .filter((elt) => {
+        return parseInt(elt);
+      })
+      .join(" ");
+    // Under a second (one fast unit with a high spawn level) every token is
+    // 0 and gets filtered out, which left the spawn time empty.
+    return time || numeral(val).format("0.[00]") + "s";
   }
   /**
    * Converts a duration string into a number of seconds.
