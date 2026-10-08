@@ -128,6 +128,7 @@ class Utils {
     if (val > 1000) return Math.floor(val / 1000) * 1000;
     return val;
   }
+
   /**
    * Formate un nombre entier en temps.
    *
@@ -137,16 +138,18 @@ class Utils {
    * @return {String} La chaine formatée.
    */
   static intToTime(val) {
-    return val
-      ? moment
-          .duration(val, "s")
-          .format("Y[A ]d[J ]h[h ]m[m ]s[s]")
-          .split(" ")
-          .filter((elt) => {
-            return parseInt(elt);
-          })
-          .join(" ")
-      : "0 sec";
+    if (!val) return "0 sec";
+    let temps = moment
+      .duration(val, "s")
+      .format("Y[A ]d[J ]h[h ]m[m ]s[s]")
+      .split(" ")
+      .filter((elt) => {
+        return parseInt(elt);
+      })
+      .join(" ");
+    // Sous la seconde (une unité rapide avec un haut niveau de ponte) tous les
+    // morceaux valent 0 et sont filtrés, ce qui laissait le temps de ponte vide.
+    return temps || numeral(val).format("0.[00]") + "s";
   }
   /**
    * Convertit une chaine de caractere en entier.
