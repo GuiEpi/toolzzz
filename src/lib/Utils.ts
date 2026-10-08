@@ -138,6 +138,20 @@ export class Utils {
     return val;
   }
   /**
+   * Formats a number in short form: 950, 12,3k, 1,5M, 2G, 3,2T, then P and E,
+   * which numeral does not know (it would print 1000T).
+   *
+   * @static
+   * @method shortNumber
+   * @param {Number} val
+   * @return {String} La chaine formatée.
+   */
+  static shortNumber(val) {
+    if (Math.abs(val) >= 1e18) return numeral(val / 1e18).format("0.[0]") + "E";
+    if (Math.abs(val) >= 1e15) return numeral(val / 1e15).format("0.[0]") + "P";
+    return numeral(val).format("0.[0]a");
+  }
+  /**
    * Formats an integer number of seconds as a duration.
    *
    * @static

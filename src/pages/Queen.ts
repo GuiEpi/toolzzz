@@ -12,11 +12,13 @@ import {
   IMG_DEF,
   IMG_HP,
   UNIT_NAMES,
+  UNIT_NAMES_PLURAL,
   UNIT_TIME,
   UNIT_HP,
 } from "~/constants";
 import { Utils } from "~/lib/Utils";
 import { getProfile } from "~/models/currentPlayer";
+import { Army } from "~/models/Army";
 
 /**
  * Enriches the /Reine.php page.
@@ -256,6 +258,30 @@ export class QueenPage {
     }
     // check whether the data is already recorded
     if (listSpawn.length) this.saveSpawns(listSpawn);
+    return this;
+  }
+  /**
+   * Shows how many of each unit the player owns next to its name (in a span
+   * after the <h2>, not inside, so it stays small), shortened
+   * (12,3k, 1,5M, 2G… see Utils.shortNumber) with the exact count on hover. The workers come from
+   * the header, the army from Armee.php.
+   * @method unitCounts
+   */
+  unitCounts() {
+    let show = (index, count) => {
+      $("h2")
+        .filter((i, elt) => $(elt).text().trim() == UNIT_NAMES[index])
+        .after(
+          `<span class="o_nbUnite" title="${numeral(count).format()} ${count > 1 ? UNIT_NAMES_PLURAL[index] : UNIT_NAMES[index]}">${Utils.shortNumber(count)}</span>`,
+        );
+    };
+    show(0, Utils.ouvrieres || 0);
+    let army = new Army();
+    army.getArmy().then((data) => {
+      army.loadData(data);
+      army.unite.forEach((count, i) => show(i + 1, count));
+    });
+    return this;
   }
   /**
    * Saves the running spawn.

@@ -46,7 +46,9 @@ export const routes: Route[] = [
     test: (uri) => uri == "/Reine.php",
     run: ({ comptePlusBox }) => {
       const page = new QueenPage(comptePlusBox);
-      if (!Utils.comptePlus) page.plus();
+      // ComptePlus already shows the unit counts. unitCounts() runs after
+      // plus(), which reads the bare <h2> texts.
+      if (!Utils.comptePlus) page.plus().unitCounts();
     },
   },
   {

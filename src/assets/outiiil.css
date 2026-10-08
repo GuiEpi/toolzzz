@@ -947,6 +947,18 @@ input[id^="input_cout_nourriture"] {
   padding: 0 5px;
 }
 
+/* Nombre d'unités possédées à côté de leur nom, page : Reine.php */
+h2:has(+ .o_nbUnite) {
+  display: inline-block;
+}
+.o_nbUnite {
+  margin-left: 8px;
+  font-size: 0.85em;
+  font-weight: normal;
+  opacity: 0.8;
+  cursor: help;
+}
+
 /* Filtres de la carte de l'alliance, page : alliance.php?Membres */
 #o_carteFiltres label {
   display: inline-block;
