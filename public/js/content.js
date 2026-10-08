@@ -112,8 +112,11 @@ const PERTE_MAX_CHASSE = [
   0.33333334, 0.176739357, 0.113191158, 0.08245817, 0.051342954, 0.036955988, 0.03395735,
   0.032083615, 0.026461955, 0.024588162, 0.021774264, 0.018960366, 0.017190797,
 ];
-const ORDRE_UNITE_CHASSE = [10, 3, 4, 1, 12, 7, 5, 13, 11, 9, 8, 6, 2];
-const ORDRE_XP_CHASSE = [10, 3, 4, 1, 12, 7, 5];
+// Ordre d'envoi en chasse (indices d'Armee.unite, soit NOM_UNITE moins un) :
+// d'abord les unités qui prennent de l'XP — Tu, Tk, A, C, S, JS, SN — puis les
+// autres, les JSN en dernier pour combler l'attaque manquante (Calystene 2.00.38).
+const ORDRE_XP_CHASSE = [12, 10, 7, 5, 4, 3, 1];
+const ORDRE_UNITE_CHASSE = [...ORDRE_XP_CHASSE, 13, 11, 9, 8, 6, 2, 0];
 // Faune (cibles de chasse) — stats par espèce, source : http://alliancead2.free.fr/Bestiaire.html (2017).
 // `slug` = nom de fichier image dans public/images/faune/, `fdf` = force de frappe (= attaque),
 // `vie` = points de vie, `diff` = points de difficulté (cumul utilisé par le serveur pour
