@@ -43,6 +43,17 @@ Le titre de la carte rappelle combien de membres sont affichés sur l'effectif t
 
 Ta sélection est **mémorisée par alliance et par serveur** : tu la retrouves telle quelle à la prochaine ouverture de la carte. Toolzzz mémorise ce qui est masqué, donc un membre qui rejoint l'alliance plus tard apparaît sur la carte au lieu d'être oublié en silence.
 
+## Chaîne entre plus proches voisins
+
+Sous la carte, la section **Chaîne entre plus proches voisins** calcule l'ordre de passage qui relie les membres affichés avec le moins de temps de trajet possible : chacun envoie au suivant, du premier au dernier, sans revenir au départ. Seuls les membres affichés comptent : décocher un joueur, un grade ou un rang dans les filtres le retire de la chaîne, qui se recalcule aussitôt.
+
+- **Départ** — par défaut _Le plus court (départ libre)_ : Toolzzz essaie chaque membre comme départ et garde la chaîne la plus courte, présentée du bas vers le haut de la carte. Tu peux aussi imposer le premier joueur.
+- **Tracer sur la carte** — relie les membres dans l'ordre de la chaîne et numérote les points. Les liens habituels entre voisins sont masqués tant que la chaîne est tracée.
+- **Tableau** — pour chaque étape, le joueur, sa position, à qui il envoie et le temps de trajet, avec le temps cumulé et la plus longue étape.
+- **Copier pour le forum** — copie la chaîne, une étape par ligne.
+
+Les temps sont ceux du jeu **sans amélioration de Vitesse d'attaque**, puisque chaque membre envoie avec son propre niveau. Le départ et le tracé sont mémorisés par alliance et par serveur.
+
 ## Exporter pour le forum
 
 Le bouton **Exporter pour le forum** génère un PNG de la carte zoomée comme tu la vois actuellement, prêt à être partagé sur le forum d'alliance ou un Discord. C'est une capture simple, sans interactivité — pour discuter de stratégie collective sans demander à chaque membre de venir voir la carte sur son écran.

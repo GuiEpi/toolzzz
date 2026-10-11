@@ -616,6 +616,16 @@ class PageAlliance {
         </div>
         <div id='o_carteFiltres' class='left o_marginT15' style='display:none;'></div>
         <div id='o_carteAllianceChart' style='height:800px;margin-top:15px;display:none;'></div>
+        <div id='o_carteChaine' class='o_marginT15' style='display:none;'>
+          <div class='centre gras'>Chaîne entre plus proches voisins</div>
+          <p class='reduce'>Ordre de passage qui minimise le temps de trajet total entre les membres affichés : chacun envoie au suivant. Les joueurs décochés dans les filtres sont exclus. Temps sans amélioration de Vitesse d'attaque.</p>
+          <div class='centre o_marginT15'>
+            <label>Départ <select id='o_chaineDepart'></select></label>
+            <label style='margin-left:12px;'><input type='checkbox' id='o_chaineTracer'/> Tracer sur la carte</label>
+            <button id='o_chaineCopier' class='o_button f_success' style='margin-left:12px;'>Copier pour le forum</button>
+          </div>
+          <table id='o_chaineListe' class='o_maxWidth centre o_marginT15' cellspacing='0'></table>
+        </div>
       </div>
     `);
     let cached = null;
@@ -634,6 +644,7 @@ class PageAlliance {
     }
     $("#o_carteAllianceRefresh").click(() => this._actualiserCarte());
     $("#o_carteAllianceExportForum").click(() => this._exporterCarteForumPng());
+    this._evenementsChaine();
     return this;
   }
   /**
@@ -1185,6 +1196,215 @@ class PageAlliance {
     return this;
   }
   /**
+   * Options de la chaîne (départ, tracé), mémorisées par alliance.
+   *
+   * @private
+   * @method _chargerOptionsChaine
+   */
+  _chargerOptionsChaine() {
+    let o = {};
+    try {
+      o =
+        JSON.parse(
+          localStorage.getItem(`outiiil_carteChaine_${Utils.serveur}_${Utils.alliance}`),
+        ) || {};
+    } catch (e) {
+      o = {};
+    }
+    return { depart: o.depart || "", tracer: !!o.tracer };
+  }
+  /**
+   * @private
+   * @method _sauverOptionsChaine
+   */
+  _sauverOptionsChaine() {
+    try {
+      localStorage.setItem(
+        `outiiil_carteChaine_${Utils.serveur}_${Utils.alliance}`,
+        JSON.stringify(this._optionsChaine),
+      );
+    } catch (e) {
+      console.warn("outiiil: localStorage write failed", e);
+    }
+    return this;
+  }
+  /**
+   * @private
+   * @method _evenementsChaine
+   */
+  _evenementsChaine() {
+    if (!this._optionsChaine) this._optionsChaine = this._chargerOptionsChaine();
+    $("#o_chaineTracer").prop("checked", this._optionsChaine.tracer);
+    let redessiner = () => {
+      this._optionsChaine = {
+        depart: $("#o_chaineDepart").val() || "",
+        tracer: $("#o_chaineTracer").prop("checked"),
+      };
+      this._sauverOptionsChaine();
+      if (this._carteMembres)
+        this._dessinerCarte(this._filtrerMembres(this._carteMembres), this._carteMembres.length);
+    };
+    $("#o_chaineDepart, #o_chaineTracer").on("change", redessiner);
+    let copie = new Clipboard("#o_chaineCopier", { text: () => this._texteChaine() });
+    copie.on("success", () => {
+      $.toast({ ...TOAST_SUCCESS, text: "La chaîne a été copiée dans le presse papier." });
+    });
+    copie.on("error", () => {
+      $.toast({ ...TOAST_ERROR, text: "Une erreur a été rencontrée, la copie a échoué." });
+    });
+    return this;
+  }
+  /**
+   * Temps de trajet de base (sans Vitesse d'attaque) entre deux fourmilières.
+   *
+   * @private
+   * @method _tempsEntre
+   */
+  _tempsEntre(a, b) {
+    return Math.ceil(637200 * (1 - Math.exp(-Math.hypot(a.x - b.x, a.y - b.y) / 350)));
+  }
+  /**
+   * Ordre de passage qui minimise la somme des temps de trajet : plus proche
+   * voisin depuis le départ, puis amélioration 2-opt (on inverse un morceau du
+   * parcours tant que ça raccourcit le total). Avec quelques dizaines de membres
+   * c'est instantané, et en pratique très proche de l'optimum.
+   *
+   * @private
+   * @method _calculerChaine
+   * @param {Array} membres membres affichés
+   * @param {Object} depart membre de départ
+   */
+  _calculerChaine(membres, depart) {
+    let ordre = [depart],
+      restants = membres.filter((m) => m !== depart);
+    while (restants.length) {
+      let dernier = ordre[ordre.length - 1],
+        i = 0;
+      restants.forEach((m, j) => {
+        if (this._tempsEntre(dernier, m) < this._tempsEntre(dernier, restants[i])) i = j;
+      });
+      ordre.push(restants.splice(i, 1)[0]);
+    }
+    const n = ordre.length,
+      t = (a, b) => (a && b ? this._tempsEntre(a, b) : 0),
+      // suivant de la position k : rien en bout de chaîne
+      suivant = (k) => (k + 1 < n ? ordre[k + 1] : null);
+    let ameliore = n > 3;
+    while (ameliore) {
+      ameliore = false;
+      for (let i = 1; i < n - 1; i++)
+        for (let k = i + 1; k < n; k++) {
+          let avant = t(ordre[i - 1], ordre[i]) + t(ordre[k], suivant(k)),
+            apres = t(ordre[i - 1], ordre[k]) + t(ordre[i], suivant(k));
+          if (apres < avant) {
+            ordre = [
+              ...ordre.slice(0, i),
+              ...ordre.slice(i, k + 1).reverse(),
+              ...ordre.slice(k + 1),
+            ];
+            ameliore = true;
+          }
+        }
+    }
+    let etapes = ordre.map((m, k) => t(m, suivant(k)));
+    etapes.pop();
+    return {
+      ordre: ordre,
+      etapes: etapes,
+      total: etapes.reduce((s, v) => s + v, 0),
+      max: etapes.length ? Math.max(...etapes) : 0,
+    };
+  }
+  /**
+   * Départ libre : on essaie chaque membre comme départ et on garde la chaîne
+   * la plus courte, orientée du bas vers le haut de la carte (la parcourir dans
+   * un sens ou dans l'autre prend le même temps).
+   *
+   * @private
+   * @method _chaineLaPlusCourte
+   */
+  _chaineLaPlusCourte(membres) {
+    let c = membres
+      .map((m) => this._calculerChaine(membres, m))
+      .reduce((a, b) => (b.total < a.total ? b : a));
+    if (c.ordre[0].y > c.ordre[c.ordre.length - 1].y) {
+      c.ordre.reverse();
+      c.etapes.reverse();
+    }
+    return c;
+  }
+  /**
+   * Recalcule la chaîne sur les membres affichés et remplit le tableau sous la
+   * carte. Renvoie null s'il n'y a pas assez de membres.
+   *
+   * @private
+   * @method _majChaine
+   */
+  _majChaine(membres) {
+    if (!this._optionsChaine) this._optionsChaine = this._chargerOptionsChaine();
+    $("#o_carteChaine").show();
+    let pseudos = membres.map((m) => m.pseudo).sort((a, b) => a.localeCompare(b)),
+      // sans départ choisi (ou s'il n'est plus affiché), départ libre
+      depart = membres.find((m) => m.pseudo === this._optionsChaine.depart);
+    $("#o_chaineDepart").html(
+      `<option value=''>Le plus court (départ libre)</option>` +
+        pseudos
+          .map(
+            (p) =>
+              `<option value='${$("<div>").text(p).html()}'>${$("<div>").text(p).html()}</option>`,
+          )
+          .join(""),
+    );
+    $("#o_chaineDepart").val(depart ? depart.pseudo : "");
+    if (membres.length < 2) {
+      this._chaine = null;
+      $("#o_chaineListe").html(
+        "<tr><td><em>Il faut au moins deux membres affichés pour former une chaîne.</em></td></tr>",
+      );
+      $("#o_chaineCopier").prop("disabled", true);
+      return null;
+    }
+    $("#o_chaineCopier").prop("disabled", false);
+    let chaine = (this._chaine = depart
+        ? this._calculerChaine(membres, depart)
+        : this._chaineLaPlusCourte(membres)),
+      n = chaine.ordre.length,
+      lien = (m) =>
+        `<a href='Membre.php?Pseudo=${m.pseudo}'>${$("<div>").text(m.pseudo).html()}</a>`,
+      lignes = chaine.ordre.map((m, k) => {
+        let vers = chaine.ordre[k + 1];
+        return `<tr><td>${k + 1}</td><td>${lien(m)}${m.isMe ? " <em>(toi)</em>" : ""}</td><td>${m.x} / ${m.y}</td>
+          <td>${vers ? lien(vers) : "—"}</td><td>${vers ? Utils.intToTime(chaine.etapes[k]) : "—"}</td></tr>`;
+      });
+    $("#o_chaineListe").html(
+      `<thead><tr><th>#</th><th>Joueur</th><th>Position</th><th>Envoie à</th><th>Temps de trajet</th></tr></thead>
+      <tbody>${lignes.join("")}
+        <tr class='reduce'><td colspan='5'><em>${chaine.etapes.length} étapes · temps cumulé ${Utils.intToTime(chaine.total)} · plus longue étape ${Utils.intToTime(chaine.max)}</em></td></tr>
+      </tbody>`,
+    );
+    $("#o_chaineListe tr:even").css("background-color", monProfil.parametre["couleur2"].valeur);
+    return chaine;
+  }
+  /**
+   * Texte de la chaîne pour le forum, une étape par ligne.
+   *
+   * @private
+   * @method _texteChaine
+   */
+  _texteChaine() {
+    let c = this._chaine;
+    if (!c) return "";
+    let n = c.ordre.length,
+      lignes = c.etapes.map(
+        (t, k) =>
+          `${k + 1}. ${c.ordre[k].pseudo} → ${c.ordre[k + 1].pseudo} (${Utils.intToTime(t)})`,
+      );
+    return (
+      `Chaîne de ${n} joueurs :\n${lignes.join("\n")}\n` +
+      `Temps cumulé ${Utils.intToTime(c.total)}, plus longue étape ${Utils.intToTime(c.max)} (sans Vitesse d'attaque)`
+    );
+  }
+  /**
    * Point d'entrée de la carte : mémorise la liste complète, (re)construit les
    * filtres, puis dessine la carte filtrée.
    *
@@ -1219,6 +1439,9 @@ class PageAlliance {
       m.isMe = m.pseudo === monProfil.pseudo;
     });
     const me = members.find((m) => m.isMe) || { x: monProfil.x, y: monProfil.y };
+    const chaine = this._majChaine(members);
+    const tracer = !!(chaine && this._optionsChaine.tracer);
+    const rangs = new Map(tracer ? chaine.ordre.map((m, k) => [m.pseudo, k + 1]) : []);
     const tempsParcours = (target, niveauVit) =>
       Math.ceil(
         Math.pow(0.9, niveauVit) *
@@ -1249,6 +1472,8 @@ class PageAlliance {
         edgeSet.add(key);
       });
     }
+    // la chaîne tracée remplace les liens, sinon la carte devient illisible
+    if (tracer) edgeSet.clear();
     const edges = [...edgeSet].map((key) => {
       const [i, j] = key.split("-").map(Number);
       return [spots[i], spots[j]];
@@ -1281,7 +1506,7 @@ class PageAlliance {
         spacingTop: 25,
       },
       title: {
-        text: `${total > members.length ? `${members.length} membres affichés sur ${total}` : `${members.length} membres`} • ${spots.length} cases • ${edges.length} liens (${K_NEIGHBORS} plus proches voisins)`,
+        text: `${total > members.length ? `${members.length} membres affichés sur ${total}` : `${members.length} membres`} • ${spots.length} cases • ${tracer ? `chaîne de ${chaine.ordre.length} joueurs (${Utils.intToTime(chaine.total)} cumulés)` : `${edges.length} liens (${K_NEIGHBORS} plus proches voisins)`}`,
         style: { fontSize: "14px", fontWeight: "600" },
       },
       subtitle: {
@@ -1400,6 +1625,20 @@ class PageAlliance {
           showInLegend: false,
           animation: false,
         },
+        // Chaîne entre plus proches voisins, dans l'ordre de passage
+        {
+          type: "line",
+          name: "Chaîne",
+          data: tracer ? chaine.ordre.map((m) => [m.x, m.y]) : [],
+          color: "rgba(41, 128, 185, 0.85)",
+          lineWidth: 2,
+          dashStyle: "ShortDash",
+          marker: { enabled: false },
+          enableMouseTracking: false,
+          states: { hover: { enabled: false } },
+          showInLegend: false,
+          animation: false,
+        },
         {
           type: "scatter",
           name: "Membres",
@@ -1421,6 +1660,12 @@ class PageAlliance {
             if (n === 1) label = s.members[0].pseudo;
             else if (s.isMyGroup) label = `Toi +${n - 1}`;
             else label = `${[...s.members].map((m) => m.pseudo).sort()[0]} +${n - 1}`;
+            // numéro de passage dans la chaîne tracée
+            if (tracer)
+              label = `${s.members
+                .map((m) => rangs.get(m.pseudo))
+                .sort((a, b) => a - b)
+                .join(", ")}. ${label}`;
             // Radius modeste : log(terrain) compressé pour limiter le stack visuel dans
             // les clusters denses (alliances de 30+ membres souvent groupés).
             const radiusBase = terrainMax > 0 ? 2 + Math.log10(terrainMax) / 2 : 4;

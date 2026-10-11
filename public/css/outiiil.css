@@ -1352,3 +1352,9 @@ center > div > #tabMembresAlliance {
     padding: 0px !important;
   }
 }
+
+/* Chaîne entre plus proches voisins, sous la carte de l'alliance */
+#o_chaineListe td,
+#o_chaineListe th {
+  padding: 2px 6px;
+}
