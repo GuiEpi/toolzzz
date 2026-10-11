@@ -1,6 +1,6 @@
 ## SDC — Infos membres
 
-En plus des [commandes de ressources](SDC-Commandes-de-ressources), le SDC gère un **annuaire partagé des membres de l'alliance** : coordonnées de chaque fourmilière et rangs personnalisés. C'est ce qui alimente les colonnes **Grade / Tdt / Retour** du tableau des membres, et quelques autres enrichissements.
+En plus des [commandes de ressources](SDC-Commandes-de-ressources), le SDC gère un **annuaire partagé des membres de l'alliance** : coordonnées de chaque fourmilière et rangs personnalisés. C'est ce qui alimente les colonnes **Grade / Tdt / Retour** du tableau des membres, la [Carte d'alliance](Carte-d-alliance) (remplie sans charger les profils), et quelques autres enrichissements.
 
 Comme pour les commandes, tout est stocké dans une **section cachée du forum d'alliance** (`Toolzzz_Membre`) : chaque membre a sa **fiche**, un sujet du forum dont le titre contient son pseudo, son identifiant, ses coordonnées, et éventuellement son rang. Rien ne sort du jeu.
 

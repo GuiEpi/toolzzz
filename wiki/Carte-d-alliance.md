@@ -14,9 +14,13 @@ Tu peux aussi y accéder via le hash `#carte` dans l'URL de la page Membres : To
 
 ## Charger / actualiser les données
 
-Au premier ouvrage, la carte est vide — clique sur **Charger / Actualiser** pour récupérer les positions et stats de tous les membres. Cette opération prend quelques secondes (Toolzzz doit visiter le profil de chaque membre pour récupérer ses coordonnées et ses ressources).
+Si ton alliance utilise le [SDC](SDC-Infos-membres), la carte se remplit toute seule à l'ouverture de la page Membres, avec les coordonnées partagées dans les fiches des membres : aucun profil à charger.
+
+Sinon, au premier ouvrage, la carte est vide — clique sur **Charger / Actualiser** pour récupérer les positions et stats de tous les membres. Cette opération prend quelques secondes (Toolzzz doit visiter le profil de chaque membre pour récupérer ses coordonnées et ses ressources).
 
 Les données sont **mises en cache localement** : la prochaine fois que tu ouvres la carte, elle s'affiche instantanément depuis le cache. Re-clique sur Actualiser quand tu veux remettre à jour (par exemple après l'arrivée de nouveaux membres ou un déménagement).
+
+Quand les deux existent, les positions chargées depuis les profils passent devant celles du SDC (elles sont plus récentes), et le SDC complète les membres qui manquent. La ligne d'état sous les boutons indique combien de positions viennent du SDC.
 
 ## Interaction
 

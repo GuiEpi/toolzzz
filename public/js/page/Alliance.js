@@ -389,6 +389,8 @@ class PageAlliance {
       }
     });
     this.tableauUtilitaire().optionAdmin();
+    // la carte profite aussi des coordonnées partagées
+    this._carteDepuisSdc();
     return this;
   }
   /**
@@ -661,6 +663,59 @@ class PageAlliance {
       }
       return { members, timestamp };
     });
+  }
+  /**
+   * Alimente la carte avec les coordonnées partagées du SDC (section
+   * Toolzzz_Membre), pour que tous les membres d'une alliance équipée voient la
+   * carte sans charger un seul profil. Les positions du cache local (lues sur
+   * les profils, donc à jour) restent prioritaires ; le SDC complète les
+   * membres qui n'y sont pas. On part des membres actuels de l'alliance : un
+   * ancien membre resté dans le cache n'est plus affiché.
+   *
+   * @private
+   * @method _carteDepuisSdc
+   */
+  _carteDepuisSdc() {
+    if (!$("#o_carteAlliance").length) return;
+    let cache = {},
+      depuisCache = 0,
+      depuisSdc = 0,
+      connu = (x, y) => x > -1 && y > -1 && !(x == 0 && y == 0),
+      donnees = null;
+    try {
+      donnees = JSON.parse(
+        localStorage.getItem(`outiiil_carteAlliance_${Utils.serveur}_${Utils.alliance}`),
+      );
+    } catch (e) {
+      donnees = null;
+    }
+    ((donnees && donnees.members) || []).forEach((m) => {
+      if (connu(m.x, m.y)) cache[m.pseudo] = m;
+    });
+    let membres = Object.values(this._alliance.joueurs)
+      .map((j) => {
+        if (cache[j.pseudo]) {
+          depuisCache++;
+          return { ...cache[j.pseudo], terrain: j.terrain || cache[j.pseudo].terrain || 0 };
+        }
+        // les fiches du SDC donnent les coordonnées en texte (titre du sujet)
+        let x = Number(j.x),
+          y = Number(j.y);
+        if (connu(x, y)) {
+          depuisSdc++;
+          return { pseudo: j.pseudo, x, y, terrain: j.terrain || 0 };
+        }
+        return null;
+      })
+      .filter(Boolean);
+    // rien de nouveau par rapport au cache déjà affiché
+    if (!depuisSdc) return;
+    this._renderCarte(membres);
+    if (depuisCache) this._afficherAge(donnees.timestamp);
+    $("#o_carteAllianceStatus").text(
+      (depuisCache ? $("#o_carteAllianceStatus").text() + " · " : "") +
+        `${depuisSdc} position${depuisSdc > 1 ? "s" : ""} issue${depuisSdc > 1 ? "s" : ""} du SDC`,
+    );
   }
   /**
    * Refresh de la Carte (UI Carte + render Highcharts).
