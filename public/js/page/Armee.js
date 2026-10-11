@@ -179,17 +179,34 @@ class PageArmee {
             monProfil.parametre["uniteAntisondeDome"].valeur,
           )
         )
-          this.placerAntisondeSuffisant(premiereUnite, nbUniteDispo);
+          this.lancerReplacement(() => this.placerAntisondeSuffisant(premiereUnite, nbUniteDispo));
         else if (!auto)
           $.toast({ ...TOAST_INFO, text: "Votre armée est déjà placée correctement." });
       } else {
         if (!this.estPlacePourAntiSonde(premiereUnite, 1, nbUniteDispo * 0.3))
-          this.placerAntisondeInsuffisant(premiereUnite, nbUniteDispo);
+          this.lancerReplacement(() =>
+            this.placerAntisondeInsuffisant(premiereUnite, nbUniteDispo),
+          );
         else if (!auto)
           $.toast({ ...TOAST_INFO, text: "Votre armée est déjà placée correctement." });
       }
     } else if (!auto) $.toast({ ...TOAST_ERROR, text: "Aucune unité n'est transférable." });
     return this;
+  }
+  /**
+   * Lance un replacement une seule fois par page : les transferts finissent
+   * par recharger Armee.php, et un double clic (ou un clic pendant le
+   * replacement automatique) déplaçait les troupes deux fois.
+   *
+   * @private
+   * @method lancerReplacement
+   * @param {Function} placer
+   */
+  lancerReplacement(placer) {
+    if (this._replacementEnCours) return;
+    this._replacementEnCours = true;
+    $("#o_replaceArmee").prop("disabled", true).text("Replacement…");
+    placer();
   }
   /**
    *

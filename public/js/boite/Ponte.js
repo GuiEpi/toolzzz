@@ -157,7 +157,10 @@ class BoitePonte extends Boite {
         nombre = $("input[name='o_nombre" + unite + "']").spinner("value"),
         securite = "";
       let correspondanceFzzz = new Array("", 1, 2, 3, 4, 5, 6, -1, 7, 8, 9, 10, -1, 11, 12);
-      if (nombre) {
+      // une ponte à la fois par unité : un double clic la lançait deux fois
+      if (nombre && !$(e.currentTarget).data("enCours")) {
+        let bouton = $(e.currentTarget).data("enCours", true).css("opacity", 0.4),
+          liberer = () => bouton.data("enCours", false).css("opacity", "");
         // on recup un jeton
         $.ajax({ url: location.origin + "/Reine.php" }).then((data) => {
           let parsed = Utils.parseHtml(data);
@@ -180,8 +183,8 @@ class BoitePonte extends Boite {
                 .fadeIn("slow");
             $.toast({ ...TOAST_SUCCESS, text: "La ponte a été correctement lancée." });
             $("input[name='o_nombre" + unite + "']").spinner("value", 0);
-          });
-        });
+          }).always(liberer);
+        }, liberer);
       }
       return false;
     });

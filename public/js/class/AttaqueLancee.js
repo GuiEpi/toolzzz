@@ -383,6 +383,7 @@ class AttaqueLancee {
         let encore = groupe.filter((a) => $(a.cellule).find("a").length);
         if (!encore.length || !confirm(`Annuler les ${encore.length} attaques sur ${cible} ?`))
           return;
+        $(`#${id}ToutAnnuler`).prop("disabled", true).text("Annulation…");
         encore
           .reduce(
             (suite, a) => suite.then(() => $.get($(a.cellule).find("a").attr("href"))),

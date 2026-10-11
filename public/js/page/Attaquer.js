@@ -130,6 +130,7 @@ class PageAttaquer {
       );
     $("#o_synchro").click((e) => {
       e.preventDefault();
+      $("#o_btnSynchro button").prop("disabled", true);
       this.lancerSynchro(this._cible.attenteSynchro());
       return false;
     });
@@ -146,6 +147,7 @@ class PageAttaquer {
     // Sonde synchronisée (arrive sur la minute pleine)
     $("#o_sonder").click((e) => {
       e.preventDefault();
+      $("#o_btnSynchro button").prop("disabled", true);
       remplirFormulaireSonde();
       this.lancerSynchro(this._cible.attenteSynchro());
       return false;
@@ -153,6 +155,7 @@ class PageAttaquer {
     // Sonde directe (envoi immédiat, pas de synchro)
     $("#o_sonderDirect").click((e) => {
       e.preventDefault();
+      $("#o_btnSynchro button").prop("disabled", true);
       remplirFormulaireSonde();
       $("input[name='ChoixArmee']").click();
       return false;
@@ -236,6 +239,9 @@ class PageAttaquer {
       this.preparerFlood($("#o_floodTDCA").spinner("value"), $("#o_floodTDCB").spinner("value"));
     });
     $("#o_lanceFlood").click((e) => {
+      // désactivé dès le premier clic : un double clic lançait deux floods en
+      // parallèle (chaque attaque partait deux fois)
+      $(e.currentTarget).prop("disabled", true).text("Flood en cours…");
       // contexte pour que envoyerFlood capture chaque attaque confirmée. Le
       // terrain de départ est celui saisi dans la simulation (par défaut celui
       // du profil, modifiable si on connaît une valeur plus fraîche)

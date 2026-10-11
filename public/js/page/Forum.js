@@ -307,6 +307,10 @@ class PageForum {
       );
       // Creation de l'utilitaire
       $("#o_creerUtilitaire").click((e) => {
+        // une fois par page : les vérifications d'existence lisent la page, qui
+        // n'est pas mise à jour, et un double clic créait les sections en double
+        if ($(e.currentTarget).data("fait")) return false;
+        $(e.currentTarget).data("fait", true).css({ opacity: 0.5, cursor: "default" });
         // On ne crée la nouvelle section Toolzzz que si ni Toolzzz_* ni Outiiil_*
         // n'existent déjà — pour ne pas dédoubler le stockage dans une alliance
         // qui a déjà ses sections sous l'ancien nom.
@@ -412,6 +416,8 @@ class PageForum {
       };
       // event sur le bouton guerre
       $("#o_creerSectionGuerre").click((e) => {
+        // une fois par page, comme la création de l'utilitaire
+        $(e.currentTarget).prop("disabled", true);
         let alliance = new Alliance({ tag: $("#o_tagGuerre").val() }),
           titreSection = "Guerre " + alliance.tag;
         if (

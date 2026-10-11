@@ -231,6 +231,8 @@ class PageRessource {
     // Lancement des chasses
     $("#o_chasseEnvoyer").click((e) => {
       if (this._armee.getSommeUnite()) {
+        // désactivé dès le premier clic : un double clic enverrait chaque chasse deux fois
+        $(e.currentTarget).prop("disabled", true).text("Envoi en cours…");
         let terrainChasse = $("#o_chasseTDCRep").spinner("value"),
           nbChasse = $("#o_chasseNbr").spinner("value"),
           intervalle = $("#o_chasseInt").val() * 1000;
