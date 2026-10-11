@@ -522,6 +522,37 @@ class Utils {
     return element;
   }
   /**
+   * Coordonnées d'un joueur lues sur sa page de profil (lien « x=.. et y=.. »
+   * vers la carte). Le lien mène à carte2.php sur s4 mais à carte.php sur s5 :
+   * on accepte les deux.
+   *
+   * @static
+   * @method coordonnees
+   * @param {jQuery} page la page de profil, ou un conteneur qui la contient
+   * @return {Object} {x, y}, -1 / -1 si le lien est introuvable
+   */
+  static coordonnees(page) {
+    let m = $(page)
+      .find("a[href^='carte2.php?'], a[href^='carte.php?']")
+      .first()
+      .text()
+      .match(/x=(\d+) et y=(\d+)/);
+    return m ? { x: parseInt(m[1]), y: parseInt(m[2]) } : { x: -1, y: -1 };
+  }
+  /**
+   * Page de la carte sur le serveur courant, lue dans le menu du jeu :
+   * carte2.php sur s4, carte.php sur s5.
+   *
+   * @static
+   * @method pageCarte
+   * @return {String}
+   */
+  static get pageCarte() {
+    return $("a[href='carte.php']").length && !$("a[href='carte2.php']").length
+      ? "carte.php"
+      : "carte2.php";
+  }
+  /**
    * Parse une chaîne HTML reçue d'une page Fourmizzz sans exécuter ses scripts
    * inline. À utiliser à la place de `$("<div/>").append(html)` qui, sur Chrome,
    * exécute les `<script>` du HTML reçu et propage leurs ReferenceError jusqu'à

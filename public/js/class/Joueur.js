@@ -511,8 +511,11 @@ class Joueur {
         this._y = data.y;
       }
     }
-    // sinon
-    if (this._x == -1 || this._y == -1 || this._id == -1) return this.getProfil();
+    // sinon. 0 / 0 compte comme inconnu : c'est ce qu'enregistraient les versions
+    // qui ne lisaient pas le lien carte.php de s5, et le profil n'était alors
+    // jamais relu (temps de trajet faux)
+    if (this._x == -1 || this._y == -1 || this._id == -1 || (this._x == 0 && this._y == 0))
+      return this.getProfil();
     return null;
   }
   /**
@@ -527,11 +530,12 @@ class Joueur {
       // spamment `ERR_NAME_NOT_RESOLVED` dans la console. On lit que du texte
       // et de la structure ici, jamais les images.
       let stripped = html.replace(/<img\b[^>]*>/gi, ""),
-        regexp = new RegExp("x=(\\d*) et y=(\\d*)"),
-        ligne = $(stripped).find(".boite_membre a[href^='carte2.php?']").text();
+        // -1 / -1 si les coordonnées sont introuvables : la carte d'alliance
+        // écarte alors le joueur au lieu de le placer en 0 / 0
+        coordonnees = Utils.coordonnees($(stripped).find(".boite_membre"));
       this._id = $(stripped).find("a[href^='commerce.php?ID=']").attr("href").match(/\d+/g)[0];
-      this._x = ~~ligne.replace(regexp, "$1");
-      this._y = ~~ligne.replace(regexp, "$2");
+      this._x = coordonnees.x;
+      this._y = coordonnees.y;
       this._mv = $(stripped)
         .find("table:eq(0) tr:eq(0) td:eq(0)")
         .text()

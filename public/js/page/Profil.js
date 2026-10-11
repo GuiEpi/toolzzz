@@ -32,10 +32,9 @@ class PageProfil {
     // concaténerait avec le pseudo de la page et corromprait la clé de
     // surveillance dans `_joueurs`.
     this._profil = new Joueur({ pseudo: $("center > h2").text() });
-    let regexp = new RegExp("x=(\\d*) et y=(\\d*)"),
-      ligne = $(".boite_membre").find("a[href^='carte2.php?']").text();
-    this._profil.x = ~~ligne.replace(regexp, "$1");
-    this._profil.y = ~~ligne.replace(regexp, "$2");
+    let coordonnees = Utils.coordonnees($(".boite_membre"));
+    this._profil.x = coordonnees.x;
+    this._profil.y = coordonnees.y;
     this._profil.mv = $(".boite_membre table:eq(0) tr:eq(0) td:eq(0)")
       .text()
       .includes("Joueur en vacances");

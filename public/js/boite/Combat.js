@@ -1031,8 +1031,7 @@ class BoiteCombat extends Boite {
     let url = `${location.origin}/Membre.php?Pseudo=${encodeURIComponent(pseudo)}`;
     return $.get(url).then((html) => {
       let $page = Utils.parseHtml(html),
-        coords = $page.find(".boite_membre a[href^='carte2.php?']").text(),
-        m = coords.match(/x=(\d+) et y=(\d+)/),
+        coords = Utils.coordonnees($page.find(".boite_membre")),
         idLink = $page.find("a[href^='commerce.php?ID=']").attr("href") || "",
         idMatch = idLink.match(/\d+/);
       return {
@@ -1040,8 +1039,9 @@ class BoiteCombat extends Boite {
         id: idMatch ? parseInt(idMatch[0]) : 0,
         terrain: numeral($page.find(".tableau_score tr:eq(1) td:eq(1)").text()).value() || 0,
         type: "profil",
-        x: m ? parseInt(m[1]) : 0,
-        y: m ? parseInt(m[2]) : 0,
+        // 0 / 0 si introuvables, comme avant
+        x: Math.max(0, coords.x),
+        y: Math.max(0, coords.y),
       };
     });
   }

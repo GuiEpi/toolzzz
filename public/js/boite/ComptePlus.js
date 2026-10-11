@@ -328,7 +328,9 @@ class BoiteComptePlus {
     let liens = actifs
       .map((item) => {
         let target = item.target ? ` target='${item.target}' rel='noopener'` : "";
-        return `<a href='${item.url}'${target}>${item.label}</a>`;
+        // la carte n'a pas la même adresse sur tous les serveurs
+        let url = item.url == "carte2.php" ? Utils.pageCarte : item.url;
+        return `<a href='${url}'${target}>${item.label}</a>`;
       })
       .join("");
     return `<div class='lien_rapide'>${liens}</div>`;
