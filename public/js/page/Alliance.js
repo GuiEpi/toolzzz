@@ -275,8 +275,12 @@ class PageAlliance {
     $("#o_syncCarteAlliance").click((e) => {
       e.preventDefault();
       const $btn = $("#o_syncCarteAlliance");
-      $btn.addClass("disabled").find("span").text("Synchronisation...");
-      this._fetchAndCacheCoords()
+      // la classe ne bloquait que l'apparence : un second clic relançait tout
+      if ($btn.hasClass("disabled")) return false;
+      $btn.addClass("disabled").find("span").text("Synchronisation…");
+      this._fetchAndCacheCoords((faits, total) =>
+        $btn.find("span").text(`Synchronisation… (${faits}/${total})`),
+      )
         .then(() => location.reload())
         .catch((err) => {
           $btn.removeClass("disabled").find("span").text("Synchroniser");
@@ -397,6 +401,10 @@ class PageAlliance {
         `<a id="o_actualiserAlliance" class="dt-button" href="#"><span>Actualiser l'alliance</span></a>`,
       );
       $("#o_actualiserAlliance").click((e) => {
+        // un seul clic à la fois : les profils partent un par un (cf.
+        // class/Requetes.js), ce qui peut prendre un moment sur une grosse alliance
+        let bouton = $(e.currentTarget);
+        if (bouton.hasClass("disabled")) return false;
         let promiseJoueur = new Array(),
           pseudoJoueur = new Array();
         // si coordonnée inconnu on va les chercher
@@ -404,38 +412,62 @@ class PageAlliance {
           // si le joueur n'est pas connu dans l'utilitaire
           if (!this._utilitaire.alliance.joueurs.hasOwnProperty(joueur))
             this._utilitaire.alliance.joueurs[joueur] = this._alliance.joueurs[joueur];
-          // si ses coordonnées ne sont pas connu
-          if (
-            this._utilitaire.alliance.joueurs[joueur].x == -1 &&
-            this._utilitaire.alliance.joueurs[joueur].y == -1
-          ) {
+          // si ses coordonnées ne sont pas connues (0 / 0 compris : c'est ce
+          // qu'enregistraient les versions qui ne lisaient pas le lien carte.php de s5)
+          let { x, y } = this._utilitaire.alliance.joueurs[joueur];
+          if ((x == -1 && y == -1) || (x == 0 && y == 0)) {
             promiseJoueur.push(this._utilitaire.alliance.joueurs[joueur].getProfil());
             pseudoJoueur.push(joueur);
           }
         }
+        let faits = 0,
+          progression = () =>
+            bouton.find("span").text(`Actualisation… (${faits}/${promiseJoueur.length})`);
+        bouton.addClass("disabled").css("opacity", 0.6);
+        progression();
+        promiseJoueur = promiseJoueur.map((p) =>
+          Promise.resolve(p).then((html) => {
+            faits++;
+            progression();
+            return html;
+          }),
+        );
         // on recup les profils de tout les joueurs
-        Promise.all(promiseJoueur).then((values) => {
-          let promiseForum = new Array(),
-            joueur = null;
-          for (let i = 0; i < values.length; i++) {
-            joueur = this._utilitaire.alliance.joueurs[pseudoJoueur[i]];
-            joueur.chargerProfil(values[i]);
-            // on enregistre
-            if (!joueur.sujetForum)
-              promiseForum.push(
-                this._utilitaire.creerSujet(
-                  joueur.toUtilitaire(),
-                  " ",
-                  monProfil.parametre["forumMembre"].valeur,
-                ),
-              );
-          }
-          // on creer les sujets pour les membres qui n'en disposent pas
-          Promise.all(promiseForum).then((values) => {
-            $.toast({ ...TOAST_SUCCESS, text: "la mise à jour c'est correctement effectuée." });
-            this.actualiserMembre();
+        Promise.all(promiseJoueur)
+          .then((values) => {
+            let promiseForum = new Array(),
+              joueur = null;
+            for (let i = 0; i < values.length; i++) {
+              joueur = this._utilitaire.alliance.joueurs[pseudoJoueur[i]];
+              joueur.chargerProfil(values[i]);
+              // on enregistre
+              if (!joueur.sujetForum)
+                promiseForum.push(
+                  this._utilitaire.creerSujet(
+                    joueur.toUtilitaire(),
+                    " ",
+                    monProfil.parametre["forumMembre"].valeur,
+                  ),
+                );
+            }
+            // on creer les sujets pour les membres qui n'en disposent pas
+            return Promise.all(promiseForum).then((values) => {
+              $.toast({ ...TOAST_SUCCESS, text: "la mise à jour c'est correctement effectuée." });
+              this.actualiserMembre();
+            });
+          })
+          .catch(() => {
+            // sans ce catch, un échec laissait le bouton sans réaction et sans message
+            bouton
+              .removeClass("disabled")
+              .css("opacity", "")
+              .find("span")
+              .text("Actualiser l'alliance");
+            $.toast({
+              ...TOAST_ERROR,
+              text: "La mise à jour a échoué (réseau ou serveur). Réessayez dans un instant.",
+            });
           });
-        });
         return false;
       });
     }
@@ -549,6 +581,10 @@ class PageAlliance {
     } catch (e) {
       cached = null;
     }
+    // les versions qui ne lisaient pas le lien carte.php de s5 ont mis en cache
+    // des membres en 0 / 0 : on les ignore (un Actualiser les repositionne)
+    if (cached && cached.members)
+      cached.members = cached.members.filter((m) => !(m.x == 0 && m.y == 0));
     if (cached && cached.members && cached.members.length) {
       this._renderCarte(cached.members);
       this._afficherAge(cached.timestamp);
@@ -586,12 +622,13 @@ class PageAlliance {
    * @method _fetchAndCacheCoords
    * @returns {Promise<{members, timestamp}>}
    */
-  _fetchAndCacheCoords() {
+  _fetchAndCacheCoords(progres = () => {}) {
     const pseudos = Object.keys(this._alliance.joueurs);
     if (!pseudos.length) {
       return Promise.reject(new Error("Aucun membre détecté dans l'alliance."));
     }
     const cacheKey = `outiiil_carteAlliance_${Utils.serveur}_${Utils.alliance}`;
+    let faits = 0;
     const promises = pseudos.map((pseudo) => {
       const joueur = this._alliance.joueurs[pseudo];
       return joueur
@@ -600,7 +637,11 @@ class PageAlliance {
           joueur.chargerProfil(html);
           return joueur;
         })
-        .catch(() => null);
+        .catch(() => null)
+        .then((j) => {
+          progres(++faits, pseudos.length);
+          return j;
+        });
     });
     return Promise.all(promises).then((joueurs) => {
       const members = joueurs
@@ -628,14 +669,22 @@ class PageAlliance {
    * @method _actualiserCarte
    */
   _actualiserCarte() {
-    const pseudos = Object.keys(this._alliance.joueurs);
+    const pseudos = Object.keys(this._alliance.joueurs),
+      liberer = () => {
+        $("#o_carteAllianceRefresh").prop("disabled", false).text("Charger / Actualiser");
+        $("#o_carteAllianceExportForum").prop("disabled", false);
+      };
+    // bloqués pendant le chargement : les profils partent un par un
     $("#o_carteAllianceRefresh")
       .prop("disabled", true)
-      .text(`Chargement de ${pseudos.length} profils...`);
+      .text(`Chargement des profils… (0/${pseudos.length})`);
+    $("#o_carteAllianceExportForum").prop("disabled", true);
     $("#o_carteAllianceStatus").text("");
-    this._fetchAndCacheCoords()
+    this._fetchAndCacheCoords((faits, total) =>
+      $("#o_carteAllianceRefresh").text(`Chargement des profils… (${faits}/${total})`),
+    )
       .then(({ members, timestamp }) => {
-        $("#o_carteAllianceRefresh").prop("disabled", false).text("Charger / Actualiser");
+        liberer();
         $.toast({
           ...TOAST_SUCCESS,
           text: `Carte mise à jour : ${members.length} membres positionnés.`,
@@ -644,7 +693,7 @@ class PageAlliance {
         this._renderCarte(members);
       })
       .catch((err) => {
-        $("#o_carteAllianceRefresh").prop("disabled", false).text("Charger / Actualiser");
+        liberer();
         $.toast({
           ...TOAST_ERROR,
           text: err.message || "Erreur lors du chargement des profils.",
