@@ -409,6 +409,8 @@ class PageAlliance {
         if (bouton.hasClass("disabled")) return false;
         let promiseJoueur = new Array(),
           pseudoJoueur = new Array();
+        // fiches d'anciens membres, supprimées après confirmation
+        this.supprimerAnciensMembres();
         // si coordonnée inconnu on va les chercher
         for (let joueur in this._alliance.joueurs) {
           // si le joueur n'est pas connu dans l'utilitaire
@@ -474,6 +476,45 @@ class PageAlliance {
       });
     }
     return this;
+  }
+  /**
+   * Supprime du SDC les fiches des joueurs qui ont quitté l'alliance (sujets
+   * de la section Toolzzz_Membre dont le pseudo n'est plus dans le tableau des
+   * membres), après confirmation : une suppression sur le forum ne s'annule pas.
+   *
+   * @private
+   * @method supprimerAnciensMembres
+   */
+  supprimerAnciensMembres() {
+    // tableau vide ou mal chargé : on ne supprime rien plutôt que tout
+    if (!Object.keys(this._alliance.joueurs).length) return;
+    let partis = Object.keys(this._utilitaire.alliance.joueurs).filter(
+      (pseudo) =>
+        !this._alliance.joueurs.hasOwnProperty(pseudo) &&
+        this._utilitaire.alliance.joueurs[pseudo].sujetForum,
+    );
+    if (
+      !partis.length ||
+      !confirm(
+        `${partis.length} ancien${partis.length > 1 ? "s" : ""} membre${partis.length > 1 ? "s ont" : " a"} encore une fiche dans le SDC : ${partis.join(", ")}.\n\nSupprimer ${partis.length > 1 ? "ces fiches" : "cette fiche"} du forum ?`,
+      )
+    )
+      return;
+    this._utilitaire
+      .supprimerSujets(
+        partis.map((pseudo) => this._utilitaire.alliance.joueurs[pseudo].sujetForum),
+        monProfil.parametre["forumMembre"].valeur,
+      )
+      .then(
+        () => {
+          partis.forEach((pseudo) => delete this._utilitaire.alliance.joueurs[pseudo]);
+          $.toast({
+            ...TOAST_SUCCESS,
+            text: `${partis.length} fiche${partis.length > 1 ? "s" : ""} d'ancien${partis.length > 1 ? "s" : ""} membre${partis.length > 1 ? "s" : ""} supprimée${partis.length > 1 ? "s" : ""}.`,
+          });
+        },
+        () => $.toast({ ...TOAST_ERROR, text: "La suppression des fiches a échoué." }),
+      );
   }
   /**
    *

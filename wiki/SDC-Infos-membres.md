@@ -16,7 +16,7 @@ Ensuite, un **chef** doit remplir l'annuaire : sur la page **Membres** de l'alli
 > ![Bouton Actualiser l'alliance](assets/wiki/sdc-actualiser-alliance.png)
 -->
 
-À refaire de temps en temps : à chaque nouvelle recrue, un coup d'**Actualiser l'alliance** crée sa fiche.
+À refaire de temps en temps : à chaque nouvelle recrue, un coup d'**Actualiser l'alliance** crée sa fiche. Il repère aussi les fiches des joueurs qui ont quitté l'alliance et propose de les supprimer du forum, après confirmation.
 
 ## Les colonnes ajoutées au tableau des membres
 
@@ -50,6 +50,6 @@ L'annuaire sert aussi à d'autres fonctionnalités :
 ## Bon à savoir
 
 - **Sans SDC**, tu peux quand même avoir les colonnes Tdt / Retour : le bouton **Synchroniser** du tableau des membres (lié à la [Carte d'alliance](Carte-d-alliance)) récupère les coordonnées et les met en cache localement — mais elles ne sont alors ni partagées ni assorties des rangs.
-- **Si un membre déménage**, sa fiche n'est pas mise à jour automatiquement (Actualiser l'alliance ne crée que les fiches manquantes). Un chef peut corriger les coordonnées en éditant directement le titre de son sujet dans la section `Toolzzz_Membre` du forum.
+- **Si un membre déménage**, sa fiche n'est pas mise à jour automatiquement (Actualiser l'alliance crée les fiches manquantes et supprime celles des anciens membres, mais ne touche pas aux autres). Un chef peut corriger les coordonnées en éditant directement le titre de son sujet dans la section `Toolzzz_Membre` du forum.
 - Comme pour les commandes, la configuration est **locale à chaque joueur** (un passage sur le forum suffit) et il faut avoir **accès en lecture** à la section — voir [Boîte Paramètres → Utilitaire](Boite-Parametres#onglet-utilitaire).
 - Les anciennes sections `Outiiil_Membre` sont reconnues, inutile de les recréer.

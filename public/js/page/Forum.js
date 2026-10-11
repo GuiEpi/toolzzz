@@ -128,6 +128,29 @@ class PageForum {
     });
   }
   /**
+   * Supprime des sujets d'une section, comme les cases à cocher + bouton
+   * Supprimer du forum d'alliance (xajax callSupprimer).
+   *
+   * @method supprimerSujets
+   * @param {Array} ids identifiants des sujets (topic[])
+   * @param {Integer} idSection section qui les contient
+   */
+  supprimerSujets(ids, idSection) {
+    return $.ajax({
+      type: "post",
+      url: location.origin + "/alliance.php?forum_menu",
+      data: {
+        xajax: "callSupprimer",
+        xajaxr: moment().valueOf(),
+        // deux xajaxargs[] : jQuery garde la clé telle quelle pour un tableau
+        "xajaxargs[]": [
+          `<xjxquery><q>${ids.map((id) => "topic[]=" + id).join("&")}</q></xjxquery>`,
+          idSection,
+        ],
+      },
+    });
+  }
+  /**
    *
    */
   consulterSujet(id) {
