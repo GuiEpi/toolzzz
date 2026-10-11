@@ -84,6 +84,7 @@ export default defineConfig({
           "js/lib/moment_2.19.1.js",
           "js/lib/moment-locale-fr.js",
           "js/lib/moment-duration-format.js",
+          "js/class/Requetes.js",
           "js/data/couts.js",
           "js/data/menuRapide.js",
           "js/class/Utils.js",
