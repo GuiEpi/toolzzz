@@ -760,8 +760,13 @@ class PageAlliance {
         return null;
       })
       .filter(Boolean);
-    // rien de nouveau par rapport au cache déjà affiché
-    if (!depuisSdc) return;
+    // Aucune position nouvelle : la carte du cache reste, mais ses filtres ont
+    // été construits avant l'arrivée du SDC, donc sans les rangs. On les
+    // reconstruit pour faire apparaître les rangs SDC (et l'ordre SDC de la chaîne).
+    if (!depuisSdc) {
+      if (this._carteMembres) this._renderCarte(this._carteMembres);
+      return;
+    }
     this._renderCarte(membres);
     if (depuisCache) this._afficherAge(donnees.timestamp);
     $("#o_carteAllianceStatus").text(
