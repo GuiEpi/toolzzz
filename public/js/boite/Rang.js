@@ -17,7 +17,7 @@ class BoiteRang extends Boite {
       "Attribuer un rang",
       `<form id="o_form${joueur.id}" class="o_rangForm">
             <div class="group"><input id="o_libRang${joueur.id}" name="o_rang" type="text" class="o_input" value="${joueur.rang}" required/><span class="o_inputHighlight"></span><span class="o_inputBar"></span><label class='o_label'>Rang de ${joueur.pseudo}</label></div>
-            <div class="group"><input id="o_ordRang${joueur.id}" name="o_ordre" class="o_input" type="text" value="${joueur.ordreRang}" required/><span class="o_inputHighlight"></span><span class="o_inputBar"></span><label class='o_label'>Prioritè du rang</label></div><br/>
+            <div class="group"><input id="o_ordRang${joueur.id}" name="o_ordre" class="o_input" type="text" value="${joueur.ordreRang}" required/><span class="o_inputHighlight"></span><span class="o_inputBar"></span><label class='o_label'>Priorité dans la chaîne</label></div><br/>
             <button name="o_btnRang" class="o_button f_success">Valider</button>
             </form>`,
     );

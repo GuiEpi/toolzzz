@@ -362,7 +362,7 @@ class PageAlliance {
       $(elt)
         .find("td:eq(1)")
         .after(
-          `<td align="center">${this._alliance.joueurs.hasOwnProperty(pseudo) ? this._alliance.joueurs[pseudo].rang : Utils.alliance}</td>`,
+          `<td align="center">${this._alliance.joueurs.hasOwnProperty(pseudo) ? this._libelleRang(this._alliance.joueurs[pseudo].rang, this._alliance.joueurs[pseudo].ordreRang) : Utils.alliance}</td>`,
         );
       $(elt)
         .find("td:eq(9)")
@@ -542,7 +542,10 @@ class PageAlliance {
         .find("td:eq(2)")
         .text(
           this._alliance.joueurs.hasOwnProperty(pseudo)
-            ? this._alliance.joueurs[pseudo].rang
+            ? this._libelleRang(
+                this._alliance.joueurs[pseudo].rang,
+                this._alliance.joueurs[pseudo].ordreRang,
+              )
             : Utils.alliance,
         );
       $(elt)
@@ -618,11 +621,13 @@ class PageAlliance {
         <div id='o_carteAllianceChart' style='height:800px;margin-top:15px;display:none;'></div>
         <div id='o_carteChaine' class='o_marginT15' style='display:none;'>
           <div class='centre gras'>Chaîne entre plus proches voisins</div>
-          <p class='reduce'>Ordre de passage qui minimise le temps de trajet total entre les membres affichés : chacun envoie au suivant. Les joueurs décochés dans les filtres sont exclus. Temps sans amélioration de Vitesse d'attaque.</p>
+          <p class='reduce'>Ordre de passage qui minimise le temps de trajet total entre les membres affichés : chacun envoie au suivant. Les joueurs décochés dans les filtres sont exclus. L'ordre SDC suit plutôt les rangs et priorités saisis par les chefs, pour comparer. Temps sans amélioration de Vitesse d'attaque.</p>
           <div class='centre o_marginT15'>
-            <label>Départ <select id='o_chaineDepart'></select></label>
+            <label>Ordre <select id='o_chaineOrdre'><option value=''>Le plus court</option><option value='sdc'>SDC (rang puis priorité)</option></select></label>
+            <label style='margin-left:12px;'>Départ <select id='o_chaineDepart'></select></label>
             <label style='margin-left:12px;'><input type='checkbox' id='o_chaineTracer'/> Tracer sur la carte</label>
             <button id='o_chaineCopier' class='o_button f_success' style='margin-left:12px;'>Copier pour le forum</button>
+            <button id='o_chaineNumeroter' class='o_button f_info' style='margin-left:8px;display:none;' title='Écrit la place de chacun dans la chaîne comme priorité de sa fiche SDC, rang par rang, le dernier de la chaîne étant le 1'>Numéroter dans le SDC</button>
           </div>
           <table id='o_chaineListe' class='o_maxWidth centre o_marginT15' cellspacing='0'></table>
         </div>
@@ -1216,7 +1221,7 @@ class PageAlliance {
     } catch (e) {
       o = {};
     }
-    return { depart: o.depart || "", tracer: !!o.tracer };
+    return { ordre: o.ordre || "", depart: o.depart || "", tracer: !!o.tracer };
   }
   /**
    * @private
@@ -1242,6 +1247,7 @@ class PageAlliance {
     $("#o_chaineTracer").prop("checked", this._optionsChaine.tracer);
     let redessiner = () => {
       this._optionsChaine = {
+        ordre: $("#o_chaineOrdre").val() || "",
         depart: $("#o_chaineDepart").val() || "",
         tracer: $("#o_chaineTracer").prop("checked"),
       };
@@ -1249,7 +1255,8 @@ class PageAlliance {
       if (this._carteMembres)
         this._dessinerCarte(this._filtrerMembres(this._carteMembres), this._carteMembres.length);
     };
-    $("#o_chaineDepart, #o_chaineTracer").on("change", redessiner);
+    $("#o_chaineOrdre, #o_chaineDepart, #o_chaineTracer").on("change", redessiner);
+    $("#o_chaineNumeroter").click(() => this._numeroterChaine());
     let copie = new Clipboard("#o_chaineCopier", { text: () => this._texteChaine() });
     copie.on("success", () => {
       $.toast({ ...TOAST_SUCCESS, text: "La chaîne a été copiée dans le presse papier." });
@@ -1311,14 +1318,64 @@ class PageAlliance {
           }
         }
     }
-    let etapes = ordre.map((m, k) => t(m, suivant(k)));
-    etapes.pop();
+    return this._chaineDepuisOrdre(ordre);
+  }
+  /**
+   * Temps de chaque étape d'un ordre de passage donné.
+   *
+   * @private
+   * @method _chaineDepuisOrdre
+   */
+  _chaineDepuisOrdre(ordre) {
+    let etapes = ordre.slice(1).map((m, k) => this._tempsEntre(ordre[k], m));
     return {
       ordre: ordre,
       etapes: etapes,
       total: etapes.reduce((s, v) => s + v, 0),
       max: etapes.length ? Math.max(...etapes) : 0,
     };
+  }
+  /**
+   * Rang SDC et priorité dans la chaîne d'un membre, ex. « Grenier 2 ». La
+   * priorité 0 (ou vide) n'est pas affichée : c'est la valeur par défaut, celle
+   * des membres hors chaîne comme les chasseurs.
+   *
+   * @private
+   * @method _libelleRang
+   */
+  _libelleRang(rang, priorite) {
+    let p = String(priorite ?? "").trim();
+    return rang ? rang + (p && p != "0" ? " " + p : "") : "";
+  }
+  /**
+   * Ordre SDC : par rang (ordre alphabétique) puis par priorité décroissante,
+   * la priorité 1 étant le bout de la chaîne. Les membres sans priorité
+   * (chasseurs…) ou sans rang ne font pas partie de la chaîne prévue : ils
+   * passent à la fin.
+   *
+   * @private
+   * @method _chaineSdc
+   */
+  _chaineSdc(membres) {
+    let joueurs = (this._utilitaire.alliance && this._utilitaire.alliance.joueurs) || {},
+      cle = (m) => {
+        let j = joueurs[m.pseudo] || {},
+          p = parseFloat(j.ordreRang);
+        return { rang: j.rang || "", priorite: p > 0 ? p : Infinity };
+      };
+    return this._chaineDepuisOrdre(
+      [...membres].sort((a, b) => {
+        let ca = cle(a),
+          cb = cle(b);
+        return (
+          (ca.priorite == Infinity) - (cb.priorite == Infinity) ||
+          !ca.rang - !cb.rang ||
+          ca.rang.localeCompare(cb.rang) ||
+          (ca.priorite == cb.priorite ? 0 : ca.priorite > cb.priorite ? -1 : 1) ||
+          a.pseudo.localeCompare(b.pseudo)
+        );
+      }),
+    );
   }
   /**
    * Départ libre : on essaie chaque membre comme départ et on garde la chaîne
@@ -1350,7 +1407,19 @@ class PageAlliance {
     $("#o_carteChaine").show();
     let pseudos = membres.map((m) => m.pseudo).sort((a, b) => a.localeCompare(b)),
       // sans départ choisi (ou s'il n'est plus affiché), départ libre
-      depart = membres.find((m) => m.pseudo === this._optionsChaine.depart);
+      depart = membres.find((m) => m.pseudo === this._optionsChaine.depart),
+      joueursSdc = (this._utilitaire.alliance && this._utilitaire.alliance.joueurs) || {},
+      // l'ordre SDC n'a de sens que si des rangs ont été saisis
+      avecRangs = membres.some((m) => joueursSdc[m.pseudo] && joueursSdc[m.pseudo].rang),
+      sdc = avecRangs && this._optionsChaine.ordre === "sdc";
+    $("#o_chaineOrdre option[value='sdc']").prop("disabled", !avecRangs);
+    $("#o_chaineOrdre").val(sdc ? "sdc" : "");
+    $("#o_chaineDepart").prop("disabled", sdc);
+    // numéroter n'a de sens que pour une chaîne calculée, et seuls les chefs
+    // peuvent modifier les fiches (même condition que l'icône de rang)
+    $("#o_chaineNumeroter").toggle(
+      !sdc && avecRangs && membres.length > 1 && $("img[src='images/crayon.gif']").length > 0,
+    );
     $("#o_chaineDepart").html(
       `<option value=''>Le plus court (départ libre)</option>` +
         pseudos
@@ -1370,15 +1439,22 @@ class PageAlliance {
       return null;
     }
     $("#o_chaineCopier").prop("disabled", false);
-    let chaine = (this._chaine = depart
-        ? this._calculerChaine(membres, depart)
-        : this._chaineLaPlusCourte(membres)),
+    let chaine = (this._chaine = sdc
+        ? this._chaineSdc(membres)
+        : depart
+          ? this._calculerChaine(membres, depart)
+          : this._chaineLaPlusCourte(membres)),
+      rangDe = (m) => {
+        let j = joueursSdc[m.pseudo];
+        return j ? this._libelleRang(j.rang, j.ordreRang) : "";
+      },
       n = chaine.ordre.length,
       lien = (m) =>
         `<a href='Membre.php?Pseudo=${m.pseudo}'>${$("<div>").text(m.pseudo).html()}</a>`,
       lignes = chaine.ordre.map((m, k) => {
         let vers = chaine.ordre[k + 1];
-        return `<tr><td>${k + 1}</td><td>${lien(m)}${m.isMe ? " <em>(toi)</em>" : ""}</td><td>${m.x} / ${m.y}</td>
+        let rang = rangDe(m);
+        return `<tr><td>${k + 1}</td><td>${lien(m)}${m.isMe ? " <em>(toi)</em>" : ""}${rang ? ` <span class='reduce'>(${$("<div>").text(rang).html()})</span>` : ""}</td><td>${m.x} / ${m.y}</td>
           <td>${vers ? lien(vers) : "—"}</td><td>${vers ? Utils.intToTime(chaine.etapes[k]) : "—"}</td></tr>`;
       });
     $("#o_chaineListe").html(
@@ -1388,7 +1464,90 @@ class PageAlliance {
       </tbody>`,
     );
     $("#o_chaineListe tr:even").css("background-color", monProfil.parametre["couleur2"].valeur);
+    chaine.sdc = sdc;
     return chaine;
+  }
+  /**
+   * Écrit l'ordre de la chaîne affichée comme priorité dans les fiches SDC,
+   * rang par rang, en partant de la fin : le dernier passeur de la chaîne
+   * devient Passeur 1, celui d'avant Passeur 2, etc. Le rang n'est pas modifié,
+   * et les membres sans rang SDC sont ignorés. Seules les fiches qui changent
+   * sont réécrites.
+   *
+   * @private
+   * @method _numeroterChaine
+   */
+  _numeroterChaine() {
+    let bouton = $("#o_chaineNumeroter");
+    if (!this._chaine || bouton.prop("disabled")) return;
+    let joueurs = (this._utilitaire.alliance && this._utilitaire.alliance.joueurs) || {},
+      compteurs = {},
+      ignores = [],
+      changements = [];
+    // la priorité 1 est le bout de la chaîne : on numérote depuis la fin
+    [...this._chaine.ordre].reverse().forEach((m) => {
+      let j = joueurs[m.pseudo];
+      if (!j || !j.rang || !j.sujetForum) return ignores.push(m.pseudo);
+      let n = (compteurs[j.rang] = (compteurs[j.rang] || 0) + 1);
+      if (String(j.ordreRang ?? "").trim() !== String(n)) changements.push({ joueur: j, n: n });
+    });
+    changements.reverse();
+    if (!changements.length) {
+      $.toast({ ...TOAST_INFO, text: "Les priorités du SDC suivent déjà cette chaîne." });
+      return;
+    }
+    let lignes = changements.map(
+      (c) =>
+        `${c.joueur.pseudo} : ${this._libelleRang(c.joueur.rang, c.joueur.ordreRang) || c.joueur.rang} → ${c.joueur.rang} ${c.n}`,
+    );
+    if (
+      !confirm(
+        `Mettre à jour ${changements.length} fiche${changements.length > 1 ? "s" : ""} du SDC ?\n\n${lignes.join("\n")}` +
+          (ignores.length ? `\n\nIgnorés (pas de rang SDC) : ${ignores.join(", ")}` : ""),
+      )
+    )
+      return;
+    let libelle = bouton.text(),
+      faits = 0;
+    bouton.prop("disabled", true).text(`Mise à jour… (0/${changements.length})`);
+    // une fiche après l'autre, et arrêt à la première erreur
+    changements
+      .reduce(
+        (suite, c) =>
+          suite.then(() => {
+            let ancien = c.joueur.ordreRang;
+            c.joueur.ordreRang = c.n;
+            return Promise.resolve(
+              this._utilitaire.modifierSujet(c.joueur.toUtilitaire(), " ", c.joueur.sujetForum),
+            ).then(
+              () => {
+                let membre = this._alliance.joueurs[c.joueur.pseudo];
+                if (membre) membre.ordreRang = c.n;
+                bouton.text(`Mise à jour… (${++faits}/${changements.length})`);
+              },
+              (e) => {
+                c.joueur.ordreRang = ancien;
+                throw e;
+              },
+            );
+          }),
+        Promise.resolve(),
+      )
+      .then(
+        () => $.toast({ ...TOAST_SUCCESS, text: "Priorités du SDC mises à jour." }),
+        () =>
+          $.toast({
+            ...TOAST_ERROR,
+            text: `La mise à jour s'est arrêtée après ${faits} fiche${faits > 1 ? "s" : ""} sur ${changements.length}.`,
+          }),
+      )
+      .then(() => {
+        bouton.prop("disabled", false).text(libelle);
+        if (faits) {
+          this.actualiserMembre();
+          this._dessinerCarte(this._filtrerMembres(this._carteMembres), this._carteMembres.length);
+        }
+      });
   }
   /**
    * Texte de la chaîne pour le forum, une étape par ligne.
@@ -1405,7 +1564,7 @@ class PageAlliance {
           `${k + 1}. ${c.ordre[k].pseudo} → ${c.ordre[k + 1].pseudo} (${Utils.intToTime(t)})`,
       );
     return (
-      `Chaîne de ${n} joueurs :\n${lignes.join("\n")}\n` +
+      `Chaîne de ${n} joueurs${c.sdc ? " (ordre SDC)" : ""} :\n${lignes.join("\n")}\n` +
       `Temps cumulé ${Utils.intToTime(c.total)}, plus longue étape ${Utils.intToTime(c.max)} (sans Vitesse d'attaque)`
     );
   }

@@ -35,7 +35,7 @@ Une fois l'annuaire en place, chaque membre (qui a visité le forum une fois pou
 Les chefs voient une petite icône en début de chaque ligne du tableau : elle ouvre la boîte **Attribuer un rang**, avec deux champs :
 
 - **Rang** : le libellé affiché dans la colonne Grade (remplace le grade natif du jeu pour ce membre).
-- **Priorité du rang** : un nombre qui sert à ordonner les rangs quand on trie la colonne (les priorités faibles en premier).
+- **Priorité dans la chaîne** : la place du membre dans la chaîne de son rang, 1 étant le bout de la chaîne (Passeur 1 est le dernier passeur). Elle s'affiche après le rang dans la colonne Grade, et sert à l'ordre SDC de la [chaîne sous la carte](Carte-d-alliance#chaîne-entre-plus-proches-voisins). Laisse 0 pour les membres hors chaîne, comme les chasseurs : rien ne s'affiche.
 
 <!-- TODO screenshot : boîte « Attribuer un rang »
 > ![Boîte Attribuer un rang](assets/wiki/sdc-attribuer-rang.png)

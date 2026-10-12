@@ -48,11 +48,13 @@ Ta sélection est **mémorisée par alliance et par serveur** : tu la retrouves 
 Sous la carte, la section **Chaîne entre plus proches voisins** calcule l'ordre de passage qui relie les membres affichés avec le moins de temps de trajet possible : chacun envoie au suivant, du premier au dernier, sans revenir au départ. Seuls les membres affichés comptent : décocher un joueur, un grade ou un rang dans les filtres le retire de la chaîne, qui se recalcule aussitôt.
 
 - **Départ** — par défaut _Le plus court (départ libre)_ : Toolzzz essaie chaque membre comme départ et garde la chaîne la plus courte, présentée du bas vers le haut de la carte. Tu peux aussi imposer le premier joueur.
+- **Ordre** — _Le plus court_ calcule la chaîne. _SDC (rang puis priorité)_ suit plutôt les rangs et priorités saisis par les chefs dans le [SDC](SDC-Infos-membres) : rangs par ordre alphabétique, puis priorités décroissantes (la priorité 1 est le bout de la chaîne), et les membres sans priorité (chasseurs…) à la fin. Pratique pour vérifier qu'une chaîne prévue colle aux positions, et comparer son temps cumulé à celui de la chaîne calculée. Cette option n'est disponible que si des rangs ont été saisis.
 - **Tracer sur la carte** — relie les membres dans l'ordre de la chaîne et numérote les points. Les liens habituels entre voisins sont masqués tant que la chaîne est tracée.
-- **Tableau** — pour chaque étape, le joueur, sa position, à qui il envoie et le temps de trajet, avec le temps cumulé et la plus longue étape.
+- **Tableau** — pour chaque étape, le joueur (avec son rang SDC et sa priorité s'il en a), sa position, à qui il envoie et le temps de trajet, avec le temps cumulé et la plus longue étape.
 - **Copier pour le forum** — copie la chaîne, une étape par ligne.
+- **Numéroter dans le SDC** (chefs uniquement) — écrit la place de chacun dans la chaîne affichée comme priorité de sa fiche SDC, rang par rang en partant de la fin : le dernier passeur de la chaîne devient Passeur 1, celui d'avant Passeur 2, etc. Par exemple, ne coche que les passeurs, laisse _Le plus court_, puis numérote. Le rang n'est pas modifié, les membres sans rang SDC sont ignorés, et une confirmation liste les fiches qui vont changer avant d'écrire quoi que ce soit.
 
-Les temps sont ceux du jeu **sans amélioration de Vitesse d'attaque**, puisque chaque membre envoie avec son propre niveau. Le départ et le tracé sont mémorisés par alliance et par serveur.
+Les temps sont ceux du jeu **sans amélioration de Vitesse d'attaque**, puisque chaque membre envoie avec son propre niveau. L'ordre, le départ et le tracé sont mémorisés par alliance et par serveur.
 
 ## Exporter pour le forum
 
