@@ -445,6 +445,43 @@ class BoiteComptePlus {
     }
   }
   /**
+   * Compte à rebours d'une ligne de la boîte jusqu'à exp, et sa barre de
+   * progression depuis start : durée courte au-delà d'une heure, secondes
+   * visibles en dessous. Pour une liste (pontes, chasses…), l'élément terminé
+   * en est retiré à 0 et la ligne passe au suivant. Pas pour la construction
+   * et la recherche : leur fin met à jour les niveaux du profil (cf.
+   * verifierDonnees), à faire une seule fois au chargement d'une page et non
+   * dans chaque onglet ouvert.
+   *
+   * @private
+   * @method _compteARebours
+   * @param {String} ligne suffixe des ids o_temps / o_progress
+   * @param start début, pour la progression
+   * @param exp fin
+   * @param {String} liste attribut de la liste dont exp est le premier élément
+   */
+  _compteARebours(ligne, start, exp, liste = "") {
+    let debut = moment(start).valueOf(),
+      fin = moment(exp).valueOf(),
+      progression = $("#o_progress" + ligne);
+    Utils.decreaseTime((fin - Date.now()) / 1000, "o_temps" + ligne, {
+      format: (t) => (t > 3600 ? Utils.shortcutTime(t) : Utils.intToTime(t)),
+      chaqueSeconde: (t) => {
+        progression
+          .progressbar({ value: fin > debut ? ((Date.now() - debut) * 100) / (fin - debut) : 100 })
+          .toggleClass("highlight_success", t <= 600);
+      },
+      aZero: () => {
+        if (!liste) return;
+        // une seconde plus tard, pour que l'élément soit bien passé
+        setTimeout(() => {
+          this[liste] = this[liste].filter((elt) => moment(elt.exp).isAfter(moment()));
+          this["maj" + (ligne == "Unite" ? "Ponte" : ligne)]();
+        }, 1000);
+      },
+    });
+  }
+  /**
    * Met à jour les pontes si elles ne correspondent pas.
    *
    * @private
@@ -457,11 +494,6 @@ class BoiteComptePlus {
         "text-overflow": "ellipsis",
         overflow: "hidden",
         "white-space": "nowrap",
-      });
-      $("#o_progressUnite").progressbar({
-        value:
-          ((moment().valueOf() - moment(this._startPonte).valueOf()) * 100) /
-          (moment(this._ponte[0].exp).valueOf() - moment(this._startPonte).valueOf()),
       });
       // Ajout du title
       let table = "<table>",
@@ -485,14 +517,12 @@ class BoiteComptePlus {
       table += "</table>";
       $("#boiteComptePlus table tr:eq(0)").attr("title", table);
       // Si il reste moins d'une heure (on voit les secondes) on met dynamise
-      let tempsR = moment(this._ponte[0].exp).diff(moment()) / 1000;
-      $("#o_tempsUnite").text(Utils.shortcutTime(tempsR));
-      if (tempsR <= 3600) Utils.decreaseTime(tempsR, "o_tempsUnite");
-      if (tempsR <= 600) $("#o_progressUnite").addClass("highlight_success");
+      this._compteARebours("Unite", this._startPonte, this._ponte[0].exp, "_ponte");
     } else {
       $("#o_resteUnite").html("<span class='red_light'>Aucune ponte</span>");
+      Utils.arreterTime("o_tempsUnite");
       $("#o_tempsUnite").text("");
-      $("#o_progressUnite").progressbar({ value: 0 });
+      $("#o_progressUnite").progressbar({ value: 0 }).removeClass("highlight_success");
     }
     return this;
   }
@@ -510,17 +540,7 @@ class BoiteComptePlus {
         overflow: "hidden",
         "white-space": "nowrap",
       });
-      $("#o_progressConstruction").progressbar({
-        value:
-          ((moment().valueOf() - moment(this._startConstruction).valueOf()) * 100) /
-          (moment(this._expConstruction).valueOf() - moment(this._startConstruction).valueOf()),
-      });
-      let tempsR = moment(this._expConstruction).diff(moment()) / 1000;
-      $("#o_resteConstruction").after(
-        `<div id='o_tempsConstruction' class='o_labelTempsBoite'>${Utils.shortcutTime(tempsR)}</div>`,
-      );
-      if (tempsR <= 3600) Utils.decreaseTime(tempsR, "o_tempsConstruction");
-      if (tempsR <= 600) $("#o_progressConstruction").addClass("highlight_success");
+      this._compteARebours("Construction", this._startConstruction, this._expConstruction);
     }
     return this;
   }
@@ -538,17 +558,7 @@ class BoiteComptePlus {
         overflow: "hidden",
         "white-space": "nowrap",
       });
-      $("#o_progressRecherche").progressbar({
-        value:
-          ((moment().valueOf() - moment(this._startRecherche).valueOf()) * 100) /
-          (moment(this._expRecherche).valueOf() - moment(this._startRecherche).valueOf()),
-      });
-      let tempsR = moment(this._expRecherche).diff(moment()) / 1000;
-      $("#o_resteRecherche").after(
-        `<div id='o_tempsRecherche' class='o_labelTempsBoite'>${Utils.shortcutTime(tempsR)}</div>`,
-      );
-      if (tempsR <= 3600) Utils.decreaseTime(tempsR, "o_tempsRecherche");
-      if (tempsR <= 600) $("#o_progressRecherche").addClass("highlight_success");
+      this._compteARebours("Recherche", this._startRecherche, this._expRecherche);
     }
     return this;
   }
@@ -566,25 +576,18 @@ class BoiteComptePlus {
         overflow: "hidden",
         "white-space": "nowrap",
       });
-      $("#o_progressAttaque").progressbar({
-        value:
-          ((moment().valueOf() - moment(this._startAttaque).valueOf()) * 100) /
-          (moment(this._attaque[0].exp).valueOf() - moment(this._startAttaque).valueOf()),
-      });
       // Ajout du title
       let table = "<table>";
       for (let i = 0, l = this._attaque.length; i < l; i++)
         table += `<tr><td class='gras'>${this._attaque[i].cible}</td><td>&nbsp;</td><td>Retour le ${moment(this._attaque[i].exp).add(1, "minute").startOf("minute").format("D MMM YYYY à HH[h]mm")}</td></tr>`;
       table += "</table>";
       $("#boiteComptePlus table tr:eq(4)").attr("title", table);
-      let tempsR = moment(this._attaque[0].exp).diff(moment()) / 1000;
-      $("#o_tempsAttaque").text(Utils.shortcutTime(tempsR));
-      if (tempsR <= 3600) Utils.decreaseTime(tempsR, "o_tempsAttaque");
-      if (tempsR <= 600) $("#o_progressAttaque").addClass("highlight_success");
+      this._compteARebours("Attaque", this._startAttaque, this._attaque[0].exp, "_attaque");
     } else {
       $("#o_resteAttaque").text("Aucune attaque");
+      Utils.arreterTime("o_tempsAttaque");
       $("#o_tempsAttaque").text("");
-      $("#o_progressAttaque").progressbar({ value: 0 });
+      $("#o_progressAttaque").progressbar({ value: 0 }).removeClass("highlight_success");
     }
     return this;
   }
@@ -602,25 +605,18 @@ class BoiteComptePlus {
         overflow: "hidden",
         "white-space": "nowrap",
       });
-      $("#o_progressConvoi").progressbar({
-        value:
-          ((moment().valueOf() - moment(this._startConvoi).valueOf()) * 100) /
-          (moment(this._convoi[0].exp).valueOf() - moment(this._startConvoi).valueOf()),
-      });
       // Ajout du title
       let table = "<table id='o_titleConvoi'>";
       for (let i = 0, l = this._convoi.length; i < l; i++)
         table += `<tr><td>${this._convoi[i].sens ? "<img src='" + IMG_DOWN + "' alt='reception'/>" : "<img src='" + IMG_UP + "' alt='livraison'/>"}</td><td class='gras'>${this._convoi[i].cible}</td><td>&nbsp;</td><td class="right">${numeral(this._convoi[i].nou).format("0[.]00a")} <img alt="nourritures" src="images/icone/icone_pomme.png" height="17"></td><td class="right">${numeral(this._convoi[i].mat).format("0[.]00a")} <img alt="materiaux" src="images/icone/icone_bois.png" height="17"/></td><td>Retour le ${moment(this._convoi[i].exp).add(1, "minute").startOf("minute").format("D MMM YYYY à HH[h]mm")}</td></tr>`;
       table += "</table>";
       $("#boiteComptePlus table tr:eq(5)").attr("title", table);
-      let tempsR = moment(this._convoi[0].exp).diff(moment()) / 1000;
-      $("#o_tempsConvoi").text(Utils.shortcutTime(tempsR));
-      if (tempsR <= 3600) Utils.decreaseTime(tempsR, "o_tempsConvoi");
-      if (tempsR <= 600) $("#o_progressConvoi").addClass("highlight_success");
+      this._compteARebours("Convoi", this._startConvoi, this._convoi[0].exp, "_convoi");
     } else {
       $("#o_resteConvoi").text("Aucune convoi");
+      Utils.arreterTime("o_tempsConvoi");
       $("#o_tempsConvoi").text("");
-      $("#o_progressConvoi").progressbar({ value: 0 });
+      $("#o_progressConvoi").progressbar({ value: 0 }).removeClass("highlight_success");
     }
     return this;
   }
@@ -648,22 +644,15 @@ class BoiteComptePlus {
           overflow: "hidden",
           "white-space": "nowrap",
         });
-      $("#o_progressChasse").progressbar({
-        value:
-          ((moment().valueOf() - moment(this._startChasse).valueOf()) * 100) /
-          (moment(this._chasse[0].exp).valueOf() - moment(this._startChasse).valueOf()),
-      });
       // Ajout du title
       $("#boiteComptePlus table tr:eq(3)").attr("title", table);
-      let tempsR = moment(this._chasse[0].exp).diff(moment()) / 1000;
-      $("#o_tempsChasse").text(Utils.shortcutTime(tempsR));
-      if (tempsR <= 3600) Utils.decreaseTime(tempsR, "o_tempsChasse");
-      if (tempsR <= 600) $("#o_progressChasse").addClass("highlight_success");
+      this._compteARebours("Chasse", this._startChasse, this._chasse[0].exp, "_chasse");
     } else {
       $("#o_resteChasse").text("Aucune chasse");
+      Utils.arreterTime("o_tempsChasse");
       $("#o_tempsChasse").text("");
       $("#boiteComptePlus table tr:eq(3)").attr("title", "");
-      $("#o_progressChasse").progressbar({ value: 0 });
+      $("#o_progressChasse").progressbar({ value: 0 }).removeClass("highlight_success");
     }
     return this;
   }

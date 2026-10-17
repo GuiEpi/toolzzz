@@ -4,6 +4,13 @@
  **********************************************************************/
 
 /**
+ * Comptes à rebours en cours (cf. Utils.decreaseTime) : id de l'élément →
+ * {fin (timestamp ms), format, chaqueSeconde, aZero}.
+ */
+const COMPTES_A_REBOURS = {};
+let intervalleComptesARebours = null;
+
+/**
  * Données globales du projet, de fourmizzz et des fonctions utilisables partout dans le code.
  *
  * @class Utils
@@ -413,20 +420,66 @@ class Utils {
     if (location.search.includes("confAnnuler")) history.replaceState({}, "", retourUrl);
   }
   /**
-   * Decremente un chrono dynamique toutes les secondes.
+   * Compte à rebours dans l'élément id. Le temps restant est recalculé depuis
+   * l'heure de fin à chaque tick (et au retour sur l'onglet) : un onglet en
+   * arrière-plan, où le navigateur espace les timers, ou une mise en veille
+   * ne le font pas dériver. Un seul intervalle sert tous les comptes, et
+   * relancer un compte sur le même id remplace le précédent au lieu de
+   * l'empiler.
    *
    * @static
    * @method decreaseTime
-   * @param {Integer} time
+   * @param {Number} time secondes restantes
    * @param {String} id
-   * @return L'affichage du contenue de l'id est decrementé d'une seconde.
+   * @param {Object} options
+   *   - format(secondes) : texte affiché, Utils.intToTime par défaut
+   *   - chaqueSeconde(secondes) : appelé à chaque mise à jour
+   *   - aZero() : appelé une fois le compte arrivé à 0 (s'il ne l'était pas au départ)
    */
-  static decreaseTime(time, id) {
-    $("#" + id).text(this.intToTime(time));
-    if (time > 0)
-      setTimeout(() => {
-        Utils.decreaseTime(time - 1, id);
-      }, 1000);
+  static decreaseTime(time, id, options = {}) {
+    COMPTES_A_REBOURS[id] = { ...options, fin: Date.now() + time * 1000 };
+    if (time <= 0) delete COMPTES_A_REBOURS[id].aZero;
+    if (intervalleComptesARebours === null) {
+      intervalleComptesARebours = setInterval(Utils.majComptesARebours, 1000);
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) Utils.majComptesARebours();
+      });
+    }
+    Utils.majComptesARebours();
+  }
+  /**
+   * Arrête le compte à rebours de l'élément id (le texte reste en place).
+   *
+   * @static
+   * @method arreterTime
+   * @param {String} id
+   */
+  static arreterTime(id) {
+    delete COMPTES_A_REBOURS[id];
+  }
+  /**
+   * Met à jour tous les comptes à rebours ; ceux à 0 ou dont l'élément a
+   * disparu sont retirés.
+   *
+   * @static
+   * @method majComptesARebours
+   */
+  static majComptesARebours() {
+    for (let id in COMPTES_A_REBOURS) {
+      let compte = COMPTES_A_REBOURS[id],
+        elt = document.getElementById(id);
+      if (!elt) {
+        delete COMPTES_A_REBOURS[id];
+        continue;
+      }
+      let reste = Math.max(0, Math.ceil((compte.fin - Date.now()) / 1000));
+      elt.textContent = compte.format ? compte.format(reste) : Utils.intToTime(reste);
+      if (compte.chaqueSeconde) compte.chaqueSeconde(reste);
+      if (!reste) {
+        delete COMPTES_A_REBOURS[id];
+        if (compte.aZero) compte.aZero();
+      }
+    }
   }
   /**
    * Incremente un chrono dynamique toutes les secondes.
