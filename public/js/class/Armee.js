@@ -100,9 +100,12 @@ class Armee {
     return $.ajax({ url: location.origin + "/Armee.php" });
   }
   /**
+   * Lit la garnison d'Armee.php, tous lieux confondus ou pour un seul lieu.
    *
+   * @param {String} html Armee.php
+   * @param {Integer} lieu 1 terrain de chasse, 2 dôme, 3 loge ; 0 pour tous
    */
-  chargeData(html) {
+  chargeData(html, lieu = 0) {
     $(html)
       .find(".simulateur tr[align='center']:lt(14)")
       .each((i, elt) => {
@@ -111,6 +114,8 @@ class Armee {
           $(elt)
             .find("td span")
             .each((i2, elt2) => {
+              // id du jeu : (nombre,'uniteX',lieu)
+              if (lieu && !($(elt2).attr("id") || "").endsWith("," + lieu + ")")) return;
               this._unite[NOM_UNITE.indexOf(label) - 1] += parseInt(
                 $(elt2)
                   .text()
@@ -538,11 +543,12 @@ class Armee {
       let donnees = Armee.donneesChasse(terrainChasse, this._repartition[indice], securite);
       // Requete
       $.post(location.origin + "/AcquerirTerrain.php", donnees, (data) => {
-        if (data.indexOf("La chasse est lancée.") > -1)
+        if (data.indexOf("La chasse est lancée.") > -1) {
+          TroupesDehors.enregistrerChasse(this._repartition[indice]);
           $("#o_simulationChasse tr:eq(" + (indice + 1) + ")").html(
             `<td class='green'>${indice + 1}</td><td colspan='14' class='green'>La chasse est lancée.</td>`,
           );
-        else
+        } else
           $("#o_simulationChasse tr:eq(" + (indice + 1) + ")").html(
             `<td class='red'>${indice + 1}</td><td colspan='14' class='red'>La chasse n'a pas pu être lancée.</td>`,
           );

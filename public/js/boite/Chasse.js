@@ -719,6 +719,7 @@ class BoiteChasse extends Boite {
   _envoyerChasse(s, i, securite) {
     if (i >= s.nombre) return this._finLancement(i, s.nombre);
     let marquer = (ok) => {
+      if (ok) TroupesDehors.enregistrerChasse(s.chasses[i].unites);
       $(`#o_scRepartition tbody tr:eq(${i})`)
         .addClass(ok ? "green" : "red")
         .find("td:first")

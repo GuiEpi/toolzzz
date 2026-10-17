@@ -1407,6 +1407,18 @@ class BoiteCombat extends Boite {
       let txt = Utils.parseHtml(data).find("center:last").text(),
         ok = txt.indexOf("Vos troupes sont en marche") !== -1;
       this._mfMarquerAttaque(cible.pseudo, i, ok);
+      // capture pour le récapitulatif par cible et le compte des troupes
+      // dehors (lieu toujours le terrain : le payload envoie lieu=1)
+      if (ok) {
+        let unite = {};
+        this._mfArmee.repartition[k].forEach((nb, ind) => {
+          if (nb) unite[NOM_UNITE[ind + 1]] = nb;
+        });
+        AttaqueLancee.enregistrer(cible.pseudo, "Terrain de chasse", unite, {
+          html: data,
+          terrain: cible.terrain,
+        });
+      }
       setTimeout(
         () => this._mfEnvoyerAttaqueSuivante(cible, securite, indices, k + 1, onComplete),
         1000,

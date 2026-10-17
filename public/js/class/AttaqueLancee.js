@@ -100,6 +100,7 @@ class AttaqueLancee {
       if (ligne) {
         capture.id = ligne.id;
         capture.arrivee = ligne.arrivee.valueOf();
+        AttaqueLancee.noterDehors(capture);
       }
     }
     liste.push(capture);
@@ -164,10 +165,24 @@ class AttaqueLancee {
         let ligne = candidates[candidates.length - nb + i];
         capture.id = ligne.id;
         capture.arrivee = ligne.arrivee.valueOf();
+        AttaqueLancee.noterDehors(capture);
         modifie = true;
       });
     });
     return modifie;
+  }
+  /**
+   * Ajoute une attaque liée au registre des troupes dehors, jusqu'à son
+   * arrivée : les survivantes sont alors de nouveau en garnison.
+   *
+   * @param {Object} capture capture liée (id et arrivée connus)
+   */
+  static noterDehors(capture) {
+    TroupesDehors.ajouterAttaque(
+      capture.id,
+      new Armee({ unite: capture.unite }).unite,
+      capture.arrivee,
+    );
   }
   /**
    * Terrain estimé de la cible après une attaque : même règle que la
@@ -236,6 +251,7 @@ class AttaqueLancee {
         modifie = true;
       });
     liste = liste.filter((a) => !a.id || lignes.some((l) => l.id == a.id));
+    TroupesDehors.synchroniserAttaques(lignes);
     if (AttaqueLancee.recalculerTerrains(liste)) modifie = true;
     if (modifie) AttaqueLancee.sauvegarder(liste);
     return liste;

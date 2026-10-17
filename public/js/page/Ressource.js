@@ -43,6 +43,8 @@ class PageRessource {
       // Ajout du lanceur de chasse
       this.lanceur();
     });
+    // Lie les chasses lancées aux lignes du jeu (compte des troupes dehors)
+    TroupesDehors.synchroniserChasses();
     // Sauvegarde les chasses en cours et ajoute les boutons max recolte
     if (!Utils.comptePlus) this.plus();
     // Affectation automatique des ouvrières (tous comptes)
@@ -474,6 +476,23 @@ class PageRessource {
     $("#RecolteMateriaux").after(
       "<a title='Affecter un maximum d’ouvrière aux matériaux' class='button_max' onclick='javascript:maxMateriaux();' href='#max'><img class='o_vAlign' width='23' height='23' src='images/bouton/fleche_haut.gif'/></a>",
     );
+    // Hors C+ le formulaire du jeu envoie chasser toute l'armée du terrain de
+    // chasse : on la mémorise pour la compter tant qu'elle est dehors. Elle
+    // est relue juste avant l'envoi (elle a pu bouger depuis le chargement de
+    // la page, une valeur périmée compterait des troupes fantômes), puis le
+    // formulaire est renvoyé tel quel, quoi qu'il arrive à la lecture.
+    let formChasse = $("form[action='AcquerirTerrain.php']"),
+      armeeLue = false;
+    formChasse.on("submit", (e) => {
+      if (armeeLue || !(numeral($("#AcquerirTerrain").val()).value() > 0)) return;
+      e.preventDefault();
+      armeeLue = true;
+      let bouton = e.originalEvent && e.originalEvent.submitter;
+      Promise.resolve(new Armee().getArmee())
+        .then((data) => TroupesDehors.enregistrerChasse(new Armee().chargeData(data, 1).unite))
+        .catch(() => {})
+        .finally(() => formChasse[0].requestSubmit(bouton || undefined));
+    });
     // Affichage du retour des chasses
     let listeChasse = new Array();
     $("span[id^=chasse_]").each((i, elt) => {
