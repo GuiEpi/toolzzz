@@ -492,8 +492,9 @@ class PageRessource {
             "</span>",
         );
     });
-    // Sauvegarde de la chasse en cours
-    if (listeChasse.length) this.saveChasse(listeChasse);
+    // Sauvegarde de la chasse en cours, y compris quand il n'y en a plus
+    // (annulée) pour vider la boîte
+    this.saveChasse(listeChasse);
   }
   /**
    * Choix du mode d'affectation automatique des ouvrières sur la page, et
@@ -694,6 +695,14 @@ class PageRessource {
    * @method saveChasse
    */
   saveChasse(listeChasse) {
+    if (!listeChasse.length) {
+      if (this._boiteComptePlus.chasse.length) {
+        this._boiteComptePlus.chasse = [];
+        this._boiteComptePlus.startChasse = 0;
+        this._boiteComptePlus.sauvegarder().majChasse();
+      }
+      return this;
+    }
     if (
       !this._boiteComptePlus.hasOwnProperty("chasse") ||
       this._boiteComptePlus.chasse.length != listeChasse.length ||

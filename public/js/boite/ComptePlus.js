@@ -662,6 +662,7 @@ class BoiteComptePlus {
     } else {
       $("#o_resteChasse").text("Aucune chasse");
       $("#o_tempsChasse").text("");
+      $("#boiteComptePlus table tr:eq(3)").attr("title", "");
       $("#o_progressChasse").progressbar({ value: 0 });
     }
     return this;
