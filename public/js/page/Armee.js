@@ -366,7 +366,7 @@ class PageArmee {
           $(elt)
             .next()
             .html(
-              `<a href="${lien}" class='cursor'><img width='9' height='15' src='//img2.fourmizzz.fr/images/bouton/fleche-champs-droite.gif'/></a>`,
+              `<a href="${lien}" class='cursor'><img width='9' height='15' src='images/bouton/fleche-champs-droite.gif'/></a>`,
             );
         }
         if (lieuDep != 1) {
@@ -386,7 +386,7 @@ class PageArmee {
           $(elt)
             .prev()
             .html(
-              `<a href="${lien}" class='cursor'><img width='9' height='15' src='//img2.fourmizzz.fr/images/bouton/fleche-champs-gauche.gif'/></a>`,
+              `<a href="${lien}" class='cursor'><img width='9' height='15' src='images/bouton/fleche-champs-gauche.gif'/></a>`,
             );
         }
       }
