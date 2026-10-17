@@ -148,6 +148,24 @@ class PageChat {
     $("#listeSmiley50").html(LISTESMILEY4);
     $("#listeSmiley60").html(LISTESMILEY5);
     $("#listeSmiley70").html(LISTESMILEY6);
+    // Flèches pour passer d'un pack à l'autre : présentes mais vides hors
+    // Compte+ (changerCookiePack est réservé au C+)
+    $("#smileyPrecedent0")
+      .html(`<img title='Précédent' class='cursor' src='images/bouton/fleche-champs-gauche.gif'/>`)
+      .css({ position: "relative", top: "2px" })
+      .click((e) => {
+        let div = $("#tousLesSmiley0 div:visible");
+        div.hide();
+        div.prev().length ? div.prev().show() : $("#tousLesSmiley0 div:last").show();
+      });
+    $("#smileySuivant0")
+      .html(`<img title='Suivant' class='cursor' src='images/bouton/fleche-champs-droite.gif'/>`)
+      .css({ position: "relative", top: "2px" })
+      .click((e) => {
+        let div = $("#tousLesSmiley0 div:visible");
+        div.hide();
+        div.next().length ? div.next().show() : $("#tousLesSmiley0 div:first").show();
+      });
   }
   /**
    *
