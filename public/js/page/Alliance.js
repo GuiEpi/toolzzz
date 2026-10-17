@@ -160,11 +160,13 @@ class PageAlliance {
       });
       this._gradesNatifs[pseudo] = tmpJoueurs[pseudo].rang;
       if (!Utils.comptePlus && !tmpJoueurs[pseudo].estJoueurCourant()) {
-        if (tmpJoueurs[pseudo].estAttaquable()) $(elt).find("td:eq(6)").html(IMG_ATT);
+        if (tmpJoueurs[pseudo].estAttaquable())
+          $(elt).find("td:eq(6)").html(Joueur.lienAttaque(pseudo));
         if (tmpJoueurs[pseudo].estAttaquant()) $(elt).find("td:eq(4)").html(IMG_DEF);
       }
     });
     this._alliance.joueurs = tmpJoueurs;
+    Joueur.activerLiensAttaque();
 
     $("#tabMembresAlliance").append(
       `<tfoot class='${Object.keys(this._alliance.joueurs).length % 2 ? "ligne_paire" : ""}'><tr class='gras centre'><td colspan='12'>Terrain : <span id='totalTerrain'>${numeral(this._alliance.calculTerrain()).format()}</span> cm² | Fourmilière : ${numeral(this._alliance.calculFourmiliere()).format()} | Technologie : ${numeral(this._alliance.calculTechnologie()).format()}.</td></tr></tfoot>`,

@@ -41,11 +41,13 @@ class PageDescription {
         technologie: ~~$(elt).find("td:eq(6)").text(),
       });
       if (!Utils.comptePlus && !tmpJoueurs[pseudo].estJoueurCourant()) {
-        if (tmpJoueurs[pseudo].estAttaquable()) $(elt).find("td:eq(5)").html(IMG_ATT);
+        if (tmpJoueurs[pseudo].estAttaquable())
+          $(elt).find("td:eq(5)").html(Joueur.lienAttaque(pseudo));
         if (tmpJoueurs[pseudo].estAttaquant()) $(elt).find("td:eq(3)").html(IMG_DEF);
       }
     });
     this._alliance.joueurs = tmpJoueurs;
+    Joueur.activerLiensAttaque();
 
     $("#tabMembresAlliance tr:first").remove();
     $("#tabMembresAlliance")

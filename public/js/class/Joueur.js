@@ -497,6 +497,46 @@ class Joueur {
     });
   }
   /**
+   * Épée « Attaquer cette Fourmilière », comme dans les tableaux de membres
+   * en Compte+. Le tableau ne donne que le pseudo et la page d'attaque veut
+   * l'id du joueur : le lien mène au profil, et au clic l'id y est lu pour
+   * ouvrir directement la page d'attaque (cf. Joueur.activerLiensAttaque).
+   *
+   * @static
+   * @method lienAttaque
+   * @param {String} pseudo
+   * @return {String} html
+   */
+  static lienAttaque(pseudo) {
+    return `<a href="Membre.php?Pseudo=${encodeURIComponent(pseudo)}" class="o_lienAttaque" data-pseudo="${pseudo}"><img src="images/icone/icone_degat_attaque.gif" title="Attaquer cette Fourmilière" alt="Attaquer" width="18" height="18"></a>`;
+  }
+  /**
+   * Clic sur une épée de Joueur.lienAttaque : lit l'id sur le profil puis
+   * ouvre la page d'attaque. En cas d'échec, le lien mène au profil.
+   *
+   * @static
+   * @method activerLiensAttaque
+   */
+  static activerLiensAttaque() {
+    $(document)
+      .off("click.o_lienAttaque")
+      .on("click.o_lienAttaque", ".o_lienAttaque", (e) => {
+        e.preventDefault();
+        let lien = e.currentTarget,
+          joueur = new Joueur({ pseudo: $(lien).data("pseudo") });
+        joueur.getProfil().then(
+          (html) => {
+            try {
+              joueur.chargerProfil(html);
+            } catch (erreur) {}
+            location.href =
+              joueur.id != -1 ? `ennemie.php?Attaquer=${joueur.id}&lieu=1` : lien.href;
+          },
+          () => (location.href = lien.href),
+        );
+      });
+  }
+  /**
    *
    */
   getProfilCourant() {
