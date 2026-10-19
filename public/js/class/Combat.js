@@ -659,9 +659,11 @@ class Combat {
       );
     });
     // on repique à 10% si l'attaque est strictement supérieur à la vie en def
+    // (vie totale : vieDefenseur est par unité, un tableau comparé à un
+    // nombre vaut NaN et la réplique restait toujours à 100 %)
     let replique = this.calculerReplique(
       this._armeeAv.getTotalAtt(this._attaquant.niveauRecherche[2]),
-      vieDefenseur,
+      vieDefenseur.reduce((acc, val) => acc + val, 0),
     );
     // tant qu'il rete de la vie sur la defense ou l'attaque on enchaine les tours
     while (
