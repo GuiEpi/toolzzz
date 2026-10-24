@@ -33,12 +33,19 @@ class PageRessource {
      * Dernière simulation du lanceur
      */
     this._simu = null;
+    /**
+     * Vrai quand l'affectation des ouvrières a soumis le formulaire du jeu
+     */
+    this._rechargement = false;
   }
   /**
    *
    */
   executer() {
     this._armee.getArmee().then((data) => {
+      // la page va se recharger (affectation des ouvrières) : un lancement de
+      // chasses commencé maintenant serait coupé en route
+      if (this._rechargement) return;
       this._armee.chargeData(data);
       // Ajout du lanceur de chasse
       this.lanceur();
@@ -588,13 +595,21 @@ class PageRessource {
         </td></tr>${ligneRatio}`);
     $("#o_ratioRecolte").toggle(affection == 3);
     $("#o_ratioRecoltePart").spinner({ min: 0, max: 100, numberFormat: "i" });
-    let appliquerRatio = (r) => {
+    // Un réglage du ratio n'est qu'un aperçu dans les champs du jeu : il est
+    // enregistré avec eux par le bouton du jeu, qui recharge la page. Appliqué
+    // à chaque changement, il rechargeait la page à chaque clic sur une flèche.
+    let apercuRatio = (r) => {
       ratio = r;
       majRatio(ratio);
+      let repartition = this.repartitionRatio(ratio);
+      $("#RecolteMateriaux").val(repartition.materiaux);
+      $("#RecolteNourriture").val(repartition.nourriture);
+    };
+    $("#ChangeRessource").on("click", () => {
+      if (monProfil.parametre["affectationRessource"].valeur != 3) return;
       monProfil.parametre["ratioRecolte"].valeur = ratio;
       monProfil.parametre["ratioRecolte"].sauvegarde();
-      this.affecterOuvrieres(3, ratio);
-    };
+    });
     // Le pas jQuery UI reste à 1 : avec un pas de 10, une valeur fine posée
     // depuis le champ serait arrondie. Le glissement à la souris est filtré
     // sur les multiples de 10 pour garder un curseur rapide ; le clavier sur
@@ -611,15 +626,14 @@ class PageRessource {
       // seulement sur action de l'utilisateur : une valeur posée depuis le
       // champ est appliquée par le champ
       change: (e, ui) => {
-        if (e.originalEvent) appliquerRatio(ui.value);
+        if (e.originalEvent) apercuRatio(ui.value);
       },
     });
-    // saisie au clavier : validée à la sortie du champ ou avec les flèches,
-    // pas à chaque frappe (un « 5 » tapé avant « 0 » lancerait une affectation)
+    // saisie au clavier : prise en compte à la sortie du champ ou avec les flèches
     $("#o_ratioRecoltePart").on("spinstop change", (e) => {
       let v = Math.min(100, Math.max(0, parseInt($(e.currentTarget).val()) || 0));
       $("#o_ratioRecolteCurseur").slider("value", v);
-      appliquerRatio(v);
+      apercuRatio(v);
     });
     if (Utils.comptePlus)
       // sur "click" et non "change" : le jeu peut réagir au changement en
@@ -654,9 +668,9 @@ class PageRessource {
         }
         monProfil.parametre["affectationRessource"].sauvegarde();
         $("#o_ratioRecolte").toggle(monProfil.parametre["affectationRessource"].valeur == 3);
-        // le ratio se voit tout de suite, les autres modes agissent à la prochaine consultation
-        if (monProfil.parametre["affectationRessource"].valeur == 3)
-          this.affecterOuvrieres(3, ratio);
+        // le ratio s'affiche dans les champs du jeu, à enregistrer avec son
+        // bouton ; les autres modes agissent à la prochaine consultation
+        if (monProfil.parametre["affectationRessource"].valeur == 3) apercuRatio(ratio);
         return false;
       });
     // Affectation des ouvriéres inutilisé si on a la pref
@@ -681,8 +695,9 @@ class PageRessource {
       nouveauMateriaux = materiaux,
       nouvelleNourriture = nourriture;
     if (mode == 3) {
-      nouvelleNourriture = Math.round((affectables * ratio) / 100);
-      nouveauMateriaux = affectables - nouvelleNourriture;
+      let repartition = this.repartitionRatio(ratio);
+      nouvelleNourriture = repartition.nourriture;
+      nouveauMateriaux = repartition.materiaux;
     } else if (materiaux + nourriture < affectables) {
       // si on ne couvre pas le terrain et qu'on a assez d'ouvrières
       if (mode == 1) nouveauMateriaux = affectables - nourriture;
@@ -703,9 +718,21 @@ class PageRessource {
       return;
     }
     sessionStorage.setItem(CLE_TENTATIVE, "1");
+    this._rechargement = true;
     $("#RecolteMateriaux").val(nouveauMateriaux);
     $("#RecolteNourriture").val(nouvelleNourriture);
     $("#ChangeRessource").click();
+  }
+  /**
+   * Ouvrières en nourriture et en matériaux pour une part `ratio` (%) en nourriture.
+   *
+   * @private
+   * @method repartitionRatio
+   */
+  repartitionRatio(ratio) {
+    let affectables = Math.min(Utils.ouvrieres, Utils.terrain),
+      nourriture = Math.round((affectables * ratio) / 100);
+    return { nourriture: nourriture, materiaux: affectables - nourriture };
   }
   /**
    * Sauvegarde la chasse en cours.
