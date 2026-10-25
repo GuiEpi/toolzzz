@@ -727,6 +727,21 @@ class Armee {
     });
   }
   /**
+   * Unités gardées à la maison pendant un flood. Si « Suivre antisondes » est
+   * coché, la réserve s'aligne sur les antisondes (terrain + dôme), sinon on
+   * prend la valeur saisie par l'utilisateur.
+   *
+   * @static
+   * @method reserveFlood
+   * @return {Integer}
+   */
+  static reserveFlood() {
+    return monProfil.parametre["reserveFloodAuto"].valeur
+      ? monProfil.parametre["uniteAntisondeTerrain"].valeur +
+          monProfil.parametre["uniteAntisondeDome"].valeur
+      : monProfil.parametre["reserveFlood"].valeur;
+  }
+  /**
    * Simule le placement des unités pour une methode de flood choisie.
    *
    * @private
@@ -736,12 +751,7 @@ class Armee {
     this._floods = new Array();
     // Réserve : on retire ces unités du pool dispo avant simulation.
     // repartirUniteFlood() les laissera intactes dans this._unite.
-    // Si « Suivre antisondes » est coché, la réserve s'aligne dynamiquement sur les antisondes
-    // (terrain + dôme) — sinon on prend la valeur saisie par l'utilisateur.
-    let reserve = monProfil.parametre["reserveFloodAuto"].valeur
-      ? monProfil.parametre["uniteAntisondeTerrain"].valeur +
-        monProfil.parametre["uniteAntisondeDome"].valeur
-      : monProfil.parametre["reserveFlood"].valeur;
+    let reserve = Armee.reserveFlood();
     // on a besoin d'un objet pour le passer au différentes fonctions
     let data = {
       attaques: attaques,

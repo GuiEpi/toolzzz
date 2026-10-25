@@ -786,7 +786,8 @@ class BoiteCombat extends Boite {
     });
   }
   /**
-   * Affiche le simulateur multi-flood (onglet 3).
+   * Onglet Multi-flood : un flood optimisé sur plusieurs cibles, calculé avec
+   * l'armée disponible et les créneaux d'attaque libres (VA + 1 au total).
    *
    * @private
    * @method multiFlood
@@ -794,90 +795,132 @@ class BoiteCombat extends Boite {
   multiFlood() {
     $("#o_tabsCombat3").append(`<div id="o_multiFlood" class="centre">
             <div id="o_mfFormWrap"></div>
+            <p class="o_marginT15"><label title="Les unités qui ne servent pas à prendre du terrain partent avec la dernière attaque, la plus longue : toute l'armée est à l'abri pendant le flood"><input type="checkbox" id="o_mfToutEnvoyer"/> Envoyer toute l'armée (le surplus part avec la dernière attaque)</label></p>
             <div id="o_mfResultats" class="o_marginT15"></div>
             <p id="o_mfRecap" class="o_marginT15"></p>
             <button id="o_mfLancer" class="o_button f_success o_marginT15" type="button" disabled>Lancer ces attaques</button>
         </div>`);
     /**
-     * Cibles sélectionnées par l'utilisateur. Chaque entrée :
-     * { pseudo, id, terrain, type, x, y, tempsParcours }
+     * Cibles sélectionnées. Chaque entrée :
+     * { pseudo, id, terrain, terrainImpact, type, x, y, tempsParcours }
      */
     this._mfCibles = [];
-    this._mfAttaquantOpts = { terrainFinal: null, priseMax: null };
-    this._mfTotalUnites = null; // chargé lazy via Armee.getArmee()
+    // mon terrain quand les attaques arriveront, si saisi (null = actuel)
+    this._mfTerrainAtt = null;
+    // armée et attaques en cours chargées depuis Armee.php
+    this._mfDisponible = null;
+    this._mfEnCours = 0;
     this._mfRenderForm();
-    // Pré-charge l'armée pour le check garnison ; ne bloque pas l'UI
-    if (!this._mfArmee) this._mfArmee = new Armee();
-    this._mfArmee.getArmee().then((data) => {
-      this._mfArmee.chargeData(data);
-      this._mfTotalUnites = (this._mfArmee.unite || []).reduce((s, n) => s + (n || 0), 0);
-      this.simulerMultiFlood();
-    });
+    $("#o_mfToutEnvoyer").change(() => this.simulerMultiFlood());
+    this._mfCharger();
     return this;
   }
   /**
+   * (Re)charge l'armée et les attaques en cours depuis Armee.php, puis recalcule.
+   *
+   * @private
+   * @method _mfCharger
+   */
+  _mfCharger() {
+    this._mfArmee = new Armee();
+    // niveaux relus : la Vitesse d'attaque fixe les créneaux et les temps de trajet
+    return Promise.all([
+      this._mfArmee.getArmee(),
+      $.ajax({ url: location.origin + "/laboratoire.php" }),
+      this._mfCompterEnCours(),
+    ]).then(([data, laboratoire]) => {
+      this._mfArmee.chargeData(data);
+      monProfil.chargerRecherche(laboratoire);
+      this._mfCibles.forEach((c) => (c.tempsParcours = monProfil.getTempsParcours2(c)));
+      this._mfDisponible = Math.max(0, this._mfArmee.getSommeUnite() - Armee.reserveFlood());
+      this._mfRenderForm();
+      this.simulerMultiFlood();
+    });
+  }
+  /**
+   * Attaques en cours, comptées sur la page d'attaque de la première cible
+   * comme le fait le lanceur de flood (attaques et renforts). Sans cible, on
+   * garde le compte précédent : il ne sert qu'une fois une cible ajoutée.
+   *
+   * @private
+   * @method _mfCompterEnCours
+   */
+  _mfCompterEnCours() {
+    let cible = this._mfCibles.find((c) => c.id > 0);
+    if (!cible) return Promise.resolve();
+    return $.get(`${location.origin}/ennemie.php?Attaquer=${cible.id}`).then(
+      (html) => {
+        this._mfEnCours =
+          Utils.parseHtml(html)
+            .text()
+            .split(/- Vous allez attaquer|- Des renforts arrivent/g).length - 1;
+      },
+      () => {},
+    );
+  }
+  /**
+   * Fin du lancement (complet ou interrompu) : l'armée et les créneaux ont
+   * changé, le plan est recalculé.
+   *
+   * @private
+   * @method _mfFinLancement
+   */
+  _mfFinLancement() {
+    $("#o_mfLancer").text("Lancer ces attaques");
+    $("#o_mfToutEnvoyer").prop("disabled", false);
+    // laisse au jeu le temps d'enregistrer la dernière attaque
+    setTimeout(() => this._mfCharger(), 1500);
+  }
+  /**
+   * Créneaux d'attaque encore libres : VA + 1 au total, moins les attaques en cours.
+   *
+   * @private
+   * @method _mfCreneaux
+   */
+  _mfCreneaux() {
+    return Math.max(0, monProfil.niveauRecherche[6] + 1 - this._mfEnCours);
+  }
+  /**
+   * Terrain de la cible quand les attaques arriveront : celui saisi (flood
+   * d'un collègue qui la touche avant), sinon celui de son profil.
+   *
+   * @private
+   * @method _mfTerrainCible
+   */
+  _mfTerrainCible(cible) {
+    return cible.terrainImpact ?? cible.terrain;
+  }
+  /**
    * Rend le tableau-formulaire au look natif :
-   * Attaquant | label | cible1 | cible2 | … | "+" (slot d'ajout).
-   * Re-rend complètement à chaque add/remove → re-bind autocomplete derrière.
+   * Attaquant | label | cible1 | cible2 | cible3.
+   * Re-rend complètement à chaque ajout/retrait → re-bind derrière.
    *
    * @private
    * @method _mfRenderForm
    */
   _mfRenderForm() {
     let cibles = [...this._mfCibles].sort((a, b) => a.tempsParcours - b.tempsParcours),
-      arrondirOptions = [0, 5, 10, 100, 1000],
-      // Toujours 3 slots cibles : rempli / autocomplete (1er vide) / placeholder.
-      slot = (i, render) =>
-        i < cibles.length
-          ? render(cibles[i])
-          : i === cibles.length
-            ? `<td><input type="text" id="o_mfPseudoCible" placeholder="Pseudo…"/></td>`
-            : `<td><input type="text" disabled placeholder="—"/></td>`,
       placeholder = `<td><input type="text" disabled placeholder="—"/></td>`,
-      arrondirPlaceholder = `<td><select disabled><option>Aucun</option></select></td>`,
+      ligne = (render) =>
+        [0, 1, 2].map((i) => (i < cibles.length ? render(cibles[i]) : placeholder)),
       pseudoRow = [0, 1, 2]
         .map((i) =>
-          slot(
-            i,
-            (c) =>
-              `<td><input type="text" class="o_mfPseudoCell cursor" data-pseudo="${c.pseudo}" value="${c.pseudo}" readonly title="Cliquer pour retirer"/></td>`,
-          ),
-        )
-        .join(""),
-      terrainRow = [0, 1, 2]
-        .map((i) =>
           i < cibles.length
-            ? `<td><input type="text" value="${numeral(cibles[i].terrain).format()} cm²" disabled/></td>`
-            : placeholder,
+            ? `<td><input type="text" class="o_mfPseudoCell cursor" data-pseudo="${cibles[i].pseudo}" value="${cibles[i].pseudo}" readonly title="Cliquer pour retirer"/></td>`
+            : i === cibles.length
+              ? `<td><input type="text" id="o_mfPseudoCible" placeholder="Pseudo…"/></td>`
+              : placeholder,
         )
         .join(""),
-      terrainFinalRow = [0, 1, 2]
-        .map((i) =>
-          i < cibles.length
-            ? `<td><input type="text" class="o_mfOpt" data-pseudo="${cibles[i].pseudo}" data-opt="terrainFinal" value="${cibles[i].terrainFinal ?? ""}" placeholder="—"/></td>`
-            : placeholder,
-        )
-        .join(""),
-      priseMaxRow = [0, 1, 2]
-        .map((i) =>
-          i < cibles.length
-            ? `<td><input type="text" class="o_mfOpt" data-pseudo="${cibles[i].pseudo}" data-opt="priseMax" value="${cibles[i].priseMax ?? ""}" placeholder="—"/></td>`
-            : placeholder,
-        )
-        .join(""),
-      arrondirRow = [0, 1, 2]
-        .map((i) => {
-          if (i >= cibles.length) return arrondirPlaceholder;
-          let c = cibles[i],
-            opts = arrondirOptions
-              .map(
-                (v) =>
-                  `<option value="${v}"${(c.arrondir ?? 0) == v ? " selected" : ""}>${v === 0 ? "Aucun" : v}</option>`,
-              )
-              .join("");
-          return `<td><select class="o_mfOpt" data-pseudo="${c.pseudo}" data-opt="arrondir">${opts}</select></td>`;
-        })
-        .join("");
+      terrainRow = ligne(
+        (c) =>
+          `<td><input type="text" class="o_mfTerrain" data-pseudo="${c.pseudo}" value="${this._mfTerrainCible(c)}" title="Terrain de ${c.pseudo} quand vos attaques arriveront (profil : ${numeral(c.terrain).format()} cm²). À baisser si un collègue la floode avant vous."/></td>`,
+      ).join(""),
+      trajetRow = ligne(
+        (c) => `<td><input type="text" value="${Utils.intToTime(c.tempsParcours)}" disabled/></td>`,
+      ).join(""),
+      disponible = this._mfDisponible == null ? "…" : numeral(this._mfDisponible).format(),
+      creneaux = this._mfCreneaux();
     $("#o_mfFormWrap").html(`
         <table id="o_mfForm" class="o_maxWidth centre" cellspacing="0">
           <thead>
@@ -894,27 +937,18 @@ class BoiteCombat extends Boite {
               ${pseudoRow}
             </tr>
             <tr>
-              <td><input type="text" value="${numeral(Utils.terrain).format()}" disabled/></td>
+              <td><input type="text" id="o_mfTerrainAtt" value="${this._mfTerrainAtt ?? Utils.terrain}" title="Votre terrain quand vos attaques arriveront (actuel : ${numeral(Utils.terrain).format()} cm²). À changer si vous savez qu'on vous touche avant."/></td>
               <td class="right">Terrain</td>
               ${terrainRow}
             </tr>
             <tr>
-              <td><input type="text" class="o_mfAttOpt" data-opt="terrainFinal" value="${this._mfAttaquantOpts?.terrainFinal ?? ""}" placeholder="—"/></td>
-              <td class="right reduce">Terrain Final</td>
-              ${terrainFinalRow}
-            </tr>
-            <tr>
-              <td><input type="text" class="o_mfAttOpt" data-opt="priseMax" value="${this._mfAttaquantOpts?.priseMax ?? ""}" placeholder="—"/></td>
-              <td class="right reduce">Prise Max</td>
-              ${priseMaxRow}
-            </tr>
-            <tr>
-              <td></td>
-              <td class="right reduce">Arrondir</td>
-              ${arrondirRow}
+              <td><input type="text" value="${disponible}" disabled title="Armée moins la réserve des paramètres de flood"/></td>
+              <td class="right reduce">Armée / Trajet</td>
+              ${trajetRow}
             </tr>
           </tbody>
-        </table>`);
+        </table>
+        <p class="reduce">${creneaux} créneau${creneaux > 1 ? "x" : ""} d'attaque libre${creneaux > 1 ? "s" : ""} sur ${monProfil.niveauRecherche[6] + 1}</p>`);
     this._mfBindForm();
   }
   /**
@@ -956,30 +990,24 @@ class BoiteCombat extends Boite {
       this._mfRenderForm();
       this.simulerMultiFlood();
     });
-    // Spinner sur tous les inputs numériques (Terrain Final / Prise Max par cible et attaquant) — convention Toolzzz
-    $("#o_mfForm input.o_mfOpt, #o_mfForm input.o_mfAttOpt").spinner({
-      min: 0,
-      numberFormat: "i",
-    });
-    // Options par cible (Terrain Final / Prise Max / Arrondir) — re-simu sur change
-    $("#o_mfForm .o_mfOpt").on("change", (e) => {
-      let $el = $(e.currentTarget),
-        pseudo = $el.data("pseudo"),
-        opt = $el.data("opt"),
-        cible = this._mfCibles.find((c) => c.pseudo === pseudo);
-      if (!cible) return;
-      let raw = $el.val();
-      cible[opt] = raw === "" || raw === "0" ? null : parseInt(raw);
-      this.simulerMultiFlood();
-    });
-    // Options globales attaquant (Terrain Final / Prise Max) — re-simu sur change
-    $("#o_mfForm .o_mfAttOpt").on("change", (e) => {
-      let $el = $(e.currentTarget),
-        opt = $el.data("opt"),
-        raw = $el.val();
-      this._mfAttaquantOpts[opt] = raw === "" || raw === "0" ? null : parseInt(raw);
-      this.simulerMultiFlood();
-    });
+    $("#o_mfTerrainAtt")
+      .spinner({ min: 0, numberFormat: "i" })
+      .on("change spinstop", (e) => {
+        let valeur = numeral($(e.currentTarget).val()).value();
+        this._mfTerrainAtt = valeur > 0 && valeur != Utils.terrain ? valeur : null;
+        this.simulerMultiFlood();
+      });
+    // terrain de la cible à l'arrivée des attaques — recalcul à chaque changement
+    $("#o_mfForm input.o_mfTerrain")
+      .spinner({ min: 0, numberFormat: "i" })
+      .on("change spinstop", (e) => {
+        let $el = $(e.currentTarget),
+          cible = this._mfCibles.find((c) => c.pseudo === $el.data("pseudo")),
+          valeur = numeral($el.val()).value();
+        if (!cible) return;
+        cible.terrainImpact = valeur > 0 && valeur != cible.terrain ? valeur : null;
+        this.simulerMultiFlood();
+      });
   }
   /**
    * Pipeline d'ajout d'une cible par son pseudo :
@@ -1073,125 +1101,81 @@ class BoiteCombat extends Boite {
     this._mfCibles.push(cible);
     this._mfRenderForm();
     this.simulerMultiFlood();
+    // première cible : on peut maintenant compter les attaques en cours comme le jeu
+    if (this._mfCibles.length == 1)
+      this._mfCompterEnCours().then(() => {
+        this._mfRenderForm();
+        this.simulerMultiFlood();
+      });
   }
   /**
-   * Orchestre la simulation multi-cibles : chaîne `Armee.optimiserFlood`
-   * sur chaque cible (triée par distance) en propageant `tdcAtt`.
-   * Détecte les cibles "trop hautes" (terrain > mon terrain × SEUIL_TROP_HAUT).
+   * Plan du multi-flood : les cibles dans l'ordre d'arrivée (temps de
+   * trajet), chacune floodée de façon optimale avec ce qui reste d'unités et
+   * de créneaux, à partir de mon terrain (saisi, sinon l'actuel) après les
+   * cibles précédentes. Les
+   * unités en trop restent à la maison, sauf si « Envoyer toute l'armée » est
+   * coché : elles partent alors avec la dernière attaque.
    *
    * @private
    * @method simulerMultiFlood
    */
   simulerMultiFlood() {
     if (!this._mfArmee) this._mfArmee = new Armee();
-    // Seuils alignés sur le natif (Attaquer.js:231 → tdcCible ∈ [tdcAtt × 0.5, tdcAtt × 3])
-    const SEUIL_TROP_HAUT = 3;
-    const SEUIL_TROP_BAS = 2;
-    const MAX_ATTAQUES_PAR_CIBLE = 10;
-    const UNITE_INFINIE = 1e9; // simu purement terrain — la contrainte d'armée est appliquée globalement (recap) pas par cible
     let cibles = [...this._mfCibles].sort((a, b) => a.tempsParcours - b.tempsParcours),
-      mfTerrain = Utils.terrain,
-      // map des états cochés précédents (par pseudo+i) pour préserver les choix utilisateur
-      previous = {};
-    (this._mfResultats || []).forEach((r) => {
-      r.attaques?.forEach((a, i) => {
-        previous[r.cible.pseudo + ":" + i] = a.checked !== false;
-      });
-    });
-    let resultats = [];
+      mfTerrain = this._mfTerrainAtt ?? Utils.terrain,
+      unites = this._mfDisponible ?? 0,
+      creneaux = this._mfCreneaux(),
+      resultats = [];
     cibles.forEach((cible) => {
-      if (cible.terrain > mfTerrain * SEUIL_TROP_HAUT) {
-        resultats.push({
-          cible,
-          tropHaute: true,
-          tdcAttDebut: mfTerrain,
-          tdcAttFin: mfTerrain,
-        });
-        return;
-      }
-      if (mfTerrain > cible.terrain * SEUIL_TROP_BAS) {
-        resultats.push({
-          cible,
-          tropBasse: true,
-          tdcAttDebut: mfTerrain,
-          tdcAttFin: mfTerrain,
-        });
-        return;
-      }
+      let terrainCible = this._mfTerrainCible(cible),
+        r = { cible, terrainCible, attaques: [], tdcAttDebut: mfTerrain, tdcAttFin: mfTerrain };
+      resultats.push(r);
+      // portée vérifiée par le jeu au lancement, avec les terrains de ce
+      // moment-là : terrain de la cible entre la moitié et le triple du mien
+      if (cible.terrain > Utils.terrain * 3) return (r.tropHaute = true);
+      if (cible.terrain < Utils.terrain * 0.5) return (r.tropBasse = true);
+      if (!unites || !creneaux) return;
       this._mfArmee.floods = [];
       let donneesFlood = {
         tdcAtt: mfTerrain,
-        tdcCible: cible.terrain,
-        unite: UNITE_INFINIE,
-        reste: MAX_ATTAQUES_PAR_CIBLE,
+        tdcCible: terrainCible,
+        unite: unites,
+        reste: creneaux,
         attaques: [],
       };
       this._mfArmee.optimiserFlood(donneesFlood);
-      let prises = this._mfArmee.floods.slice();
-      // Post-traitement avec les options (par cible + globales attaquant)
-      // Prise Max : cap par attaque (cible OU attaquant, le plus restrictif)
-      let priseMax = Math.min(
-        cible.priseMax ?? Infinity,
-        this._mfAttaquantOpts.priseMax ?? Infinity,
-      );
-      if (priseMax !== Infinity) prises = prises.map((p) => Math.min(p, priseMax));
-      // Arrondir : sur la valeur (par cible)
-      if (cible.arrondir)
-        prises = prises.map((p) => Math.round(p / cible.arrondir) * cible.arrondir);
-      // Terrain Final cible : faire tomber le terrain de la cible JUSQU'À cette valeur
-      if (cible.terrainFinal != null) {
-        let cumulCible = cible.terrain,
-          tronquees = [];
-        for (let p of prises) {
-          if (cumulCible <= cible.terrainFinal) break;
-          let allowed = cumulCible - cible.terrainFinal;
-          let truncated = Math.min(p, allowed);
-          tronquees.push(truncated);
-          cumulCible -= truncated;
-        }
-        prises = tronquees.filter((p) => p > 0);
-      }
-      // Terrain Final attaquant : stoppe quand mon terrain a atteint le plafond
-      if (this._mfAttaquantOpts.terrainFinal != null) {
-        let cumulAtt = mfTerrain,
-          plafond = this._mfAttaquantOpts.terrainFinal,
-          tronquees = [];
-        for (let p of prises) {
-          if (cumulAtt >= plafond) break;
-          let truncated = Math.min(p, plafond - cumulAtt);
-          tronquees.push(truncated);
-          cumulAtt += truncated;
-        }
-        prises = tronquees.filter((p) => p > 0);
-      }
-      let attaques = [],
-        tdcAttC = mfTerrain,
-        tdcCibleC = cible.terrain;
-      prises.forEach((p, i) => {
-        attaques.push({
-          prise: p,
-          tdcAttAvant: tdcAttC,
-          tdcCibleAvant: tdcCibleC,
-          pct: tdcCibleC > 0 ? Math.round((p / tdcCibleC) * 100) : 0,
-          checked: previous[cible.pseudo + ":" + i] !== false,
+      let tdcAtt = mfTerrain,
+        tdcCible = terrainCible;
+      this._mfArmee.floods
+        .filter((p) => p > 0)
+        .forEach((p) => {
+          r.attaques.push({
+            troupes: p,
+            prise: p,
+            tdcAttAvant: tdcAtt,
+            tdcCibleAvant: tdcCible,
+            pct: tdcCible > 0 ? Math.round((p / tdcCible) * 100) : 0,
+          });
+          tdcAtt += p;
+          tdcCible -= p;
+          unites -= p;
+          creneaux--;
         });
-        tdcAttC += p;
-        tdcCibleC -= p;
-      });
-      resultats.push({
-        cible,
-        attaques,
-        tdcAttDebut: mfTerrain,
-        tdcAttFin: tdcAttC,
-        tdcCibleFin: tdcCibleC,
-      });
-      mfTerrain = tdcAttC;
+      r.tdcAttFin = tdcAtt;
+      r.tdcCibleFin = tdcCible;
+      mfTerrain = tdcAtt;
     });
+    // le surplus voyage avec la dernière attaque, sans rien prendre de plus
+    let derniere = resultats.flatMap((r) => r.attaques).slice(-1)[0];
+    if (derniere && unites > 0 && $("#o_mfToutEnvoyer").is(":checked")) {
+      derniere.troupes += unites;
+      unites = 0;
+    }
     this._mfResultats = resultats;
     this.afficherResultatsMultiFlood(resultats);
   }
   /**
-   * Rend le tableau dynamique des résultats (un sous-tableau par cible).
+   * Rend le tableau des résultats (un sous-tableau par cible).
    *
    * @private
    * @method afficherResultatsMultiFlood
@@ -1202,17 +1186,20 @@ class BoiteCombat extends Boite {
     resultats.forEach((r) => {
       html += `<table class="o_mfResultatCible o_maxWidth o_marginT15 centre" cellspacing="0">
                 <thead>
-                    <tr><th>${r.cible.pseudo} <span class="reduce">(${Utils.intToTime(r.cible.tempsParcours)})</span></th><th class="right">Mon Terrain</th><th class="right">Terrain de ${r.cible.pseudo}</th><th class="right">Prise</th></tr>
+                    <tr><th>${r.cible.pseudo} <span class="reduce">(${Utils.intToTime(r.cible.tempsParcours)})</span></th><th class="right">Troupes</th><th class="right">Mon Terrain</th><th class="right">Terrain de ${r.cible.pseudo}</th><th class="right">Prise</th></tr>
                 </thead>
                 <tbody>`;
-      if (r.tropHaute) {
-        html += `<tr><td colspan="4" class="centre red"><em>Le terrain de la cible est trop haut</em></td></tr>`;
-      } else if (r.tropBasse) {
-        html += `<tr><td colspan="4" class="centre red"><em>Le terrain de la cible est trop bas</em></td></tr>`;
-      } else {
+      if (r.tropHaute)
+        html += `<tr><td colspan="5" class="centre red"><em>Le terrain de la cible est trop haut</em></td></tr>`;
+      else if (r.tropBasse)
+        html += `<tr><td colspan="5" class="centre red"><em>Le terrain de la cible est trop bas</em></td></tr>`;
+      else if (!r.attaques.length)
+        html += `<tr><td colspan="5" class="centre"><em>Plus d'unités ou de créneaux d'attaque disponibles</em></td></tr>`;
+      else {
         r.attaques.forEach((a, i) => {
-          html += `<tr>
-                    <td class="left"><label><input type="checkbox" class="o_mfAttaqueCheck" data-pseudo="${r.cible.pseudo}" data-i="${i}"${a.checked ? " checked" : ""}/> Attaque ${i + 1} <span class="reduce">(${a.pct}%)</span></label></td>
+          html += `<tr data-pseudo="${r.cible.pseudo}" data-i="${i}">
+                    <td class="left">Attaque ${i + 1} <span class="reduce">(${a.pct}%)</span></td>
+                    <td class="right">${numeral(a.troupes).format()}</td>
                     <td class="right">${numeral(a.tdcAttAvant).format()}</td>
                     <td class="right">${numeral(a.tdcCibleAvant).format()}</td>
                     <td class="right">${numeral(a.prise).format()}</td>
@@ -1221,6 +1208,7 @@ class BoiteCombat extends Boite {
         let totalPrise = r.attaques.reduce((s, a) => s + a.prise, 0);
         html += `<tr class="gras">
                     <td class="left">Résultat</td>
+                    <td></td>
                     <td class="right">${numeral(r.tdcAttFin).format()}</td>
                     <td class="right">${numeral(r.tdcCibleFin).format()}</td>
                     <td class="right green">+${numeral(totalPrise).format()}</td>
@@ -1229,88 +1217,44 @@ class BoiteCombat extends Boite {
       html += `</tbody></table>`;
     });
     $("#o_mfResultats").html(html);
-    // Toggle checkbox → màj instantanée du récap (ne re-simule pas, garde l'état utilisateur)
-    $("#o_mfResultats .o_mfAttaqueCheck").on("change", (e) => {
-      let $el = $(e.currentTarget),
-        pseudo = $el.data("pseudo"),
-        i = parseInt($el.data("i")),
-        r = this._mfResultats.find((x) => x.cible.pseudo === pseudo);
-      if (r && r.attaques[i]) {
-        r.attaques[i].checked = $el.is(":checked");
-        this.afficherRecapMultiFlood(this._mfResultats);
-      }
-    });
     this.afficherRecapMultiFlood(resultats);
     this.css(); // ré-applique couleur2 sur les nouvelles tables
   }
   /**
-   * Récap global : nombre d'attaques, total fourmis, prise totale.
-   * Pas de % de capacité (vitesse d'attaque, garnison) tant qu'on n'a pas
-   * de source fiable pour ces valeurs — à ajouter en v2.
+   * Récap global : attaques, troupes envoyées sur l'armée disponible, prise totale.
    *
    * @private
    * @method afficherRecapMultiFlood
    * @param {Array} resultats
    */
   afficherRecapMultiFlood(resultats) {
-    let totalAttaques = 0,
-      totalFourmis = 0,
-      totalPrise = 0,
-      cibles = new Set();
-    resultats.forEach((r) => {
-      if (r.tropHaute || r.tropBasse) return;
-      r.attaques.forEach((a) => {
-        if (a.checked === false) return; // attaques décochées exclues
-        cibles.add(r.cible.pseudo);
-        totalAttaques++;
-        totalFourmis += a.prise; // approximation 1cm² ≈ 1 unité (cohérent avec le natif sur JSN)
-        totalPrise += a.prise;
-      });
-    });
-    cibles = cibles.size;
-    if (!totalAttaques) {
+    let attaques = resultats.flatMap((r) => r.attaques),
+      cibles = resultats.filter((r) => r.attaques.length).length,
+      troupes = attaques.reduce((s, a) => s + a.troupes, 0),
+      prise = attaques.reduce((s, a) => s + a.prise, 0);
+    $("#o_mfLancer").prop("disabled", !attaques.length);
+    if (!attaques.length) {
       let msg = "";
-      if (resultats.length) {
-        let allHaut = resultats.every((r) => r.tropHaute),
-          allBas = resultats.every((r) => r.tropBasse),
-          allOob = resultats.every((r) => r.tropHaute || r.tropBasse);
-        if (allHaut) msg = "Aucune attaque possible — toutes les cibles sont trop hautes.";
-        else if (allBas) msg = "Aucune attaque possible — toutes les cibles sont trop basses.";
-        else if (allOob)
-          msg =
-            "Aucune attaque possible — toutes les cibles sont hors-portée (trop hautes ou trop basses).";
-        else msg = "Aucune attaque planifiée (cibles bornées par les options ou décochées).";
-      }
+      if (this._mfDisponible == null) msg = "Chargement de votre armée…";
+      else if (resultats.length && resultats.every((r) => r.tropHaute || r.tropBasse))
+        msg = "Aucune attaque possible : toutes les cibles sont hors de portée.";
+      else if (resultats.length && !this._mfDisponible)
+        msg = "Aucune unité disponible (armée vide ou entièrement en réserve).";
+      else if (resultats.length && !this._mfCreneaux()) msg = "Aucun créneau d'attaque libre.";
       $("#o_mfRecap").html(msg ? `<em>${msg}</em>` : "");
-      $("#o_mfLancer").prop("disabled", true);
       return;
     }
-    // Check capacité armée (garnison). 3 états :
-    //   null  → armée pas encore chargée (Armee.getArmee en cours)
-    //   0     → armée vide → flood impossible
-    //   > 0   → calcul du % (peut largement dépasser 100% — le natif affiche 6595%, etc.)
-    let pctGarnisonHtml = "",
-      armeeOk = true;
-    if (this._mfTotalUnites === 0) {
-      pctGarnisonHtml = `, soit <span class="gras red">∞%</span> de votre armée (garnison vide)`;
-      armeeOk = false;
-    } else if (this._mfTotalUnites > 0) {
-      let pct = Math.round((totalFourmis / this._mfTotalUnites) * 100);
-      armeeOk = totalFourmis <= this._mfTotalUnites;
-      pctGarnisonHtml = `, soit <span class="gras${armeeOk ? "" : " red"}">${pct}%</span> de votre armée en garnison`;
-    }
-    let fourmisCls = armeeOk ? "" : " red",
-      recap = `Ce flood demande <span class="gras">${totalAttaques} attaque${totalAttaques > 1 ? "s" : ""}</span> sur ${cibles} cible${cibles > 1 ? "s" : ""} et <span class="gras${fourmisCls}">${numeral(totalFourmis).format()} fourmis</span>${pctGarnisonHtml} pour <span class="gras green">+${numeral(totalPrise).format()} cm²</span>.`;
-    $("#o_mfRecap").html(recap);
-    $("#o_mfLancer").prop("disabled", !armeeOk);
+    $("#o_mfRecap").html(
+      `Ce flood demande <span class="gras">${attaques.length} attaque${attaques.length > 1 ? "s" : ""}</span> sur ${cibles} cible${cibles > 1 ? "s" : ""} et <span class="gras">${numeral(troupes).format()}</span> de vos ${numeral(this._mfDisponible).format()} unités disponibles pour <span class="gras green">+${numeral(prise).format()} cm²</span>.`,
+    );
     $("#o_mfLancer")
       .off("click")
       .one("click", () => this._mfLancer());
   }
   /**
-   * Lance la séquence multi-flood : pour chaque cible (dans l'ordre de distance),
+   * Lance la séquence multi-flood : pour chaque cible (dans l'ordre d'arrivée),
    * GET `ennemie.php?Attaquer=<id>` pour récupérer le token de sécurité, puis POST
-   * chaque attaque cochée séquentiellement avec 1s d'intervalle.
+   * chaque attaque séquentiellement avec 1s d'intervalle.
    * Implémentation parallèle à `Armee.envoyerFlood` parce que celui-ci finit par
    * `location.reload()` (incompatible multi-cible) et lit `pseudoCible` depuis le
    * DOM de `ennemie.php` (que nous n'avons pas dans la BoiteCombat).
@@ -1319,35 +1263,25 @@ class BoiteCombat extends Boite {
    * @method _mfLancer
    */
   _mfLancer() {
-    let totalAttaques = 0,
-      aLancer = [];
-    this._mfResultats.forEach((r) => {
-      if (r.tropHaute || r.tropBasse) return;
-      let prises = [],
-        indices = [];
-      r.attaques.forEach((a, i) => {
-        if (a.checked !== false && a.prise > 0) {
-          prises.push(a.prise);
-          indices.push(i);
-          totalAttaques++;
-        }
-      });
-      if (prises.length) aLancer.push({ cible: r.cible, prises, indices });
-    });
+    let aLancer = this._mfResultats
+        .filter((r) => r.attaques.length)
+        .map((r) => ({
+          cible: r.cible,
+          terrain: r.terrainCible,
+          prises: r.attaques.map((a) => a.troupes),
+          indices: r.attaques.map((a, i) => i),
+        })),
+      totalAttaques = aLancer.reduce((s, l) => s + l.prises.length, 0);
     if (!totalAttaques) return;
     if (
       !confirm(
         `Lancer ${totalAttaques} attaque(s) sur ${aLancer.length} cible(s) ? Cette action est irréversible.`,
       )
     )
-      return;
+      return this.afficherRecapMultiFlood(this._mfResultats);
     $("#o_mfLancer").prop("disabled", true).text("Lancement…");
-    // S'assurer que l'armée est chargée (sinon `repartirUniteFlood` n'aura rien à distribuer)
-    let prep =
-      this._mfArmee && this._mfArmee.unite.some((u) => u > 0)
-        ? Promise.resolve()
-        : this._mfArmee.getArmee().then((d) => this._mfArmee.chargeData(d));
-    prep.then(() => this._mfLancerCibleSuivante(aLancer, 0));
+    $("#o_mfToutEnvoyer, #o_mfForm input").prop("disabled", true);
+    this._mfLancerCibleSuivante(aLancer, 0);
   }
   /**
    *
@@ -1355,8 +1289,7 @@ class BoiteCombat extends Boite {
   _mfLancerCibleSuivante(aLancer, idx) {
     if (idx >= aLancer.length) {
       $.toast({ ...TOAST_SUCCESS, text: "Multi-flood terminé." });
-      $("#o_mfLancer").text("Lancer ces attaques");
-      return;
+      return this._mfFinLancement();
     }
     let { cible, prises, indices } = aLancer[idx];
     $.get(`${location.origin}/ennemie.php?Attaquer=${cible.id}`)
@@ -1368,11 +1301,10 @@ class BoiteCombat extends Boite {
             ...TOAST_ERROR,
             text: `Token introuvable pour ${cible.pseudo}, séquence stoppée.`,
           });
-          $("#o_mfLancer").text("Lancer ces attaques");
-          return;
+          return this._mfFinLancement();
         }
         let securite = tInput.attr("name") + "=" + tInput.attr("value");
-        // Construit la répartition pour les SEULES attaques cochées de cette cible
+        // Répartition des unités sur les attaques de cette cible
         this._mfArmee.floods = prises.slice();
         this._mfArmee.repartirUniteFlood();
         this._mfEnvoyerAttaqueSuivante(cible, securite, indices, 0, () => {
@@ -1390,7 +1322,7 @@ class BoiteCombat extends Boite {
           ...TOAST_ERROR,
           text: `Échec récupération page ennemie pour ${cible.pseudo}, séquence stoppée.`,
         });
-        $("#o_mfLancer").text("Lancer ces attaques");
+        this._mfFinLancement();
       });
   }
   /**
@@ -1416,7 +1348,7 @@ class BoiteCombat extends Boite {
         });
         AttaqueLancee.enregistrer(cible.pseudo, "Terrain de chasse", unite, {
           html: data,
-          terrain: cible.terrain,
+          terrain: this._mfTerrainCible(cible),
         });
       }
       setTimeout(
@@ -1461,8 +1393,7 @@ class BoiteCombat extends Boite {
    *
    */
   _mfMarquerAttaque(pseudo, i, ok) {
-    $(`.o_mfResultatCible .o_mfAttaqueCheck[data-pseudo="${pseudo}"][data-i="${i}"]`)
-      .closest("tr")
+    $(`.o_mfResultatCible tr[data-pseudo="${pseudo}"][data-i="${i}"]`)
       .removeClass("red green")
       .addClass(ok ? "green" : "red");
   }
