@@ -225,6 +225,61 @@ class SimulationChasse {
     });
   }
   /**
+   * Chasses réglées sur les pertes acceptées plutôt que sur un ratio : pour
+   * chaque nombre de chasses jusqu'à `nombreMax`, le plus grand terrain par
+   * chasse dont les pertes estimées (moyennes ou max) restent sous le seuil.
+   * Le ratio doit rester d'au moins 1 : en dessous, les tables de pertes ne
+   * disent rien.
+   *
+   * @param {Object} p unites, armes, bouclier, vitesse, tdcLancement,
+   *   tdcArrivee, nombreMax, pertesMax, critere ("AVG" ou "MAX")
+   * @return {Array} une option par nombre de chasses possible
+   */
+  static parPertes(p) {
+    let tdcArrivee = Math.max(1, p.tdcArrivee),
+      attArmee = SimulationChasse.attaqueArmee(p.unites, p.armes),
+      evaluer = (terrain, nombre) => {
+        let difficulte = SimulationChasse.difficulteTotale(tdcArrivee, terrain, nombre),
+          ratio = attArmee / difficulte,
+          indexRef = SimulationChasse.indexRatioRef(ratio);
+        return {
+          difficulte,
+          ratio,
+          indexRef,
+          pertes: SimulationChasse.pertes(indexRef, difficulte, p.bouclier),
+        };
+      },
+      // les pertes croissent avec le terrain : recherche dichotomique
+      tient = (terrain, nombre) => {
+        let e = evaluer(terrain, nombre);
+        return e.ratio >= RATIO_CHASSE[0] && e.pertes[p.critere] <= p.pertesMax;
+      },
+      options = [];
+    if (!attArmee) return options;
+    for (let nombre = 1; nombre <= p.nombreMax && tient(1, nombre); nombre++) {
+      let bas = 1,
+        haut = 2;
+      while (tient(haut, nombre)) {
+        bas = haut;
+        haut *= 2;
+      }
+      while (haut - bas > 1) {
+        let milieu = Math.floor((bas + haut) / 2);
+        if (tient(milieu, nombre)) bas = milieu;
+        else haut = milieu;
+      }
+      let duree = SimulationChasse.duree(Math.max(1, p.tdcLancement), bas, p.vitesse);
+      options.push({
+        nombre,
+        terrain: bas,
+        duree,
+        rentabilite: ((nombre * bas) / duree) * 86400,
+        ...evaluer(bas, nombre),
+      });
+    }
+    return options;
+  }
+  /**
    * Pertes si le TdC vaut `nouveauTdc` au lieu du `tdcArrivee` prévu quand les
    * chasses arrivent. Les armées restent celles de la répartition : chaque
    * chasse a son propre nouveau ratio (son attaque était calibrée sur le ratio

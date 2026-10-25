@@ -15,7 +15,7 @@ class BoiteChasse extends Boite {
     super(
       "o_boiteChasse",
       "Outils pour Chasseur",
-      `<div id='o_tabsChasse' class='o_tabs'><ul><li><a href='#o_tabsChasse1'>Analyser</a></li><li><a href='#o_tabsChasse3'>Simuler</a></li><li><a href='#o_tabsChasse2'>Bestiaire</a></li></ul><div id='o_tabsChasse1'/><div id='o_tabsChasse3'/><div id='o_tabsChasse2'/></div>`,
+      `<div id='o_tabsChasse' class='o_tabs'><ul><li><a href='#o_tabsChasse1'>Analyser</a></li><li><a href='#o_tabsChasse3'>Simuler</a></li><li><a href='#o_tabsChasse4'>Par pertes</a></li><li><a href='#o_tabsChasse2'>Bestiaire</a></li></ul><div id='o_tabsChasse1'/><div id='o_tabsChasse3'/><div id='o_tabsChasse4'/><div id='o_tabsChasse2'/></div>`,
     );
     /**
      * Ce que le joueur a vraiment — armée et places de chasse libres —, chargé à
@@ -31,6 +31,11 @@ class BoiteChasse extends Boite {
      * Chasses en cours de lancement : le formulaire est figé pendant ce temps
      */
     this._lancement = false;
+    /**
+     * Options de l'onglet « Par pertes », une par nombre de chasses, et celle choisie
+     */
+    this._optionsPertes = [];
+    this._choixPertes = 0;
   }
   /**
    * Affiche la boite.
@@ -45,10 +50,14 @@ class BoiteChasse extends Boite {
           activate: (event, ui) => {
             this.css();
             if (ui.newPanel.attr("id") == "o_tabsChasse3" && !this._reel) this._chargerEtatReel();
+            if (ui.newPanel.attr("id") == "o_tabsChasse4")
+              (this._reel ? Promise.resolve() : this._chargerEtatReel()).then(() =>
+                this._actualiserPertes(),
+              );
           },
         })
         .removeClass("ui-widget");
-      this.analyse().simuler().bestiaire().css().event();
+      this.analyse().simuler().parPertes().bestiaire().css().event();
     }
   }
   /**
@@ -720,7 +729,7 @@ class BoiteChasse extends Boite {
     if (i >= s.nombre) return this._finLancement(i, s.nombre);
     let marquer = (ok, jeton = securite) => {
       if (ok) TroupesDehors.enregistrerChasse(s.chasses[i].unites);
-      $(`#o_scRepartition tbody tr:eq(${i})`)
+      $(`${s.tableau || "#o_scRepartition"} tbody tr:eq(${i})`)
         .addClass(ok ? "green" : "red")
         .find("td:first")
         .text(`${ok ? "✓" : "✗"} ${i + 1}`);
@@ -756,8 +765,162 @@ class BoiteChasse extends Boite {
       });
     if (location.pathname == "/Ressources.php") return location.reload();
     this._lancement = false;
-    $("#o_scForm").css({ opacity: "", "pointer-events": "" });
-    this._chargerEtatReel();
+    $("#o_scForm, #o_spForm").css({ opacity: "", "pointer-events": "" });
+    this._chargerEtatReel().then(() => this._actualiserPertes());
+  }
+  /**
+   * Onglet « Par pertes » (issue #31) : les chasses sont réglées sur les pertes
+   * que le joueur accepte, en moyenne ou au pire, plutôt que sur un ratio.
+   * Toujours avec son armée, ses niveaux et son terrain : c'est un lanceur, pas
+   * un simulateur. Le lanceur de Ressources.php n'est pas touché.
+   *
+   * @private
+   * @method parPertes
+   */
+  parPertes() {
+    let pertes = 1000;
+    try {
+      pertes = parseInt(localStorage.getItem("outiiil_chassePertes")) || pertes;
+    } catch (e) {}
+    $("#o_tabsChasse4").append(`
+        <table id="o_spForm" class="o_maxWidth">
+          <tr><td class="left">Pertes acceptées</td><td class="left"><input id="o_spPertes" value="${pertes}" size="12"/> JSN</td></tr>
+          <tr><td class="left">Calculées</td><td class="left"><select id="o_spCritere" title="En moyenne : les pertes tournent autour de ce nombre, parfois plus. Au pire : elles ne le dépassent pas, même avec une mauvaise réplique."><option value="AVG">en moyenne</option><option value="MAX">au pire</option></select></td></tr>
+          <tr><td class="left">TdC à l'arrivée</td><td class="left"><input id="o_spTdcArrivee" value="${Utils.terrain || 0}" size="12" title="À modifier si votre TdC doit bouger pendant la chasse (flood…)"/></td></tr>
+        </table>
+        <div id="o_spResultat"></div>`);
+    $("#o_tabsChasse4").css({ "max-height": "70vh", "overflow-y": "auto" });
+    $("#o_spPertes, #o_spTdcArrivee").spinner({ min: 0, numberFormat: "i" });
+    $("#o_spPertes, #o_spTdcArrivee").on("input spin", (e, ui) => {
+      $(e.currentTarget).spinner(
+        "value",
+        numeral(ui ? ui.value : e.currentTarget.value).value() || 0,
+      );
+      this._choixPertes = 0;
+      this._actualiserPertes();
+    });
+    $("#o_spCritere").change(() => {
+      this._choixPertes = 0;
+      this._actualiserPertes();
+    });
+    $("#o_spResultat").on("change", "input[name='o_spChoix']", (e) => {
+      this._choixPertes = parseInt(e.currentTarget.value);
+      this._actualiserPertes();
+    });
+    $("#o_spResultat").on("click", "#o_spLancer", () => this._lancerPertes());
+    return this;
+  }
+  /**
+   * Recalcule les options de l'onglet « Par pertes » et la répartition de celle choisie.
+   *
+   * @private
+   * @method _actualiserPertes
+   */
+  _actualiserPertes() {
+    if (this._lancement) return;
+    let r = this._reel,
+      pertesMax = $("#o_spPertes").spinner("value") || 0,
+      fmt = (n) => numeral(Math.round(n)).format();
+    try {
+      localStorage.setItem("outiiil_chassePertes", pertesMax);
+    } catch (e) {}
+    if (!r) return $("#o_spResultat").html(`<p><em>Chargement de votre armée…</em></p>`);
+    if (r.places <= 0)
+      return $("#o_spResultat").html(
+        `<p class="red">Aucune chasse possible : toutes vos places sont prises.</p>`,
+      );
+    let p = {
+      unites: r.armee.unite,
+      armes: monProfil.niveauRecherche[2],
+      bouclier: monProfil.niveauRecherche[1],
+      vitesse: monProfil.niveauRecherche[5],
+      tdcLancement: Utils.terrain,
+      tdcArrivee: $("#o_spTdcArrivee").spinner("value") || 0,
+      nombreMax: r.places,
+      pertesMax,
+      critere: $("#o_spCritere").val(),
+    };
+    this._optionsPertes = SimulationChasse.parPertes(p);
+    if (!this._optionsPertes.length)
+      return $("#o_spResultat").html(
+        `<p class="red">Aucune chasse ne tient dans ces pertes${r.armee.getSommeUnite() ? "" : " : votre armée est vide"}.</p>`,
+      );
+    // par défaut la plus rentable ; sinon le choix du joueur s'il existe encore
+    let meilleure = this._optionsPertes.reduce(
+      (m, o, i, t) => (o.rentabilite > t[m].rentabilite ? i : m),
+      0,
+    );
+    if (!this._choixPertes || !this._optionsPertes[this._choixPertes - 1])
+      this._choixPertes = meilleure + 1;
+    let choix = this._optionsPertes[this._choixPertes - 1],
+      lignes = this._optionsPertes
+        .map(
+          (o, i) =>
+            `<tr${i == meilleure ? ' class="gras"' : ""}><td><input type="radio" name="o_spChoix" value="${i + 1}"${i + 1 == this._choixPertes ? " checked" : ""}/></td><td class="right">${o.nombre} × ${fmt(o.terrain)}</td><td class="right green">${fmt(o.nombre * o.terrain)}</td><td class="right">${Utils.intToTime(o.duree)}</td><td class="right">${fmt(o.pertes.AVG)}</td><td class="right">${fmt(o.pertes.MAX)}</td><td class="right">${fmt(o.rentabilite)}</td></tr>`,
+        )
+        .join(""),
+      simu = SimulationChasse.simuler({
+        ...p,
+        ratio: RATIO_CHASSE[0],
+        nombreFixe: choix.nombre,
+        terrainFixe: choix.terrain,
+      }),
+      utilisees = p.unites.map((n) => n > 0),
+      entete = NOM_RAC_UNITE.slice(1)
+        .map((nom, u) => (utilisees[u] ? `<th class="right">${nom}</th>` : ""))
+        .join(""),
+      repartition = simu.chasses
+        .map(
+          (c, i) =>
+            `<tr><td>${i + 1}</td>${c.unites.map((n, u) => (utilisees[u] ? `<td class="right">${n ? fmt(n) : ""}</td>` : "")).join("")}<td class="right">${fmt(c.pertes.AVG)}</td><td class="right">${fmt(c.pertes.MAX)}</td></tr>`,
+        )
+        .join("");
+    this._simuPertes = { ...simu, tableau: "#o_spRepartition" };
+    $("#o_spResultat").html(`
+        <div class="centre gras o_marginT15">Chasses possibles</div>
+        <table id="o_spOptions" class="o_maxWidth" cellspacing="0">
+          <thead><tr><th></th><th class="right">Chasses</th><th class="right">TdC total</th><th class="right">Durée</th><th class="right">Pertes moy.</th><th class="right">Pertes max</th><th class="right">cm² / jour</th></tr></thead>
+          <tbody>${lignes}
+            <tr class="reduce"><td colspan="7"><em>En gras la plus rentable. Ratio ${numeral(choix.ratio).format("0.00")}, réplique à 10 % : ${Math.round(REPLIQUE_CHASSE[choix.indexRef] * 100)} %. Pertes en JSN, Bouclier compris, d'après les tables du simulateur de Calystene.</em></td></tr>
+          </tbody>
+        </table>
+        <div class="centre gras o_marginT15">Répartition des unités</div>
+        <div class="o_scDefile">
+        <table id="o_spRepartition" class="o_maxWidth" cellspacing="0">
+          <thead><tr><th>N°</th>${entete}<th class="right">Pertes moy.</th><th class="right">Pertes max</th></tr></thead>
+          <tbody>${repartition}</tbody>
+        </table>
+        </div>
+        <div class="o_marginT15"><button type="button" id="o_spLancer" class="o_button f_success">Lancer les chasses</button></div>
+        <p id="o_spLancerInfo" class="reduce"><em>Une chasse part toutes les 2 secondes : restez sur la page pendant le lancement.</em></p>`);
+    $("#o_spOptions tr:even, #o_spRepartition tr:even").css(
+      "background-color",
+      monProfil.parametre["couleur2"].valeur,
+    );
+  }
+  /**
+   * Lance les chasses de l'option choisie dans l'onglet « Par pertes ».
+   *
+   * @private
+   * @method _lancerPertes
+   */
+  _lancerPertes() {
+    let s = this._simuPertes;
+    if (!s || this._lancement) return;
+    if (
+      !confirm(
+        `Lancer ${s.nombre} chasse${s.nombre > 1 ? "s" : ""} de ${numeral(s.terrain).format()} cm² ?`,
+      )
+    )
+      return;
+    this._lancement = true;
+    $("#o_spLancer").prop("disabled", true);
+    $("#o_spForm, #o_spOptions").css({ opacity: 0.6, "pointer-events": "none" });
+    $("#o_spLancerInfo").html("<em>Lancement en cours, restez sur la page…</em>");
+    $.ajax({ url: location.origin + "/AcquerirTerrain.php" }).then(
+      (data) => this._envoyerChasse(s, 0, Armee.jetonChasse(data)),
+      () => this._finLancement(0, s.nombre),
+    );
   }
   /**
    * Onglet "Bestiaire" — liste des 17 espèces de faune avec image et stats.
