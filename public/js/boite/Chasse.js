@@ -718,20 +718,21 @@ class BoiteChasse extends Boite {
    */
   _envoyerChasse(s, i, securite) {
     if (i >= s.nombre) return this._finLancement(i, s.nombre);
-    let marquer = (ok) => {
+    let marquer = (ok, jeton = securite) => {
       if (ok) TroupesDehors.enregistrerChasse(s.chasses[i].unites);
       $(`#o_scRepartition tbody tr:eq(${i})`)
         .addClass(ok ? "green" : "red")
         .find("td:first")
         .text(`${ok ? "✓" : "✗"} ${i + 1}`);
-      if (ok) setTimeout(() => this._envoyerChasse(s, i + 1, securite), 2000);
+      if (ok) setTimeout(() => this._envoyerChasse(s, i + 1, jeton), 2000);
       else this._finLancement(i, s.nombre);
     };
     $.post(
       location.origin + "/AcquerirTerrain.php",
       Armee.donneesChasse(s.terrain, s.chasses[i].unites, securite),
     ).then(
-      (data) => marquer(data.indexOf("La chasse est lancée.") > -1),
+      (data) =>
+        marquer(data.indexOf("La chasse est lancée.") > -1, Armee.jetonChasse(data, securite)),
       () => marquer(false),
     );
   }

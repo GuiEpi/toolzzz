@@ -531,6 +531,21 @@ class Armee {
     return donnees;
   }
   /**
+   * Jeton du formulaire de chasse, "nom=valeur". Le jeu en donne un nouveau
+   * après chaque chasse lancée et refuse ensuite l'ancien.
+   *
+   * @static
+   * @method jetonChasse
+   * @param {String} html page AcquerirTerrain.php
+   * @param {String} defaut jeton gardé si la page n'en contient pas
+   * @return {String}
+   */
+  static jetonChasse(html, defaut = "") {
+    // id="t" est à la fois la table principale et l'input du jeton : on vise l'input
+    let jeton = Utils.parseHtml(html).find("input[name='t']");
+    return jeton.length ? jeton.attr("name") + "=" + jeton.attr("value") : defaut;
+  }
+  /**
    * Envoie une chasse.
    *
    * @private
@@ -552,8 +567,9 @@ class Armee {
           $("#o_simulationChasse tr:eq(" + (indice + 1) + ")").html(
             `<td class='red'>${indice + 1}</td><td colspan='14' class='red'>La chasse n'a pas pu être lancée.</td>`,
           );
+        let jeton = Armee.jetonChasse(data, securite);
         setTimeout(() => {
-          this.envoyerChasse(terrainChasse, nbChasse, ++indice, intervalle, securite);
+          this.envoyerChasse(terrainChasse, nbChasse, ++indice, intervalle, jeton);
         }, intervalle);
       });
     } else // on a fini, on recharge la page
