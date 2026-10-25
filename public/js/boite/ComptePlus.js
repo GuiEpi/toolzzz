@@ -448,10 +448,8 @@ class BoiteComptePlus {
    * Compte à rebours d'une ligne de la boîte jusqu'à exp, et sa barre de
    * progression depuis start : durée courte au-delà d'une heure, secondes
    * visibles en dessous. Pour une liste (pontes, chasses…), l'élément terminé
-   * en est retiré à 0 et la ligne passe au suivant. Pas pour la construction
-   * et la recherche : leur fin met à jour les niveaux du profil (cf.
-   * verifierDonnees), à faire une seule fois au chargement d'une page et non
-   * dans chaque onglet ouvert.
+   * en est retiré à 0 et la ligne passe au suivant. Pour la construction et la
+   * recherche, la ligne est vidée via _terminerEvolution.
    *
    * @private
    * @method _compteARebours
@@ -472,7 +470,8 @@ class BoiteComptePlus {
           .toggleClass("highlight_success", t <= 600);
       },
       aZero: () => {
-        if (!liste) return;
+        // délai variable : les onglets ouverts ne relisent pas l'état au même instant
+        if (!liste) return setTimeout(() => this._terminerEvolution(), 1000 + Math.random() * 2000);
         // une seconde plus tard, pour que l'élément soit bien passé
         setTimeout(() => {
           this[liste] = this[liste].filter((elt) => moment(elt.exp).isAfter(moment()));
@@ -480,6 +479,24 @@ class BoiteComptePlus {
         }, 1000);
       },
     });
+  }
+  /**
+   * Fin de la construction ou de la recherche affichée. Leur fin monte le
+   * niveau du profil (cf. verifierDonnees) : l'état est relu avant, pour que
+   * seul le premier onglet ouvert à le faire compte le niveau, les autres
+   * trouvant l'évolution déjà retirée.
+   *
+   * @private
+   * @method _terminerEvolution
+   */
+  _terminerEvolution() {
+    this._construction = "";
+    this._expConstruction = 0;
+    this._startConstruction = 0;
+    this._recherche = "";
+    this._expRecherche = 0;
+    this._startRecherche = 0;
+    this.getData().verifierDonnees().majConstruction().majRecherche();
   }
   /**
    * Met à jour les pontes si elles ne correspondent pas.
@@ -541,6 +558,11 @@ class BoiteComptePlus {
         "white-space": "nowrap",
       });
       this._compteARebours("Construction", this._startConstruction, this._expConstruction);
+    } else {
+      $("#o_resteConstruction").text("Aucune construction");
+      Utils.arreterTime("o_tempsConstruction");
+      $("#o_tempsConstruction").text("");
+      $("#o_progressConstruction").progressbar({ value: 0 }).removeClass("highlight_success");
     }
     return this;
   }
@@ -559,6 +581,11 @@ class BoiteComptePlus {
         "white-space": "nowrap",
       });
       this._compteARebours("Recherche", this._startRecherche, this._expRecherche);
+    } else {
+      $("#o_resteRecherche").text("Aucune recherche");
+      Utils.arreterTime("o_tempsRecherche");
+      $("#o_tempsRecherche").text("");
+      $("#o_progressRecherche").progressbar({ value: 0 }).removeClass("highlight_success");
     }
     return this;
   }
