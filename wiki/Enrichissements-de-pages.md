@@ -9,6 +9,7 @@ Sur la page de la Reine (où tu lances tes pontes) :
 - Une colonne **Terminé le** est ajoutée au tableau des pondes en cours, affichant la **date et l'heure exacte de fin** de chaque pond (au lieu du compteur relatif natif).
 - Au clic sur l'icône d'une unité, ses **stats avec bonus de recherche** s'affichent (vie ajustée Bouclier, dégâts attaque/défense ajustés Armes).
 - Les inputs et le slider du formulaire de ponte sont **corrigés** pour les comptes non-C+ (chez qui le natif est buggé).
+- Le nombre de chaque unité compte **toute ton armée**, y compris les troupes parties en chasse ou en attaque, à condition qu'elles aient été lancées depuis ce navigateur avec Toolzzz.
 
 > ![Slider de ponte corrigé pour non-C+](assets/wiki/reine-slider-compte-plus-like.png)
 
@@ -22,12 +23,12 @@ Sur la page de la Reine (où tu lances tes pontes) :
 
 Page `Ressources.php`, l'onglet où tu lances tes chasses :
 
-- **Lanceur de chasse intégré** : formulaire avec sélection de terrain et type de chasse, à côté du natif.
+- **Lanceur de chasse intégré** : calcule le nombre de chasses et le terrain par chasse selon la difficulté voulue, et les lance toutes à la suite.
 
   > ![Lanceur de chasse intégré](assets/wiki/lanceur-de-chasse.png)
 
 - **Bouton "Annuler toutes les chasses"** ajouté dans le bloc des chasses en cours, pour rappeler tout le monde en un clic.
-- **Affectation automatique des ouvrières** sur les terrains de chasse : compléter en Matériaux ou en Nourriture, ou maintenir un **ratio** nourriture / matériaux réglable au curseur, conservé après une chasse ou un flood (voir [Boîte Paramètres](Boite-Parametres)).
+- **Affectation automatique des ouvrières** sur les terrains de chasse : compléter en Matériaux ou en Nourriture, ou maintenir un **ratio** nourriture / matériaux réglable au curseur, conservé après une chasse ou un flood (voir [Boîte Paramètres](Boite-Parametres)). Un réglage du ratio s'affiche dans les champs du jeu et s'enregistre avec son bouton.
 
   > ![Affectation auto des ouvrières sur les terrains de chasse](assets/wiki/affectation-auto.png)
 
@@ -66,6 +67,7 @@ C'est l'une des pages les plus enrichies par Toolzzz.
 
 - Format **"Pseudo (datetime) :"** au lieu du natif inversé "datetime Pseudo :" — plus naturel à lire en survolant.
 - Bouton **Citer** sur chaque message (insère une citation propre dans le champ de saisie).
+- Flèches **Précédent / Suivant** pour changer de pack de smileys sans Compte+, sur le chat général et le chat d'alliance.
 - Coloration personnalisable selon ta palette d'apparence.
 
 ## Forum
@@ -77,6 +79,7 @@ C'est l'une des pages les plus enrichies par Toolzzz.
 ## Alliance Membres
 
 - L'onglet **Carte** est injecté dans le menu — voir page dédiée [Carte d'alliance](Carte-d-alliance).
+- Pour les non-C+, l'**épée** des membres attaquables ouvre directement la page d'attaque, comme en Compte+.
 - Sur le tableau des membres, des colonnes Grade / Tdt (Temps de trajet) / Retour sont ajoutées si l'utilitaire d'alliance est en place — voir la page dédiée [SDC — Infos membres](SDC-Infos-membres).
 
 ## Alliance Forum (forum_menu)
@@ -89,7 +92,7 @@ C'est l'une des pages les plus enrichies par Toolzzz.
 
 ## ClassementAlliance (fiche d'une alliance)
 
-- **Indicateurs attaquable / attaquant** pour les non-C+ (fonctionnalité native uniquement chez les C+).
+- **Indicateurs attaquable / attaquant** pour les non-C+ (fonctionnalité native uniquement chez les C+) ; l'épée ouvre la page d'attaque.
 - **Totaux cumulés** de l'alliance : terrain, fourmilière, technologie.
 
 ## Cross-page (visible partout)

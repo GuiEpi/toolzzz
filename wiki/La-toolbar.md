@@ -6,12 +6,12 @@ La toolbar (parfois appelée _dock_) est le point d'entrée principal de Toolzzz
 
 ## Les 4 icônes
 
-| Icône        | Outil          | Détail                                                                                           |
-| ------------ | -------------- | ------------------------------------------------------------------------------------------------ |
-| Fourmi (œuf) | **Ponte**      | Ouvre le [Lanceur de Ponte](Lanceur-de-Ponte)                                                    |
-| Insecte      | **Chasse**     | Ouvre les [Outils pour Chasseur](Outils-pour-Chasseur) (Analyser + Bestiaire)                    |
-| Épée         | **Combat**     | Ouvre les [Outils d'attaque](Outils-d-attaque) (Analyser, Simuler, Multi-flood, Temps de trajet) |
-| Engrenage    | **Paramètres** | Ouvre la [Boîte Paramètres](Boite-Parametres)                                                    |
+| Icône        | Outil          | Détail                                                                                            |
+| ------------ | -------------- | ------------------------------------------------------------------------------------------------- |
+| Fourmi (œuf) | **Ponte**      | Ouvre le [Lanceur de Ponte](Lanceur-de-Ponte)                                                     |
+| Insecte      | **Chasse**     | Ouvre les [Outils pour Chasseur](Outils-pour-Chasseur) (Analyser, Simuler, Par pertes, Bestiaire) |
+| Épée         | **Combat**     | Ouvre les [Outils d'attaque](Outils-d-attaque) (Analyser, Simuler, Multi-flood, Temps de trajet)  |
+| Engrenage    | **Paramètres** | Ouvre la [Boîte Paramètres](Boite-Parametres)                                                     |
 
 Chaque icône a un tooltip explicatif au survol. Cliquer sur une icône ouvre la boîte correspondante au centre de l'écran ; tu peux ensuite la déplacer, la redimensionner légèrement ou la fermer comme une fenêtre.
 

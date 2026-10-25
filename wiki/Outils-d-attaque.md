@@ -42,14 +42,18 @@ Toolzzz applique les formules du jeu (mêmes que celles utilisées par le serveu
 
 > ![Onglet Multi-flood](assets/wiki/outils-d-attaque-multi-flood.png)
 
-Le générateur d'**attaques groupées sur plusieurs cibles**. Tu saisis une liste de pseudos cibles et le nombre d'attaques que tu veux envoyer sur chacun, et Toolzzz prépare le plan complet : ordre d'envoi, délais, choix de méthode.
+Un **flood optimisé sur plusieurs cibles** (jusqu'à trois), calculé avec ce que tu as vraiment. Tu ajoutes tes cibles par leur pseudo, et Toolzzz prépare le plan :
 
-Quatre **méthodes de flood** sont disponibles (configurable par défaut dans _Paramètres → Général_) :
+- **Ton armée** : toutes tes unités, moins la réserve de flood des [Paramètres](Boite-Parametres) (ou tes antisondes si « Suivre antisondes » est coché). Le nombre d'unités disponibles s'affiche sous ton terrain.
+- **Tes créneaux d'attaque** : la Vitesse d'attaque + 1 au total, moins les attaques déjà en cours, comptées comme sur la page d'attaque du jeu. Ta VA est relue à chaque ouverture de l'onglet.
+- **L'ordre d'arrivée** : les cibles sont traitées de la plus proche à la plus lointaine. Chacune reçoit le flood optimal avec ce qui reste d'unités et de créneaux, en partant de ton terrain après les attaques sur les cibles précédentes. Quand l'armée ou les créneaux s'épuisent, les cibles suivantes reçoivent moins, ou rien.
+- **La portée** est vérifiée comme le jeu au lancement : une cible doit avoir entre la moitié et le triple de ton terrain actuel.
 
-- **Standard** — délais réguliers entre chaque attaque
-- **Optimisée** — concentre les attaques pour un débordement rapide
-- **Uniforme** — étale uniformément sur la fenêtre de temps
-- **Dégressive** — démarre serré puis espace progressivement
+Ton terrain et celui de chaque cible sont **modifiables** : si un collègue floode la cible avant toi, ou si quelqu'un te touche avant ta première attaque, mets le terrain que vous aurez au moment où tes attaques arriveront. Le plan se recalcule à chaque changement.
+
+Les unités qui ne servent pas à prendre du terrain **restent à la maison**. Coche **Envoyer toute l'armée** pour qu'elles partent avec la dernière attaque, la plus longue, et mettre toute ton armée à l'abri pendant le flood.
+
+Le plan détaille chaque attaque (troupes, ton terrain, celui de la cible, prise). **Lancer ces attaques** les envoie une par une ; après le lancement, l'onglet relit ton armée et tes attaques en cours.
 
 ## Onglet _Temps de trajet_
 
