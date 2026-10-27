@@ -16,7 +16,7 @@ jobs:
       # (shebang), pas sous Bun. Les runners GitHub sont encore en Node 20.
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
 
       - uses: oven-sh/setup-bun@v2
 
