@@ -24,6 +24,8 @@ class PageChat {
     if (!Utils.comptePlus) this.plus();
     // Couleur du texte
     this.couleur();
+    // Sélecteur de GIF, en Compte+ aussi
+    this.gif();
     // Reaffichage message
     this.afficheMessage();
     // Modification pour l'envoie du formulaire
@@ -230,6 +232,116 @@ class PageChat {
       monProfil.parametre["couleurChat"].valeur = color;
       monProfil.parametre["couleurChat"].sauvegarde();
     });
+  }
+  /**
+   * Ajoute un bouton GIF qui ouvre un sélecteur Giphy : la recherche part chez
+   * Giphy, et le GIF choisi est inséré en [img] pour que tout le monde le voie,
+   * extension ou pas.
+   *
+   * @private
+   * @method gif
+   */
+  gif() {
+    if (!GIPHY_API_KEY) return this;
+    $("#formulaireChat").append(
+      `<div class='o_group_bouton o_group_bouton_chat'><span id='o_msgGif' class='option_gestion gras' title='GIF'>GIF</span></div>
+      <div id='o_gif' style='display:none'>
+        <input id='o_gifRecherche' type='text' placeholder='Rechercher un GIF…' autocomplete='off'/>
+        <div id='o_gifResultats'></div>
+        <div class='right'><img src='${chrome.runtime.getURL("images/giphy-powered-by.png")}' alt='Powered by GIPHY' height='21'/></div>
+      </div>`,
+    );
+    $("#o_msgGif").css("background-color", monProfil.couleur1);
+    let delai = -1,
+      requete = 0;
+    // La clé Giphy est partagée par tous les joueurs et limitée en requêtes :
+    // les résultats sont gardés une heure, par recherche, dans le navigateur.
+    const lireCache = () => {
+        try {
+          return JSON.parse(localStorage.getItem("outiiil_gifCache")) || {};
+        } catch (e) {
+          return {};
+        }
+      },
+      afficher = (gifs) =>
+        $("#o_gifResultats").html(
+          gifs.length
+            ? gifs
+                .map(
+                  (g) =>
+                    `<img class='cursor' data-id='${g.id}' src='${g.url}' title='${$("<div>").text(g.titre).html()}'/>`,
+                )
+                .join("")
+            : "<span class='reduce'>Aucun GIF trouvé.</span>",
+        ),
+      chercher = () => {
+        let q = $("#o_gifRecherche").val().trim().toLowerCase(),
+          n = ++requete,
+          cache = lireCache(),
+          params = new URLSearchParams({ api_key: GIPHY_API_KEY, limit: 24, rating: "pg-13" });
+        // une ou deux lettres : pas assez pour une recherche utile
+        if (q.length && q.length < 3) return;
+        if (cache[q] && Date.now() - cache[q].date < 3600000) return afficher(cache[q].gifs);
+        if (q) (params.set("q", q), params.set("lang", "fr"));
+        fetch(`https://api.giphy.com/v1/gifs/${q ? "search" : "trending"}?${params}`)
+          .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+          .then(({ data }) => {
+            let gifs = data.map((g) => ({
+              id: g.id,
+              url: g.images.fixed_height_small.url,
+              titre: g.title,
+            }));
+            cache = lireCache();
+            cache[q] = { date: Date.now(), gifs: gifs };
+            // on ne garde que les 30 recherches les plus récentes
+            Object.keys(cache)
+              .sort((x, y) => cache[y].date - cache[x].date)
+              .slice(30)
+              .forEach((k) => delete cache[k]);
+            try {
+              localStorage.setItem("outiiil_gifCache", JSON.stringify(cache));
+            } catch (e) {}
+            // une frappe plus récente a déjà relancé une recherche
+            if (n == requete) afficher(gifs);
+          })
+          .catch((statut) =>
+            $.toast({
+              ...TOAST_ERROR,
+              text:
+                statut == 429
+                  ? "Trop de recherches de GIF pour le moment, réessaie dans un moment."
+                  : "Recherche de GIF impossible.",
+            }),
+          );
+      };
+    $("#o_msgGif").click((e) => {
+      e.preventDefault();
+      $("#o_gif").toggle();
+      if ($("#o_gif").is(":visible")) {
+        if (!$("#o_gifResultats").children().length) chercher();
+        $("#o_gifRecherche").focus();
+      }
+    });
+    $("#o_gifRecherche").on("input", () => {
+      clearTimeout(delai);
+      delai = setTimeout(chercher, 700);
+    });
+    // Entrée enverrait le formulaire du chat
+    $("#o_gifRecherche").on("keypress", (e) => {
+      if ((e.keyCode || e.which) == 13) e.preventDefault();
+    });
+    $("#o_gifResultats").on("click", "img", (e) => {
+      // lien court : les URL de l'API traînent des paramètres de suivi
+      let bbcode = `[img]https://media.giphy.com/media/${$(e.currentTarget).data("id")}/200.gif[/img]`,
+        message = $("#message")[0],
+        debut = message.selectionStart,
+        fin = message.selectionEnd;
+      message.value = message.value.slice(0, debut) + bbcode + message.value.slice(fin);
+      message.selectionStart = message.selectionEnd = debut + bbcode.length;
+      $("#o_gif").hide();
+      message.focus();
+    });
+    return this;
   }
   /**
    * Ajoute les emoticones de base pour les non compte+.

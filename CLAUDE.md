@@ -57,7 +57,7 @@ Each tier depends on everything above it being present as globals. Reordering wi
 
 `*://*.fourmizzz.fr/*` (http + https) is the only host in both `host_permissions` and `content_scripts.matches`. The upstream Outiiil v2 also relied on a companion backend at `outiiil.fr` (crowdsourced map data, player/alliance historique, Traceur POST endpoint). That backend is dead — the fork removes all of it in 3.0. If you see mentions of outiiil.fr in old branches, PRs, or issue history, they are stale and should not be re-introduced.
 
-The `data_collection_permissions.required: ["none"]` declaration in the manifest depends on this: the extension no longer transmits any data anywhere, only reads fourmizzz.fr pages locally.
+The `data_collection_permissions` declaration in the manifest depends on this. The only data that leaves the browser is the chat GIF search, sent to the GIPHY API (`GIPHY_API_KEY` in `content.js`), hence `required: ["searchTerms"]`. GIPHY answers with `Access-Control-Allow-Origin: *`, so no `host_permissions` entry is needed for it.
 
 ## MV3 CSP constraints
 
@@ -73,7 +73,7 @@ Firefox exposes `chrome.*` as an alias for `browser.*`, so `chrome.runtime.*` wo
 - `browser_specific_settings.gecko.id` is `toolzzz@guiepi.github.io` — this ID must stay stable across uploads to AMO (changing it breaks updates for installed users).
 - `strict_min_version: "142.0"` — Firefox **142** is when `data_collection_permissions` is honored on **Firefox for Android** (desktop got it earlier, but AMO's review surfaces an Android-specific warning if `strict_min_version` is below 142). Lower values let AMO accept the upload but warn that the privacy declaration is ignored on older Firefox/Android.
 - AMO requires non-minified sources for review — keep the vendored libs in `public/js/lib/` readable (they currently are).
-- AMO requires `browser_specific_settings.gecko.data_collection_permissions` since November 2025 (will be enforced for all extensions in 2026). Currently declared as `required: ["none"]` which is accurate — the extension only reads fourmizzz.fr pages locally. If you add a feature that transmits data to an external server, you MUST update this declaration (values like `websiteContent`, `websiteActivity`, etc.) or AMO will reject the submission.
+- AMO requires `browser_specific_settings.gecko.data_collection_permissions` since November 2025 (will be enforced for all extensions in 2026). Currently declared as `required: ["searchTerms"]` for the chat GIF search sent to GIPHY; everything else only reads fourmizzz.fr pages locally. If you add a feature that transmits data to an external server, you MUST update this declaration (values like `websiteContent`, `websiteActivity`, etc.) or AMO will reject the submission.
 - `manifest.author` must be a **string** on AMO (not the `{ email: string }` object form that Chrome accepts). WXT's TS types enforce the object form, so the config has a targeted `@ts-expect-error` directive on that line.
 
 ## Formatting

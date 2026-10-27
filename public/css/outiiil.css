@@ -1095,6 +1095,26 @@ hr.o_scSepar {
     rgba(215, 195, 132, 1) 100%
   );
 }
+#o_gif {
+  margin-top: 6px;
+  padding: 6px;
+  border: 1px solid #bd8d46;
+  border-radius: 2px;
+}
+#o_gifRecherche {
+  width: 100%;
+  box-sizing: border-box;
+}
+#o_gifResultats {
+  max-height: 260px;
+  overflow-y: auto;
+  margin: 6px 0;
+}
+#o_gifResultats img {
+  height: 100px;
+  margin: 2px;
+  vertical-align: top;
+}
 
 /* Page messagerie */
 .o_tabAnalyse,

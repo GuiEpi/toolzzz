@@ -143,6 +143,9 @@ const FAUNE = [
 const REPLIQUE_CHASSE = [
   0, 0, 0, 0.016, 0.093, 0.345, 0.577777778, 0.753, 0.837, 0.874, 0.937, 0.96, 0.989,
 ];
+// Clé de l'API Giphy pour le bouton GIF du chat. Elle est publique par nature
+// (toute clé embarquée dans une extension l'est) : vide, le bouton n'apparaît pas.
+const GIPHY_API_KEY = "YQcPvWuCOckauBhW0Lbh89DSeZi0rU5T";
 // Image chat, messagerie de fourmizzz
 const LISTESMILEY1 = `<img src='images/carte/rien.gif' width='1' height='39'>
       <img src='images/smiley/ant_pouce.gif' onclick='addRaccourciSmiley("message","ant_pouce")'>

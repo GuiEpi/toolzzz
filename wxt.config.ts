@@ -31,8 +31,9 @@ export default defineConfig({
       gecko: {
         id: "toolzzz@guiepi.github.io",
         strict_min_version: "142.0",
+        // searchTerms : le bouton GIF du chat envoie la recherche à Giphy
         data_collection_permissions: {
-          required: ["none"],
+          required: ["searchTerms"],
         },
       },
       // Déclare la compatibilité Firefox for Android pour qu'AMO marque
