@@ -2,7 +2,7 @@
 
 **Toolzzz** est une extension navigateur pour [Fourmizzz.fr](http://www.fourmizzz.fr) qui regroupe les outils du quotidien d'un joueur — lanceur de ponte, parseur de rapports de chasse et de combat, simulateur d'attaque, courbes de coûts, carte d'alliance, surveillance de joueurs, et bien d'autres choses — directement intégrés dans les pages du jeu.
 
-C'est un fork maintenu de [Outiiil](https://github.com/Hraesvelg/Outiiil) (le projet original par Hraesvelg / Freddy), modernisé pour Chrome MV3 et Firefox. L'extension est **gratuite, open-source (GPL-3.0)** et ne transmet aucune donnée à un serveur externe : tout reste sur ta machine.
+C'est un fork maintenu de [Outiiil](https://github.com/Hraesvelg/Outiiil) (le projet original par Hraesvelg / Freddy), modernisé pour Chrome MV3 et Firefox. L'extension est **gratuite, open-source (GPL-3.0)** et ne transmet aucune donnée à un serveur externe : tout reste sur ta machine (seule exception, la recherche du bouton GIF du chat, envoyée à Giphy).
 
 Ce wiki est destiné aux joueurs qui veulent comprendre ce que l'extension apporte et comment s'en servir. Pour les questions de développement, va voir le [README](https://github.com/GuiEpi/toolzzz) du dépôt.
 

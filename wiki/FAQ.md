@@ -20,7 +20,7 @@ Plusieurs causes possibles :
 
 ## Mes données sont-elles envoyées quelque part ?
 
-**Non.** Toolzzz ne transmet rien à un serveur externe. Toutes les données (paramètres, radar, cache de la carte d'alliance, sauvegardes d'armée, rapports collés…) restent dans le `localStorage` de ton navigateur, sur ta machine. L'extension ne demande aucune permission réseau au-delà du domaine `fourmizzz.fr` lui-même. Voir [PRIVACY.md](https://github.com/GuiEpi/toolzzz/blob/master/PRIVACY.md) pour le détail.
+**Non.** Toolzzz ne transmet rien à un serveur externe, à une exception près : quand tu utilises le bouton **GIF** du chat, ta recherche est envoyée à Giphy pour trouver les GIF. Toutes les données (paramètres, radar, cache de la carte d'alliance, sauvegardes d'armée, rapports collés…) restent dans le `localStorage` de ton navigateur, sur ta machine. L'extension ne demande aucune permission réseau au-delà du domaine `fourmizzz.fr` lui-même (l'API Giphy accepte les requêtes de n'importe quel site, elle n'en a pas besoin). Voir [PRIVACY.md](https://github.com/GuiEpi/toolzzz/blob/master/PRIVACY.md) pour le détail.
 
 ## Comment surveiller un joueur ?
 

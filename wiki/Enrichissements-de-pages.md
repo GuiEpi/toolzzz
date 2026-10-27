@@ -68,6 +68,7 @@ C'est l'une des pages les plus enrichies par Toolzzz.
 - Format **"Pseudo (datetime) :"** au lieu du natif inversé "datetime Pseudo :" — plus naturel à lire en survolant.
 - Bouton **Citer** sur chaque message (insère une citation propre dans le champ de saisie).
 - Flèches **Précédent / Suivant** pour changer de pack de smileys sans Compte+, sur le chat général et le chat d'alliance.
+- Bouton **GIF** (avec ou sans Compte+) : il ouvre une recherche Giphy, avec les tendances par défaut. Un clic sur un GIF l'insère en `[img]` dans ton message, donc tout le monde le voit, même sans l'extension. Ta recherche est envoyée à Giphy.
 - Coloration personnalisable selon ta palette d'apparence.
 
 ## Forum
