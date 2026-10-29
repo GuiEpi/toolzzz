@@ -113,10 +113,12 @@ class PageReine {
         $("#" + m[1] + m[2]).css("display", "inline-block");
       },
     );
-    // Gestion du temps pour la ponte
+    // Gestion du temps pour la ponte. Le numéro de l'input reprend celui du
+    // bouton, pas sa position : une unité absente de la page décalerait sinon
+    // les suivantes, et le clic ne trouverait plus leur input (issue #33).
     $("span[id^='bouton_cout_temps']").each((i, elt) => {
       $(elt).append(
-        `<input id="input_cout_temps${i == 0 ? "" : i}" class="tooltip_droite" type="text" style="height: 20px; width: 85px;display:none;" title="Ex: 1.5 jour, 1j 12h, 36h" value="${$(elt).find("span[id^='cout_temps']").text()}"/>`,
+        `<input id="input_cout_temps${elt.id.replace("bouton_cout_temps", "")}" class="tooltip_droite" type="text" style="height: 20px; width: 85px;display:none;" title="Ex: 1.5 jour, 1j 12h, 36h" value="${$(elt).find("span[id^='cout_temps']").text()}"/>`,
       );
     });
     $("input[id^='input_cout_temps']").on("input", (e) => {
@@ -135,7 +137,7 @@ class PageReine {
     // Gestion de la consommation pour la ponte
     $("span[id^='bouton_cout_nourriture']").each((i, elt) => {
       $(elt).append(
-        `<input id="input_cout_nourriture${i == 0 ? "" : i}" class="tooltip_droite" type="tel" style="height: 20px; width: 85px; display: none;" title="Ex: 100 000, 100k, 0.1M" value="${$(elt).find("span[id^='cout_nourriture']").text()}"/>`,
+        `<input id="input_cout_nourriture${elt.id.replace("bouton_cout_nourriture", "")}" class="tooltip_droite" type="tel" style="height: 20px; width: 85px; display: none;" title="Ex: 100 000, 100k, 0.1M" value="${$(elt).find("span[id^='cout_nourriture']").text()}"/>`,
       );
     });
     $("input[id^='input_cout_nourriture']").on("input", (e) => {
@@ -147,7 +149,7 @@ class PageReine {
       $("#nombre_de_ponte" + i).attr("value", nombre);
       $("#cout_temps" + i).text(
         Utils.intToTime(
-          (nombre * (TEMPS_UNITE[i == "" ? 0 : i] * Math.pow(0.9, monProfil.getTDP())), nombre),
+          nombre * (TEMPS_UNITE[i == "" ? 0 : i] * Math.pow(0.9, monProfil.getTDP())),
         ),
       );
       $("#cout_nourriture" + i).text(e.currentTarget.value);
