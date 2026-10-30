@@ -486,8 +486,7 @@ class AttaqueLancee {
         .filter((a) => a.capture && a.capture.terrainCible != null)
         .sort((a, b) => a.capture.lancee - b.capture.lancee)
         .pop();
-    if (estimation)
-      texte += `, TdC de ${cible} à l'arrivée : ${numeral(estimation.capture.terrainCible).format()} cm²`;
+    if (estimation) texte += `, ${AttaqueLancee.formatEstimation(cible, groupe, estimation)}`;
     return texte;
   }
   /**
@@ -512,8 +511,21 @@ class AttaqueLancee {
         .filter((a) => a.capture && a.capture.terrainCible != null)
         .sort((a, b) => a.capture.lancee - b.capture.lancee)
         .pop();
-    if (derniere)
-      texte += `\n\nTerrain estimé de ${cible} à l'arrivée : ${numeral(derniere.capture.terrainCible).format()}`;
+    if (derniere) texte += `\n\n${AttaqueLancee.formatEstimation(cible, groupe, derniere)}`;
     return texte;
+  }
+  /**
+   * « -12 345 cm², TdC de X estimé à l'arrivée : 97 121 cm² » : la prise
+   * cumulée des attaques du groupe, omise si aucune n'a de terrain de départ,
+   * puis le terrain estimé de la cible après la dernière.
+   */
+  static formatEstimation(cible, groupe, derniere) {
+    let prise = groupe
+        .filter(
+          (a) => a.capture && a.capture.terrainDepart != null && a.capture.terrainCible != null,
+        )
+        .reduce((total, a) => total + a.capture.terrainDepart - a.capture.terrainCible, 0),
+      texte = `TdC de ${cible} estimé à l'arrivée : ${numeral(derniere.capture.terrainCible).format()} cm²`;
+    return prise > 0 ? `-${numeral(prise).format()} cm², ${texte}` : texte;
   }
 }
