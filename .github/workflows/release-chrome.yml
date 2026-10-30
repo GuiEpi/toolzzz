@@ -43,6 +43,16 @@ jobs:
       - name: Build & zip (Chrome)
         run: bun run zip
 
+      # Avant l'envoi au store : le zip est attaché même si le store refuse.
+      # Pas de notes générées : les deux workflows mettent à jour la même
+      # release et les ajouteraient deux fois ; elles sont rédigées à la main.
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v3
+        with:
+          files: |
+            .output/toolzzz-*-chrome.zip
+
       - name: Submit to Chrome Web Store
         if: startsWith(github.ref, 'refs/tags/v')
         # Chrome Web Store API v2 (service account); v1 shuts down on 15 Oct 2026.
@@ -59,11 +69,3 @@ jobs:
           VERSION="${GITHUB_REF_NAME#v}"
           bun run wxt submit \
             --chrome-zip ".output/toolzzz-${VERSION}-chrome.zip"
-
-      - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v3
-        with:
-          generate_release_notes: true
-          files: |
-            .output/toolzzz-*-chrome.zip
