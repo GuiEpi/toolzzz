@@ -52,6 +52,9 @@ jobs:
           CHROME_PUBLISHER_ID: ${{ secrets.CHROME_PUBLISHER_ID }}
           CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL: ${{ secrets.CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL }}
           CHROME_SERVICE_ACCOUNT_PRIVATE_KEY: ${{ secrets.CHROME_SERVICE_ACCOUNT_PRIVATE_KEY }}
+          # une version encore en revue bloque l'envoi : on annule sa revue, la
+          # nouvelle version la remplace
+          CHROME_CANCEL_PENDING: ${{ secrets.CHROME_CANCEL_PENDING }}
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           bun run wxt submit \
