@@ -32,10 +32,9 @@ class PageLaboratoire {
     $(".ligneAmelioration").each((i, elt) => {
       niveau[i] = parseInt($(elt).find(".niveau_amelioration").text().split(" ")[1]);
     });
-    if (niveau.join(",") != monProfil.niveauRecherche.join(",")) {
-      monProfil.niveauRecherche = niveau;
-      monProfil.sauvegarder();
-    }
+    monProfil.niveauRecherche = niveau;
+    monProfil.rechercheLe = Date.now();
+    monProfil.sauvegarder();
     // ajout title evolution
     this._armee.getArmee().then((data) => {
       this._armee.chargeData(data);

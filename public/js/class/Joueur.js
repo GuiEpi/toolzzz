@@ -43,6 +43,14 @@ class Joueur {
      */
     this._niveauConstruction = parametres["niveauConstruction"] || new Array(13).fill(-1);
     /**
+     * date (ms) de la dernière lecture du profil, pour le joueur courant
+     */
+    this._profilLe = 0;
+    /**
+     * date (ms) de la dernière lecture des niveaux de recherche, pour le joueur courant
+     */
+    this._rechercheLe = 0;
+    /**
      *
      */
     this._fourmiliere = parametres["fourmiliere"] || -1;
@@ -235,6 +243,24 @@ class Joueur {
    */
   set x(newX) {
     this._x = newX;
+  }
+  /**
+   *
+   */
+  get profilLe() {
+    return this._profilLe;
+  }
+  /**
+   *
+   */
+  get rechercheLe() {
+    return this._rechercheLe;
+  }
+  /**
+   *
+   */
+  set rechercheLe(newRechercheLe) {
+    this._rechercheLe = newRechercheLe;
   }
   /**
    *
@@ -485,7 +511,15 @@ class Joueur {
   sauvegarder() {
     return localStorage.setItem(
       "outiiil_joueur",
-      JSON.stringify(this, ["id", "x", "y", "niveauConstruction", "niveauRecherche"]),
+      JSON.stringify(this, [
+        "id",
+        "x",
+        "y",
+        "profilLe",
+        "rechercheLe",
+        "niveauConstruction",
+        "niveauRecherche",
+      ]),
     );
   }
   /**
@@ -549,12 +583,20 @@ class Joueur {
         this._id = data.id;
         this._x = data.x;
         this._y = data.y;
+        this._profilLe = data.profilLe || 0;
       }
     }
     // sinon. 0 / 0 compte comme inconnu : c'est ce qu'enregistraient les versions
     // qui ne lisaient pas le lien carte.php de s5, et le profil n'était alors
-    // jamais relu (temps de trajet faux)
-    if (this._x == -1 || this._y == -1 || this._id == -1 || (this._x == 0 && this._y == 0))
+    // jamais relu (temps de trajet faux). Relu aussi chaque jour, pour qu'une
+    // position fausse ou ancienne ne fausse pas les temps de trajet indéfiniment.
+    if (
+      this._x == -1 ||
+      this._y == -1 ||
+      this._id == -1 ||
+      (this._x == 0 && this._y == 0) ||
+      Date.now() - this._profilLe > 86400000
+    )
       return this.getProfil();
     return null;
   }
@@ -581,7 +623,16 @@ class Joueur {
         .text()
         .includes("Joueur en vacances");
       this._terrain = numeral($(stripped).find(".tableau_score tr:eq(1) td:eq(1)").text()).value();
-      if (monProfil.pseudo == this._pseudo) this.sauvegarder();
+      // Son propre profil, lu par exemple depuis la carte d'alliance : on met à
+      // jour monProfil plutôt que d'enregistrer cet objet, qui ne connaît pas
+      // les niveaux de construction et de recherche (ils seraient écrasés).
+      if (monProfil.pseudo == this._pseudo && this._x != -1 && this._y != -1) {
+        monProfil._id = this._id;
+        monProfil._x = this._x;
+        monProfil._y = this._y;
+        monProfil._profilLe = Date.now();
+        monProfil.sauvegarder();
+      }
     }
     return true;
   }
@@ -645,11 +696,15 @@ class Joueur {
     let data = JSON.parse(localStorage.getItem("outiiil_joueur")) || {};
     // Si des données sont deja presente et à jour on les charges
     if (data.hasOwnProperty("niveauRecherche")) this._niveauRecherche = data.niveauRecherche;
-    // si on pas les infos en localstorage
+    this._rechercheLe = data.rechercheLe || 0;
+    // si on pas les infos en localstorage, ou qu'elles ont plus d'un jour : une
+    // recherche finie sans que la boîte la suive (lancée depuis un autre
+    // appareil) laisserait sinon une VA périmée, et des temps de trajet faux
     if (
       this._niveauRecherche.every((elt) => {
         return elt == -1;
-      })
+      }) ||
+      Date.now() - this._rechercheLe > 86400000
     )
       return $.ajax({ url: location.origin + "/laboratoire.php" });
     return null;
@@ -663,6 +718,7 @@ class Joueur {
     parsed.find(".ligneAmelioration").each((i, elt) => {
       this._niveauRecherche[i] = parseInt($(elt).find(".niveau_amelioration").text().split(" ")[1]);
     });
+    this._rechercheLe = Date.now();
     // Recherche en cours ?!
     let ligne = parsed.find("#centre strong").text();
     let recherche = ligne.substring(2, ligne.indexOf("termin") - 1),
