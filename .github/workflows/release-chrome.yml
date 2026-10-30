@@ -43,9 +43,6 @@ jobs:
       - name: Build & zip (Chrome)
         run: bun run zip
 
-      # Avant l'envoi au store : le zip est attaché même si le store refuse.
-      # Pas de notes générées : les deux workflows mettent à jour la même
-      # release et les ajouteraient deux fois ; elles sont rédigées à la main.
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v3
@@ -62,8 +59,6 @@ jobs:
           CHROME_PUBLISHER_ID: ${{ secrets.CHROME_PUBLISHER_ID }}
           CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL: ${{ secrets.CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL }}
           CHROME_SERVICE_ACCOUNT_PRIVATE_KEY: ${{ secrets.CHROME_SERVICE_ACCOUNT_PRIVATE_KEY }}
-          # une version encore en revue bloque l'envoi : on annule sa revue, la
-          # nouvelle version la remplace
           CHROME_CANCEL_PENDING: ${{ secrets.CHROME_CANCEL_PENDING }}
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
