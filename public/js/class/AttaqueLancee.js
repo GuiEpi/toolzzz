@@ -526,6 +526,6 @@ class AttaqueLancee {
         )
         .reduce((total, a) => total + a.capture.terrainDepart - a.capture.terrainCible, 0),
       texte = `TdC de ${cible} estimé à l'arrivée : ${numeral(derniere.capture.terrainCible).format()} cm²`;
-    return prise > 0 ? `-${numeral(prise).format()} cm², ${texte}` : texte;
+    return prise > 0 ? `[b]-${numeral(prise).format()} cm²[/b], ${texte}` : texte;
   }
 }
