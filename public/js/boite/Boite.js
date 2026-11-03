@@ -59,7 +59,7 @@ class Boite {
       );
       $("#" + this._id)
         .css({ top: Math.random() * 100 + 50 + "px", left: Math.random() * 250 + 100 + "px" })
-        .draggable({ handle: ".o_titre", stack: "div", containment: "window" });
+        .draggable({ handle: ".o_titre", stack: ".o_content", containment: "window" });
       bCreate = true;
     }
     $("#" + this._id).show(EFFET[monProfil.parametre["boiteShow"].valeur].toLowerCase(), () => {

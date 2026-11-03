@@ -1247,7 +1247,7 @@ center > div > #tabMembresAlliance {
 .ui-datepicker,
 .ui-autocomplete.ui-widget {
   font-size: 11px !important;
-  z-index: 25001 !important;
+  z-index: 29000 !important;
 }
 .ui-tabs .ui-tabs-nav {
   font-size: 10.8px !important;
