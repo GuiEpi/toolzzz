@@ -49,6 +49,8 @@ class PageLaboratoire {
     // resterait orphelin à sa position d'injection.
     Utils.confirmationAnnuler("laboratoire.php");
     Utils.tableauEvolution("Recherche", "Laboratoire");
+    // Délai avant d'avoir les ressources des améliorations trop chères
+    Utils.delaiRessources();
     // Restauration du scroll APRÈS toutes les manipulations DOM (sinon le
     // tableau évolutions décale la mise en page après).
     if (scrollY !== null) requestAnimationFrame(() => window.scrollTo(0, scrollY));

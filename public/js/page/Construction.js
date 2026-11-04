@@ -43,6 +43,8 @@ class PageConstruction {
     // resterait orphelin à sa position d'injection.
     Utils.confirmationAnnuler("construction.php");
     Utils.tableauEvolution("Construction", "Construction");
+    // Délai avant d'avoir les ressources des améliorations trop chères
+    Utils.delaiRessources();
     // Visualisation des coûts/temps par niveau
     this.couts();
     // Restauration du scroll APRÈS toutes les manipulations DOM (sinon le

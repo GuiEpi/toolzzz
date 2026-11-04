@@ -401,6 +401,138 @@ class Utils {
     return y;
   }
   /**
+   * Production par jour, lue dans le tooltip du terrain de la boite info
+   * (ligne « Total par Jour ») : le jeu l'écrit dans un script de la page.
+   *
+   * @static
+   * @method productionParJour
+   * @return {Object|null} {nourriture, materiaux}, null si introuvable
+   */
+  static productionParJour() {
+    let script = $("script")
+        .toArray()
+        .map((s) => s.textContent)
+        .find((t) => t.includes("#boite_info_tdc") && t.includes("Total par Jour")),
+      contenu = script && script.match(/content:\s*"((?:[^"\\]|\\.)*)"/);
+    if (!contenu) return null;
+    let ligne = $("<div>")
+        .html(JSON.parse(`"${contenu[1]}"`).replace(/<img\b[^>]*>/gi, ""))
+        .find("tr")
+        .filter((i, tr) => $(tr).text().includes("Total par Jour")),
+      valeur = (i) =>
+        parseInt(
+          ligne
+            .find(`td:eq(${i})`)
+            .text()
+            .replace(/[^\d-]/g, ""),
+        ) || 0;
+    return ligne.length ? { nourriture: valeur(1), materiaux: valeur(2) } : null;
+  }
+  /**
+   * Sous le coût des constructions et recherches trop chères, indique dans
+   * combien de temps les ressources suffiront au rythme de production actuel.
+   *
+   * @static
+   * @method delaiRessources
+   */
+  static delaiRessources() {
+    // le Compte+ affiche déjà ce délai
+    if (Utils.comptePlus) return;
+    let production = Utils.productionParJour();
+    if (!production) return;
+    let stock = (icone) =>
+        numeral(
+          $(`#tableau_boite_info .${icone}`).siblings(".texte_ligne_boite_info").text(),
+        ).value(),
+      ressources = {
+        nourriture: {
+          stock: stock("icone_nourriture_boite_info"),
+          capacite: coutsCapaEntrepot(monProfil.niveauConstruction[1]),
+        },
+        materiaux: {
+          stock: stock("icone_materiaux_boite_info"),
+          capacite: coutsCapaEntrepot(monProfil.niveauConstruction[2]),
+        },
+      },
+      // au Laboratoire, les icônes du jeu sont décalées dans leur cellule : le
+      // bloc s'aligne sur la première plutôt que sur le bord du tableau
+      aligner = (cellule) => {
+        let bloc = cellule.find(".o_delaiRessources"),
+          icone = cellule.find("table img").first();
+        if (icone.length)
+          bloc.css("margin-left", Math.max(0, icone.offset().left - bloc.offset().left));
+        return bloc;
+      };
+    $(".ligneAmelioration .cout_amelioration").each((i, elt) => {
+      // un prérequis manque : les ressources ne suffiront pas à la lancer
+      if ($(elt).closest(".ligneAmelioration").find(".verificationNonOK").length) return;
+      let secondes = 0,
+        message = "",
+        manques = [];
+      for (let nom in ressources) {
+        let cout = numeral($(elt).find(`.${nom}`).text()).value(),
+          r = ressources[nom];
+        if (!cout || r.stock == null || cout <= r.stock) continue;
+        if (monProfil.niveauConstruction[nom == "nourriture" ? 1 : 2] >= 0 && cout > r.capacite)
+          message = `Entrepôt de ${nom == "nourriture" ? "nourriture" : "matériaux"} trop petit`;
+        else if (production[nom] <= 0) message ||= "Jamais au rythme de production actuel";
+        else {
+          let attente = ((cout - r.stock) / production[nom]) * 86400;
+          manques.push({ nom: nom, cout: cout, stock: r.stock, prod: production[nom], attente });
+          secondes = Math.max(secondes, attente);
+        }
+      }
+      if (message) {
+        $(elt)
+          .find("table")
+          .first()
+          .append(
+            `<tr><td colspan='2'><div class='o_delaiRessources o_delaiBloque reduce'>${message}</div></td></tr>`,
+          );
+        aligner($(elt));
+        return;
+      }
+      if (!secondes) return;
+      let id = `o_delaiRessources${i}`,
+        jauges = manques
+          .map(
+            (m) =>
+              `<tr class='${m.attente == secondes ? "gras" : ""}'><td>${m.nom == "nourriture" ? IMG_POMME : IMG_MAT}</td><td><div class='o_delaiJauge'><div class='o_delaiJauge_${m.nom}'></div></div></td><td class='o_delaiPct right'></td></tr>`,
+          )
+          .join("");
+      $(elt)
+        .find("table")
+        .first()
+        .append(
+          `<tr><td colspan='2'><div class='o_delaiRessources reduce' title='Estimation selon la production du jour (tooltip du terrain), qui varie avec le terrain et l’armée'>
+          <table>${jauges}</table>
+          <div><img src='/images/icone/horloge.png' alt='Délai :' class='o_vAlign'/> <span id='${id}'></span></div>
+          <div class='o_delaiDate'>${Utils.roundMinute(secondes).format("D MMM HH[h]mm")}</div>
+        </div></td></tr>`,
+        );
+      let debut = Date.now(),
+        bloc = aligner($(elt));
+      // les jauges se remplissent au rythme de la production
+      const remplir = () => {
+        let ecoule = (Date.now() - debut) / 1000;
+        bloc.find("tr").each((j, tr) => {
+          let m = manques[j],
+            pct = Math.min(100, ((m.stock + (m.prod * ecoule) / 86400) / m.cout) * 100);
+          $(tr).find(".o_delaiJauge div").css("width", `${pct}%`);
+          $(tr)
+            .find(".o_delaiPct")
+            .text(`${Math.floor(pct)} %`);
+        });
+      };
+      remplir();
+      Utils.decreaseTime(Math.ceil(secondes), id, {
+        format: (reste) => Utils.intToTime(reste > 3600 ? Math.ceil(reste / 60) * 60 : reste),
+        chaqueSeconde: remplir,
+        aZero: () => bloc.addClass("o_delaiPret").html("✔ Ressources disponibles"),
+      });
+    });
+  }
+  /**
    * Sur la page de confirmation d'annulation d'une recherche ou construction
    * (`?confAnnuler=ID&t=TOKEN`), ajoute un lien "Retour" à côté du "Je confirme"
    * natif (sinon l'utilisateur n'a aucun moyen évident de revenir en arrière)

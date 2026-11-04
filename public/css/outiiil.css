@@ -1116,6 +1116,56 @@ hr.o_scSepar {
   vertical-align: top;
 }
 
+/* Construction - Laboratoire : délai avant d'avoir les ressources */
+.o_delaiRessources {
+  margin-top: 6px;
+  padding: 4px 6px;
+  border: 1px solid #bd8d46;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.25);
+}
+.o_delaiRessources table {
+  border-collapse: collapse;
+}
+.o_delaiRessources td {
+  padding: 1px 3px;
+  vertical-align: middle;
+}
+.o_delaiRessources img {
+  height: 14px;
+}
+.o_delaiJauge {
+  width: 40px;
+  height: 7px;
+  border: 1px solid #8b6b3d;
+  border-radius: 4px;
+  background: #fff;
+  overflow: hidden;
+}
+.o_delaiJauge div {
+  height: 100%;
+}
+.o_delaiJauge_nourriture {
+  background: #c5130f;
+}
+.o_delaiJauge_materiaux {
+  background: #8b5a2b;
+}
+.o_delaiPct,
+.o_delaiDate {
+  white-space: nowrap;
+}
+.o_delaiDate {
+  color: #6b4f2a;
+}
+.o_delaiBloque {
+  color: #c5130f;
+}
+.o_delaiPret {
+  color: #2e7d32;
+  font-weight: bold;
+}
+
 /* Page messagerie */
 .o_tabAnalyse,
 .o_tabTDP {
