@@ -121,6 +121,9 @@ class Parametre {
         // aussi saisissable au clavier dans un champ synchronisé avec le
         // curseur, posé dans ajouterEvent
         return `<div id="${this._id}Groupe" class="group left"><label for="${this._id}Valeur">${this._libelle} : <input id="${this._id}Valeur" class="o_sliderValeur" type="text" value="${this._valeur}"/>${this._valeurPossible.unite || ""}</label><div id="${this._id}" class="slider" style="margin:6px 12px 0 3px;"></div></div>`;
+      case "ordre":
+        // valeurPossible = ordre par défaut ; libellés des unités d'Armee.unite
+        return `<div class="group left"><label>${this._libelle}</label><ol id="${this._id}" class="o_ordre">${this._listeOrdre()}</ol><span id="${this._id}Defaut" class="cursor souligne small">Ordre par défaut</span></div>`;
       case "select":
         html += `<select id="${this._id}" class="o_input" required>`;
         this._valeurPossible.forEach((item, index, array) => {
@@ -137,8 +140,32 @@ class Parametre {
   /**
    *
    */
+  /**
+   * Éléments de la liste d'un paramètre « ordre ».
+   *
+   * @private
+   * @method _listeOrdre
+   */
+  _listeOrdre() {
+    return this._valeur.map((u) => `<li data-unite="${u}">${NOM_UNITE[u + 1]}</li>`).join("");
+  }
   ajouterEvent() {
     switch (this._type) {
+      case "ordre":
+        $("#" + this._id).sortable({
+          update: () => {
+            this._valeur = $("#" + this._id + " li")
+              .toArray()
+              .map((li) => parseInt(li.dataset.unite));
+            this.sauvegarde();
+          },
+        });
+        $("#" + this._id + "Defaut").click(() => {
+          this._valeur = [...this._valeurPossible];
+          $("#" + this._id).html(this._listeOrdre());
+          this.sauvegarde();
+        });
+        break;
       case "number":
         $("#" + this._id).spinner({
           min: 0,

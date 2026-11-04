@@ -1116,6 +1116,20 @@ hr.o_scSepar {
   vertical-align: top;
 }
 
+/* Paramètres : liste à ordonner */
+.o_ordre {
+  margin: 4px 0 2px;
+  padding-left: 24px;
+}
+.o_ordre li {
+  margin: 2px 0;
+  padding: 2px 6px;
+  border: 1px solid #bd8d46;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.3);
+  cursor: grab;
+}
+
 /* Construction - Laboratoire : délai avant d'avoir les ressources */
 .o_delaiRessources {
   margin-top: 6px;

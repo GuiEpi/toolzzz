@@ -20,6 +20,30 @@ class SimulationChasse {
     return 2.0;
   }
   /**
+   * Unités qui prennent l'XP, dans l'ordre choisi dans les paramètres (celui
+   * de Calystene par défaut, ou si l'ordre enregistré n'est pas valide).
+   */
+  static ordreXp() {
+    let ordre =
+      typeof monProfil != "undefined" && monProfil.parametre["ordreXpChasse"]
+        ? monProfil.parametre["ordreXpChasse"].valeur
+        : null;
+    return Array.isArray(ordre) &&
+      ordre.length == ORDRE_XP_CHASSE.length &&
+      ORDRE_XP_CHASSE.every((u) => ordre.includes(u))
+      ? ordre
+      : ORDRE_XP_CHASSE;
+  }
+  /**
+   * Ordre d'envoi de toutes les unités : celles qui prennent l'XP, puis les autres.
+   */
+  static ordreUnites() {
+    return [
+      ...SimulationChasse.ordreXp(),
+      ...ORDRE_UNITE_CHASSE.filter((u) => !ORDRE_XP_CHASSE.includes(u)),
+    ];
+  }
+  /**
    * Attaque de base (hors bonus) d'une armée.
    */
   static attaqueBase(unites) {
@@ -122,7 +146,8 @@ class SimulationChasse {
       difficulte = SimulationChasse.difficulteTotale(tdcArrivee, terrain, nombre),
       restante = difficulte,
       base = SimulationChasse.attaqueBase(unites),
-      chasses = new Array(nombre);
+      chasses = new Array(nombre),
+      ordre = SimulationChasse.ordreUnites();
     for (let c = nombre - 1; c >= 0; c--) {
       let envoi = new Array(14).fill(0),
         diff = SimulationChasse.difficulte(tdcArrivee + c * terrain, terrain),
@@ -137,7 +162,7 @@ class SimulationChasse {
       if (!c || envoi[0] > dispo[0] || envoi[0] < 0) envoi[0] = dispo[0];
       dispo[0] -= envoi[0];
       att -= envoi[0] * ATT_UNITE[1];
-      for (let u of ORDRE_UNITE_CHASSE) {
+      for (let u of ordre) {
         if (dispo[u] <= 0 || att <= 0) continue;
         let n = dispo[u] * ATT_UNITE[u + 1] > att ? Math.round(att / ATT_UNITE[u + 1]) : dispo[u];
         // Écart volontaire avec la 2.00.38, qui teste `envoi[u] + n` ici : pour

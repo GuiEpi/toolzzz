@@ -51,6 +51,7 @@ class BoiteParametre extends Boite {
       "reserveFloodAuto",
       "replacerArmeeAuto",
       "ratioRecolte",
+      "ordreXpChasse",
     ];
   }
   /**
@@ -216,6 +217,9 @@ class BoiteParametre extends Boite {
             ${monProfil.parametre[this._paramGeneral[5]].getForm() + monProfil.parametre[this._paramGeneral[6]].getForm()}
             <p class='left reduce gras'>Replacer l'armée à l'arrivée sur la page Armée</p>
             ${monProfil.parametre[this._paramGeneral[7]].getForm()}
+            <p class='left reduce gras'>Unités qui prennent l'XP en chasse, par priorité</p>
+            <p class='left small'><em>Glisse les unités pour les classer : celles du haut partent en priorité dans les dernières chasses, les plus difficiles, qui rapportent le plus d'XP. Par défaut, c'est l'ordre du simulateur de Calystene, celui utilisé jusqu'ici. Utilisé par le lanceur de la page Ressources et la boîte Chasse.</em></p>
+            ${monProfil.parametre[this._paramGeneral[9]].getForm()}
         </form>`);
     return this;
   }

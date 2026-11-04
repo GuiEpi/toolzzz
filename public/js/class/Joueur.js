@@ -172,6 +172,15 @@ class Joueur {
       "checkbox",
       false,
     );
+    // unités qui prennent l'XP, par priorité : les premières partent dans les
+    // dernières chasses
+    this._parametre["ordreXpChasse"] = new Parametre(
+      "ordreXpChasse",
+      "Priorité d'XP en chasse",
+      "ordre",
+      [...ORDRE_XP_CHASSE],
+      [...ORDRE_XP_CHASSE],
+    );
     // parametre divers
     this._parametre["couleurChat"] = new Parametre(
       "couleurChat",
