@@ -13,8 +13,14 @@ Sur la page de la Reine (où tu lances tes pontes) :
 
 > ![Slider de ponte corrigé pour non-C+](assets/wiki/reine-slider-compte-plus-like.png)
 
+## Construction
+
+- **Délai avant d'avoir les ressources** (sans Compte+, qui l'affiche déjà) : sous le coût d'une construction trop chère, une jauge par ressource manquante se remplit en direct, avec un compte à rebours et la date où tu pourras la lancer. Le calcul part de ta production du jour (le tooltip du terrain, dans l'encart en haut à gauche), c'est donc une estimation qui bouge avec ton terrain et ton armée. Si le coût dépasse ton entrepôt, Toolzzz l'indique ; si un prérequis manque, rien n'est affiché.
+- Les niveaux de construction sont sync vers `localStorage` à chaque visite de la page. Les [courbes de coûts](Courbes-de-couts) y sont aussi accessibles.
+
 ## Laboratoire
 
+- **Délai avant d'avoir les ressources** (sans Compte+, qui l'affiche déjà) : sous le coût d'une recherche trop chère, une jauge par ressource manquante se remplit en direct, avec un compte à rebours et la date où tu pourras la lancer. Le calcul part de ta production du jour (le tooltip du terrain, dans l'encart en haut à gauche), c'est donc une estimation qui bouge avec ton terrain et ton armée. Si le coût dépasse ton entrepôt, Toolzzz l'indique ; si un prérequis manque, rien n'est affiché.
 - **Tooltip Bouclier** : au survol d'une recherche Bouclier, comparaison de la vie de l'AB actuelle vs celle au niveau supérieur — pour décider si la prochaine recherche en vaut le coup.
 - **Tooltip Armes** : pareil pour les recherches d'Armes, comparaison des pertes estimées avant et après upgrade.
 - Les niveaux de recherche sont sync vers `localStorage` à chaque visite de la page (utilisé par d'autres outils de l'extension).
