@@ -439,7 +439,63 @@ class Utils {
     // le Compte+ affiche déjà ce délai
     if (Utils.comptePlus) return;
     let production = Utils.productionParJour();
-    if (!production) return;
+    if (production) Utils._afficherDelais(production);
+    // sur mobile, le jeu n'envoie pas le tooltip : on lit la page Ressources
+    else
+      $.ajax({ url: location.origin + "/Ressources.php" }).then((html) => {
+        let p = Utils.productionRessources(html);
+        if (p) Utils._afficherDelais(p);
+      });
+  }
+  /**
+   * Production par jour calculée depuis la page Ressources, comme son script
+   * le fait dans le navigateur (le serveur envoie des 0 à la place des
+   * récoltes) : ouvrières des champs « Récoltes » × rendement, plus la
+   * champignonnière, moins la consommation de l'armée et le pillage d'un
+   * éventuel maître.
+   *
+   * @static
+   * @method productionRessources
+   * @param {String} html page Ressources.php
+   * @return {Object|null} {nourriture, materiaux}, null si introuvable
+   */
+  static productionRessources(html) {
+    // les séparateurs de milliers varient (espace, insécable…) : on ne garde que les chiffres
+    let entier = (t) => parseInt(String(t).replace(/\D/g, "")) || 0,
+      variable = (regex) => {
+        let m = html.match(regex);
+        return m ? parseFloat(m[1]) : null;
+      },
+      page = Utils.parseHtml(html),
+      rendement = variable(/sommeN\s*=\s*sommeN\s*\*\s*([\d.]+)/),
+      consommation = page
+        .find("#nbNourriture")
+        .closest("p")
+        .text()
+        .match(/armée consomme\s*(\d[\d\s]*)/);
+    if (!rendement || !page.find("#RecolteNourriture").length) return null;
+    let nourriture = entier(page.find("#RecolteNourriture").val()) * rendement,
+      materiaux = entier(page.find("#RecolteMateriaux").val()) * rendement,
+      champi = variable(/var champi\s*=\s*([\d.]+)/) || 0,
+      pillage = variable(/var pourcentagePillage\s*=\s*([\d.]+)/) || 0;
+    return {
+      nourriture:
+        nourriture +
+        champi -
+        (consommation ? entier(consommation[1]) : 0) -
+        Math.floor((pillage * (nourriture + champi)) / 100),
+      materiaux: materiaux - Math.floor((pillage * materiaux) / 100),
+    };
+  }
+  /**
+   * Affiche les délais, une fois la production connue.
+   *
+   * @private
+   * @static
+   * @method _afficherDelais
+   * @param {Object} production {nourriture, materiaux} par jour
+   */
+  static _afficherDelais(production) {
     let stock = (icone) =>
         numeral(
           $(`#tableau_boite_info .${icone}`).siblings(".texte_ligne_boite_info").text(),
