@@ -13,6 +13,7 @@ Les options qui touchent au comportement de l'extension :
 - **Méthode de flood par défaut** — choix de l'algorithme utilisé par défaut dans le formulaire de flood injecté sur la page Attaquer (le [Multi-flood](Outils-d-attaque#onglet-multi-flood) utilise toujours la méthode Optimisée). Quatre méthodes : Standard, Optimisée, Uniforme, Dégressive.
 - **Antisonde max en terrain / en dôme** — nombre maximum d'antisondes que le formulaire flood pré-remplit. La quantité réellement envoyée est tirée aléatoirement entre 90 % et ce max, pour rester non prédictible. Configurable séparément pour terrain et pour dôme parce que les contraintes de placement diffèrent.
 - **Sonde vers l'ennemi** — nombre d'unités envoyées au clic sur les boutons _Sonder_ / _Sonder direct_ de la page Attaquer. L'espèce envoyée est automatiquement la première sonde disponible dans ton armée (Sonde, puis Sonde élite si débloquée).
+- **Priorité d'XP en chasse** — l'ordre des unités qui prennent l'XP (Tueuse, Tank, Artilleuse, Concierge, Soldate, Jeune Soldate, Soldate Naine). Glisse-les pour les classer : celles du haut partent en priorité dans les dernières chasses, les plus difficiles, qui rapportent le plus d'XP. Par défaut, c'est l'ordre du simulateur de Calystene, celui qu'utilisaient déjà les lanceurs. L'ordre s'applique au lanceur de la page Ressources et aux onglets _Simuler_ et _Par pertes_ de la boîte Chasse ; _Ordre par défaut_ remet celui du simulateur de Calystene.
 
 ## Onglet _Utilitaire_
 
