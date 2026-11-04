@@ -34,9 +34,9 @@ Un champ **Retour souhaité** calcule le terrain par chasse pour rentrer à une 
 
 Les chasses réglées sur les **pertes que tu acceptes**, plutôt que sur la réplique à 10 %. Tu indiques un nombre de JSN, **en moyenne** (les pertes tournent autour, parfois plus) ou **au pire** (elles ne le dépassent pas), et ton TdC à l'arrivée. Toolzzz prend ton armée, tes niveaux, ton terrain et tes places de chasse libres.
 
-Pour chaque nombre de chasses possible, le tableau donne le plus grand terrain qui respecte tes pertes, la durée, les pertes moyennes et max, et la rentabilité. La plus rentable est en gras et sélectionnée, mais tu peux en choisir une autre ; la répartition des unités suit, et **Lancer les chasses** les envoie.
+Pour chaque nombre de chasses possible, le tableau donne le plus grand terrain qui respecte tes pertes, la durée, les pertes moyennes et max, le ratio atteint (la réplique à 10 % au survol) et la rentabilité. La plus rentable est en gras et sélectionnée, mais tu peux en choisir une autre ; la répartition des unités suit, et **Lancer les chasses** les envoie.
 
-Avec une limite de pertes, la meilleure option est souvent **une seule grosse chasse** : chaque chasse ajoute sa propre difficulté de base, donc découper coûte plus de pertes.
+Plusieurs chasses plus petites prennent un peu moins de terrain au total, mais elles reviennent plus vite : la durée dépend du terrain de chaque chasse. Elles sont donc souvent plus rentables par jour qu'une seule grosse chasse. Le lanceur de la page Ressources, lui, ne descend jamais sous un quart de ton TdC par chasse (la règle du simulateur d'origine) : à pertes égales, cet onglet peut trouver une découpe plus rentable. La ligne que proposerait ce lanceur est marquée « lanceur » dans le tableau.
 
 > Les pertes viennent des tables du simulateur de Calystene, qui donnent un minimum, une moyenne et un maximum. Une probabilité du type « 2 000 JSN ou moins dans 80 % des cas » n'est pas disponible faute de données pour la calculer.
 
