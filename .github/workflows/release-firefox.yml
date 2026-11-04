@@ -12,6 +12,7 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    concurrency: github-release-${{ github.ref_name }}
     steps:
       - uses: actions/checkout@v7
 
