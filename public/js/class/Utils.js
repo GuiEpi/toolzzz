@@ -459,7 +459,8 @@ class Utils {
    * @static
    * @method productionRessources
    * @param {String} html page Ressources.php
-   * @return {Object|null} {nourriture, materiaux}, null si introuvable
+   * @return {Object|null} {nourriture, materiaux, retour}, null si introuvable ;
+   * retour = secondes avant le prochain retour des ouvrières
    */
   static productionRessources(html) {
     // les séparateurs de milliers varient (espace, insécable…) : on ne garde que les chiffres
@@ -487,6 +488,7 @@ class Utils {
         (consommation ? entier(consommation[1]) : 0) -
         Math.floor((pillage * (nourriture + champi)) / 100),
       materiaux: materiaux - Math.floor((pillage * materiaux) / 100),
+      retour: variable(/reste\((\d+),\s*["']retour_ouvrieres/),
     };
   }
   /**
@@ -495,7 +497,8 @@ class Utils {
    * @private
    * @static
    * @method _afficherDelais
-   * @param {Object} production {nourriture, materiaux} par jour
+   * @param {Object} production {nourriture, materiaux} par jour, et retour
+   * (secondes avant le prochain retour des ouvrières) si connu
    */
   static _afficherDelais(production) {
     let stock = (icone) =>
@@ -512,6 +515,9 @@ class Utils {
           capacite: coutsCapaEntrepot(monProfil.niveauConstruction[2]),
         },
       },
+      // les ouvrières rapportent les ressources toutes les 30 minutes, 1/48 de la production du jour
+      retour = production.retour,
+      retours = (ecoule) => (ecoule < retour ? 0 : 1 + Math.floor((ecoule - retour) / 1800)),
       // au Laboratoire, les icônes du jeu sont décalées dans leur cellule : le
       // bloc s'aligne sur la première plutôt que sur le bord du tableau
       aligner = (cellule) => {
@@ -535,7 +541,10 @@ class Utils {
           message = `Entrepôt de ${nom == "nourriture" ? "nourriture" : "matériaux"} trop petit`;
         else if (production[nom] <= 0) message ||= "Jamais au rythme de production actuel";
         else {
-          let attente = ((cout - r.stock) / production[nom]) * 86400;
+          let attente =
+            retour == null
+              ? ((cout - r.stock) / production[nom]) * 86400
+              : retour + (Math.ceil(((cout - r.stock) * 48) / production[nom]) - 1) * 1800;
           manques.push({ nom: nom, cout: cout, stock: r.stock, prod: production[nom], attente });
           secondes = Math.max(secondes, attente);
         }
@@ -562,7 +571,7 @@ class Utils {
         .find("table")
         .first()
         .append(
-          `<tr><td colspan='2'><div class='o_delaiRessources reduce' title='Estimation selon la production du jour (tooltip du terrain), qui varie avec le terrain et l’armée'>
+          `<tr><td colspan='2'><div class='o_delaiRessources reduce' title='Estimation selon la production actuelle, qui varie avec le terrain et l’armée'>
           <table>${jauges}</table>
           <div><img src='/images/icone/horloge.png' alt='Délai :' class='o_vAlign'/> <span id='${id}'></span></div>
           <div class='o_delaiDate'>${Utils.roundMinute(secondes).format("D MMM HH[h]mm")}</div>
@@ -575,7 +584,8 @@ class Utils {
         let ecoule = (Date.now() - debut) / 1000;
         bloc.find("tr").each((j, tr) => {
           let m = manques[j],
-            pct = Math.min(100, ((m.stock + (m.prod * ecoule) / 86400) / m.cout) * 100);
+            recolte = retour == null ? (m.prod * ecoule) / 86400 : (m.prod * retours(ecoule)) / 48,
+            pct = Math.min(100, ((m.stock + recolte) / m.cout) * 100);
           $(tr).find(".o_delaiJauge div").css("width", `${pct}%`);
           $(tr)
             .find(".o_delaiPct")
