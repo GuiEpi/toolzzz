@@ -40,6 +40,18 @@ Préférer les caractères UTF-8 aux substituts ASCII dans le texte affiché : `
 - `.ligne_paire` — fond alterné natif
 - `.boite_amelioration` `.simulateur` `.centre` — wrappers de boîtes natives (cf. section « Conteneur de widget injecté » plus bas)
 
+⚠️ **Ne pas réutiliser une classe native pour autre chose que son usage natif.** Le CSS du jeu la style déjà (taille, position) : une `<div class='jauge_materiaux'>` dans une jauge Toolzzz devient un grand carré, parce qu'elle prend le style des jauges de la boite info. Préfixer ses propres classes en `o_` (ex. `.o_delaiJauge_materiaux`). Même chose pour `.nourriture` `.materiaux` `.temps` `.ouvriere` sur Construction / Laboratoire : le code les lit pour récupérer les coûts, une copie injectée fausserait la lecture.
+
+### Injecter dans une colonne native étroite
+
+La mise en page native coupe ce qui déborde à droite : un bloc trop large (`white-space: nowrap`, largeur fixe) élargit la colonne et tronque **aussi** le contenu du jeu. Pour ajouter une info sous un coût (Construction, Laboratoire), l'injecter **dans** le tableau natif, sur toute sa largeur, et laisser le texte passer à la ligne :
+
+```js
+$(cellule).find("table").first().append(`<tr><td colspan='2'>…</td></tr>`);
+```
+
+Cf. `Utils.delaiRessources`.
+
 ## Conteneur de widget injecté dans une page
 
 Pour un widget Toolzzz qui s'ajoute en bas (ou au milieu) d'une page Fourmizzz native — typiquement injecté via `$("#alliance").after(...)` ou `$("#cadre").append(...)` — utiliser le **même pattern que `Lanceur de Chasses`** (cf. `public/js/page/Ressource.js:92`) pour s'intégrer visuellement comme une vraie « boîte » du jeu :
@@ -269,6 +281,7 @@ $("#o_truc").spinner({ min: 0, numberFormat: "i" });
 - `$("#x").slider({ min, max, change })` — slider 0/1
 - `$("#x").slider({ range: true, min, max, values: [a, b], slide })` — **range slider** (sélection d'une plage). Cf. la plage de niveaux du widget Coûts (`PageConstruction.couts`). Pour avoir des paliers nets, `step: Math.max(1, Math.floor((max - min) / N))` avec N ≈ 20–50 ; jQuery UI exige que `(max - min) % step == 0` pour snapper proprement.
 - `$("#x").tooltip({ position, content })` — tooltips
+- `Utils.decreaseTime(secondes, id, { format, chaqueSeconde, aZero })` — compte à rebours dans l'élément `#id`, sur un seul `setInterval` partagé. `chaqueSeconde(reste)` sert à animer autre chose (ex. une jauge qui se remplit), `aZero()` à changer l'affichage à la fin. `Utils.arreterTime(id)` l'arrête. Cf. `Utils.delaiRessources`, `BoiteComptePlus`.
 
 ### Préférer un input éditable à une checkbox + valeur figée
 
@@ -298,7 +311,9 @@ Avant de fetch quoi que ce soit, vérifier qu'on n'a pas déjà la donnée :
 - `monProfil` — Joueur courant (pseudo, x/y, niveauRecherche, niveauConstruction, parametre)
 - `Utils.serveur` — sous-domaine du serveur (uppercase)
 - `Utils.terrain` — terrain courant en cm² (depuis le DOM)
-- `Utils.ouvrieres` `Utils.nourriture` `Utils.materiaux` — stocks
+- `Utils.ouvrieres` `Utils.nourriture` `Utils.materiaux` — stocks (`#nb_*`). Le stock est aussi dans la boite info, à lire via `#tableau_boite_info .icone_nourriture_boite_info` / `.icone_materiaux_boite_info` puis `.siblings(".texte_ligne_boite_info")` (cf. `Utils.delaiRessources`)
+- `Utils.productionParJour()` — `{nourriture, materiaux}` par jour, lu dans le tooltip du terrain de la boite info (ligne « Total par Jour »), présent sur toutes les pages ; `null` si introuvable
+- `coutsCapaEntrepot(niveau)` (`data/couts.js`) — capacité d'un entrepôt ; niveaux dans `monProfil.niveauConstruction[1]` (nourriture) et `[2]` (matériaux)
 - `Utils.comptePlus` — booléen
 - `Utils.alliance` — tag alliance
 - `Joueur.rechercher(term)` — POST `classementAlliance.php` (autocomplete pseudo+alliance, page-agnostique)
@@ -314,7 +329,8 @@ Dans `public/js/content.js` :
 - `NOM_UNITE` — noms des 14 unités, indexé 1-14
 - `ATT_UNITE` `DEF_UNITE` `VIE_UNITE` — stats par unité
 - `RATIO_CHASSE` `PERTE_*_CHASSE` `REPLIQUE_CHASSE` — constantes calibrage chasse
-- `IMG_FLECHE` `IMG_VIE` `IMG_ATT` `IMG_DEF` `IMG_COPY` `IMG_GAUCHE` `IMG_DROITE` — icônes inline (chaînes HTML)
+- `IMG_FLECHE` `IMG_VIE` `IMG_ATT` `IMG_DEF` `IMG_COPY` `IMG_GAUCHE` `IMG_DROITE` `IMG_POMME` `IMG_MAT` — icônes inline (chaînes HTML)
+- Icônes du jeu : `images/icone/icone_sablier.gif` (temps), `icone_pomme.png`, `icone_bois.png`, `icone_ouvriere.png`, `horloge.png` (délai, celle du Compte+)
 - `LIEU.TERRAIN` `LIEU.DOME` `LIEU.LOGE` — enums lieux d'attaque
 - `DATEPICKER_OPTION` — options par défaut pour datetimepicker
 
