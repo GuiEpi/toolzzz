@@ -438,14 +438,16 @@ class Utils {
   static delaiRessources() {
     // le Compte+ affiche déjà ce délai
     if (Utils.comptePlus) return;
-    let production = Utils.productionParJour();
-    if (production) Utils._afficherDelais(production);
-    // sur mobile, le jeu n'envoie pas le tooltip : on lit la page Ressources
-    else
-      $.ajax({ url: location.origin + "/Ressources.php" }).then((html) => {
-        let p = Utils.productionRessources(html);
-        if (p) Utils._afficherDelais(p);
-      });
+    // la page Ressources est à jour, le tooltip de la boite info pas toujours (et absent sur mobile)
+    let repli = () => {
+      let production = Utils.productionParJour();
+      if (production) Utils._afficherDelais(production);
+    };
+    $.ajax({ url: location.origin + "/Ressources.php" }).then((html) => {
+      let production = Utils.productionRessources(html);
+      if (production) Utils._afficherDelais(production);
+      else repli();
+    }, repli);
   }
   /**
    * Production par jour calculée depuis la page Ressources, comme son script
