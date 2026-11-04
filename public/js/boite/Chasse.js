@@ -852,11 +852,21 @@ class BoiteChasse extends Boite {
     );
     if (!this._choixPertes || !this._optionsPertes[this._choixPertes - 1])
       this._choixPertes = meilleure + 1;
-    let choix = this._optionsPertes[this._choixPertes - 1],
+    // la ligne que proposerait le lanceur de la page Ressources à la même
+    // difficulté : il ne descend jamais sous un quart du TdC par chasse
+    let ratioLanceur = RATIO_CHASSE[this._optionsPertes[meilleure].indexRef],
+      lanceur = SimulationChasse.calculerChasses(
+        ratioLanceur,
+        SimulationChasse.attaqueArmee(p.unites, p.armes),
+        p.nombreMax,
+        Math.max(1, p.tdcArrivee),
+        Math.round(Math.max(1, p.tdcLancement) / 4),
+      ).nombre,
+      choix = this._optionsPertes[this._choixPertes - 1],
       lignes = this._optionsPertes
         .map(
           (o, i) =>
-            `<tr${i == meilleure ? ' class="gras"' : ""}><td><input type="radio" name="o_spChoix" value="${i + 1}"${i + 1 == this._choixPertes ? " checked" : ""}/></td><td class="right">${o.nombre} × ${fmt(o.terrain)}</td><td class="right green">${fmt(o.nombre * o.terrain)}</td><td class="right">${Utils.intToTime(o.duree)}</td><td class="right">${fmt(o.pertes.AVG)}</td><td class="right">${fmt(o.pertes.MAX)}</td><td class="right">${fmt(o.rentabilite)}</td></tr>`,
+            `<tr${i == meilleure ? ' class="gras"' : ""}><td><input type="radio" name="o_spChoix" value="${i + 1}"${i + 1 == this._choixPertes ? " checked" : ""}/></td><td class="right">${o.nombre == lanceur && RATIO_CHASSE[o.indexRef] == ratioLanceur ? `<span class="reduce" title="Ce que propose le lanceur de la page Ressources à la difficulté ${ratioLanceur.toFixed(1)} : il ne descend jamais sous un quart de votre TdC par chasse">lanceur</span> ` : ""}${o.nombre} × ${fmt(o.terrain)}</td><td class="right green">${fmt(o.nombre * o.terrain)}</td><td class="right">${Utils.intToTime(o.duree)}</td><td class="right">${fmt(o.pertes.AVG)}</td><td class="right">${fmt(o.pertes.MAX)}</td><td class="right ${this._classeRatio(RATIO_CHASSE[o.indexRef])}" title="Réplique à 10 % : ${Math.round(REPLIQUE_CHASSE[o.indexRef] * 100)} %">${numeral(o.ratio).format("0.00")}</td><td class="right">${fmt(o.rentabilite)}</td></tr>`,
         )
         .join(""),
       simu = SimulationChasse.simuler({
@@ -879,9 +889,9 @@ class BoiteChasse extends Boite {
     $("#o_spResultat").html(`
         <div class="centre gras o_marginT15">Chasses possibles</div>
         <table id="o_spOptions" class="o_maxWidth" cellspacing="0">
-          <thead><tr><th></th><th class="right">Chasses</th><th class="right">TdC total</th><th class="right">Durée</th><th class="right">Pertes moy.</th><th class="right">Pertes max</th><th class="right">cm² / jour</th></tr></thead>
+          <thead><tr><th></th><th class="right">Chasses</th><th class="right">TdC total</th><th class="right">Durée</th><th class="right">Pertes moy.</th><th class="right">Pertes max</th><th class="right">Ratio</th><th class="right">cm² / jour</th></tr></thead>
           <tbody>${lignes}
-            <tr class="reduce"><td colspan="7"><em>En gras la plus rentable. Ratio ${numeral(choix.ratio).format("0.00")}, réplique à 10 % : ${Math.round(REPLIQUE_CHASSE[choix.indexRef] * 100)} %. Pertes en JSN, Bouclier compris, d'après les tables du simulateur de Calystene.</em></td></tr>
+            <tr class="reduce"><td colspan="8"><em>En gras la plus rentable. Choisie : ratio ${numeral(choix.ratio).format("0.00")}, réplique à 10 % : ${Math.round(REPLIQUE_CHASSE[choix.indexRef] * 100)} %. Pertes en JSN, Bouclier compris, d'après les tables du simulateur de Calystene.</em></td></tr>
           </tbody>
         </table>
         <div class="centre gras o_marginT15">Répartition des unités</div>
