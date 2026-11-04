@@ -312,7 +312,7 @@ Avant de fetch quoi que ce soit, vérifier qu'on n'a pas déjà la donnée :
 - `Utils.serveur` — sous-domaine du serveur (uppercase)
 - `Utils.terrain` — terrain courant en cm² (depuis le DOM)
 - `Utils.ouvrieres` `Utils.nourriture` `Utils.materiaux` — stocks (`#nb_*`). Le stock est aussi dans la boite info, à lire via `#tableau_boite_info .icone_nourriture_boite_info` / `.icone_materiaux_boite_info` puis `.siblings(".texte_ligne_boite_info")` (cf. `Utils.delaiRessources`)
-- `Utils.productionParJour()` — `{nourriture, materiaux}` par jour, lu dans le tooltip du terrain de la boite info (ligne « Total par Jour »), présent sur toutes les pages ; `null` si introuvable
+- `Utils.productionParJour()` — `{nourriture, materiaux}` par jour, lu dans le tooltip du terrain de la boite info (ligne « Total par Jour »), présent sur toutes les pages **sauf sur mobile** (le jeu n'y envoie pas le script du tooltip) ; `null` si introuvable. Repli : `Utils.productionRessources(html)` sur `Ressources.php`, qui refait le calcul du script de la page (le serveur y envoie des 0 à la place des récoltes)
 - `coutsCapaEntrepot(niveau)` (`data/couts.js`) — capacité d'un entrepôt ; niveaux dans `monProfil.niveauConstruction[1]` (nourriture) et `[2]` (matériaux)
 - `Utils.comptePlus` — booléen
 - `Utils.alliance` — tag alliance
