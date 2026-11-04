@@ -22,7 +22,7 @@ Toolzzz does **not** collect or store any personal data on external servers. The
 
 Toolzzz does **not** use any analytics or telemetry.
 
-The chat **GIF button** uses the [GIPHY API](https://developers.giphy.com/). When you open it, the trending GIFs are requested from `api.giphy.com`; when you type a search, the search text is sent to GIPHY. GIF previews and the GIFs posted in the chat are loaded from GIPHY's servers, which therefore see your IP address. Nothing is sent to GIPHY unless you open the GIF button. See [GIPHY's privacy policy](https://support.giphy.com/hc/en-us/articles/360032872931-GIPHY-Privacy-Policy).
+The chat **GIF button** uses the [GIPHY API](https://developers.giphy.com/). When you open it, the trending GIFs are requested from `api.giphy.com`; when you type a search, the search text is sent to GIPHY. GIF previews and the GIFs posted in the chat are loaded from GIPHY's servers, which therefore see your IP address. Nothing is sent to GIPHY unless you open the GIF button. On Firefox, nothing is sent until you have allowed it once on the page the button opens; you can withdraw it in the add-on's permissions in `about:addons`. See [GIPHY's privacy policy](https://support.giphy.com/hc/en-us/articles/360032872931-GIPHY-Privacy-Policy).
 
 ## Data sharing
 

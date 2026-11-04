@@ -37,9 +37,9 @@ This project uses WXT unconventionally. **Do not assume standard WXT conventions
 
 The standard WXT workflow is to put `entrypoints/content.ts` + `defineContentScript()` and let WXT build the manifest. This project does the opposite: the entire `content_scripts` block (40+ libraries and modules) is declared manually in `wxt.config.ts` under `manifest.content_scripts`. When adding/removing a script, edit `wxt.config.ts` — there is no entrypoint file to update.
 
-### `entrypoints/background.ts` is a required no-op stub
+### `entrypoints/background.ts` is required
 
-WXT refuses to build without at least one entrypoint (`ERROR No entrypoints found`). Since the real content scripts are declared in the manifest directly, `entrypoints/background.ts` exists only as `defineBackground(() => {})` to satisfy WXT. **Do not delete it** — the build breaks. Deleting it and migrating to entrypoint-style content scripts would be a sizable refactor given the strict load order of the 40+ libs.
+WXT refuses to build without at least one entrypoint (`ERROR No entrypoints found`). Since the real content scripts are declared in the manifest directly, `entrypoints/background.ts` exists first to satisfy WXT. Its only job is the Firefox consent for the GIF search (see below), because content scripts have no `permissions` API. **Do not delete it** — the build breaks. Deleting it and migrating to entrypoint-style content scripts would be a sizable refactor given the strict load order of the 40+ libs.
 
 ### Content script load order matters
 
@@ -57,7 +57,7 @@ Each tier depends on everything above it being present as globals. Reordering wi
 
 `*://*.fourmizzz.fr/*` (http + https) is the only host in both `host_permissions` and `content_scripts.matches`. The upstream Outiiil v2 also relied on a companion backend at `outiiil.fr` (crowdsourced map data, player/alliance historique, Traceur POST endpoint). That backend is dead — the fork removes all of it in 3.0. If you see mentions of outiiil.fr in old branches, PRs, or issue history, they are stale and should not be re-introduced.
 
-The `data_collection_permissions` declaration in the manifest depends on this. The only data that leaves the browser is the chat GIF search, sent to the GIPHY API (`GIPHY_API_KEY` in `content.js`), hence `required: ["searchTerms"]`. GIPHY answers with `Access-Control-Allow-Origin: *`, so no `host_permissions` entry is needed for it.
+The `data_collection_permissions` declaration in the manifest depends on this. The only data that leaves the browser is the chat GIF search, sent to the GIPHY API (`GIPHY_API_KEY` in `content.js`), hence `optional: ["searchTerms"]`. It is optional on purpose: a new _required_ data collection makes Firefox hold the auto-update until the user accepts a prompt most players never see (it left Firefox players stuck on 3.13 after 3.14.0). The chat asks the background whether it is granted, and on Firefox the "Autoriser" link opens `public/gif-autorisation.html`, whose click calls `permissions.request({ data_collection })`. GIPHY answers with `Access-Control-Allow-Origin: *`, so no `host_permissions` entry is needed for it.
 
 ## MV3 CSP constraints
 
@@ -73,7 +73,7 @@ Firefox exposes `chrome.*` as an alias for `browser.*`, so `chrome.runtime.*` wo
 - `browser_specific_settings.gecko.id` is `toolzzz@guiepi.github.io` — this ID must stay stable across uploads to AMO (changing it breaks updates for installed users).
 - `strict_min_version: "142.0"` — Firefox **142** is when `data_collection_permissions` is honored on **Firefox for Android** (desktop got it earlier, but AMO's review surfaces an Android-specific warning if `strict_min_version` is below 142). Lower values let AMO accept the upload but warn that the privacy declaration is ignored on older Firefox/Android.
 - AMO requires non-minified sources for review — keep the vendored libs in `public/js/lib/` readable (they currently are).
-- AMO requires `browser_specific_settings.gecko.data_collection_permissions` since November 2025 (will be enforced for all extensions in 2026). Currently declared as `required: ["searchTerms"]` for the chat GIF search sent to GIPHY; everything else only reads fourmizzz.fr pages locally. If you add a feature that transmits data to an external server, you MUST update this declaration (values like `websiteContent`, `websiteActivity`, etc.) or AMO will reject the submission.
+- AMO requires `browser_specific_settings.gecko.data_collection_permissions` since November 2025 (will be enforced for all extensions in 2026). Currently declared as `required: ["none"], optional: ["searchTerms"]` for the chat GIF search sent to GIPHY; everything else only reads fourmizzz.fr pages locally. If you add a feature that transmits data to an external server, you MUST update this declaration (values like `websiteContent`, `websiteActivity`, etc.) or AMO will reject the submission. Prefer `optional` and ask at first use: any new `required` value blocks auto-updates for existing users.
 - `manifest.author` must be a **string** on AMO (not the `{ email: string }` object form that Chrome accepts). WXT's TS types enforce the object form, so the config has a targeted `@ts-expect-error` directive on that line.
 
 ## Formatting
