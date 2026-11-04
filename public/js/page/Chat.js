@@ -314,14 +314,28 @@ class PageChat {
             }),
           );
       };
+    let autorise = false;
     $("#o_msgGif").click((e) => {
       e.preventDefault();
       $("#o_gif").toggle();
-      if ($("#o_gif").is(":visible")) {
-        if (!$("#o_gifResultats").children().length) chercher();
-        $("#o_gifRecherche").focus();
-      }
+      if (!$("#o_gif").is(":visible")) return;
+      // sur Firefox, la recherche ne part chez Giphy qu'avec l'accord du joueur
+      (autorise ? Promise.resolve(true) : chrome.runtime.sendMessage({ gif: "autorise" }))
+        .catch(() => false)
+        .then((ok) => {
+          autorise = ok;
+          $("#o_gifRecherche").toggle(ok);
+          if (!ok)
+            return $("#o_gifResultats").html(
+              "<span class='reduce'>Les recherches de GIF sont envoyées à Giphy, Firefox demande ton accord une fois. <span id='o_gifAutoriser' class='cursor gras'>Autoriser</span></span>",
+            );
+          if (!$("#o_gifResultats").children().length || $("#o_gifAutoriser").length) chercher();
+          $("#o_gifRecherche").focus();
+        });
     });
+    $("#o_gifResultats").on("click", "#o_gifAutoriser", () =>
+      chrome.runtime.sendMessage({ gif: "autoriser" }),
+    );
     $("#o_gifRecherche").on("input", () => {
       clearTimeout(delai);
       delai = setTimeout(chercher, 700);

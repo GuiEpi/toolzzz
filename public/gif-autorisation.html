@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Toolzzz : GIF du chat</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 40px 16px;
+        background: #d7c384;
+        color: #2b1d0e;
+        font:
+          15px/1.5 Verdana,
+          sans-serif;
+      }
+      main {
+        max-width: 480px;
+        margin: auto;
+        padding: 24px;
+        background: #f3e9c6;
+        border: 1px solid #a88d4c;
+        border-radius: 8px;
+      }
+      h1 {
+        margin-top: 0;
+        font-size: 1.3em;
+      }
+      button {
+        padding: 8px 20px;
+        font:
+          bold 1em Verdana,
+          sans-serif;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Rechercher des GIF dans le chat</h1>
+      <p>
+        Le bouton GIF du chat envoie ta recherche à Giphy pour trouver les GIF. Firefox demande ton
+        accord avant que Toolzzz envoie ces mots : rien d'autre ne quitte ton navigateur.
+      </p>
+      <p><button id="autoriser" type="button">Autoriser</button></p>
+      <p id="resultat"></p>
+    </main>
+    <script src="js/gif-autorisation.js"></script>
+  </body>
+</html>
