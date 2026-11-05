@@ -25,3 +25,4 @@
 **Autres**
 
 - [FAQ](FAQ)
+- [Lexique](Lexique)

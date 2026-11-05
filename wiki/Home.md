@@ -32,6 +32,7 @@ Ce wiki est destiné aux joueurs qui veulent comprendre ce que l'extension appor
 ### Autres
 
 - [FAQ](FAQ)
+- [Lexique](Lexique) — les abréviations du jeu (tdc, VA, OS, flood…)
 
 ## Liens utiles
 
