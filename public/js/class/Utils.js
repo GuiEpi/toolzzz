@@ -471,15 +471,17 @@ class Utils {
       },
       page = Utils.parseHtml(html),
       rendement = variable(/sommeN\s*=\s*sommeN\s*\*\s*([\d.]+)/),
-      consommation = page
-        .find("#nbNourriture")
-        .closest("p")
-        .text()
-        .match(/armée consomme\s*(\d[\d\s]*)/);
+      paragraphe = page.find("#nbNourriture").closest("p").text(),
+      consommation = paragraphe.match(/armée consomme\s*(\d[\d\s]*)/),
+      // la production de la champignonnière n'est que dans le texte de la
+      // page (« et 208 avec votre champignonnière »), pas dans son script
+      champignonniere = paragraphe.match(/(\d[\d\s]*?)\s*avec votre champignonni/i);
     if (!rendement || !page.find("#RecolteNourriture").length) return null;
     let nourriture = entier(page.find("#RecolteNourriture").val()) * rendement,
       materiaux = entier(page.find("#RecolteMateriaux").val()) * rendement,
-      champi = variable(/var champi\s*=\s*([\d.]+)/) || 0,
+      champi = champignonniere
+        ? entier(champignonniere[1])
+        : variable(/var champi\s*=\s*([\d.]+)/) || 0,
       pillage = variable(/var pourcentagePillage\s*=\s*([\d.]+)/) || 0;
     return {
       nourriture:
