@@ -133,6 +133,13 @@ class Joueur {
     // parametres utilitaires
     this._parametre["forumCommande"] = new Parametre("forumCommande", "Commande", "input");
     this._parametre["forumMembre"] = new Parametre("forumMembre", "Membre", "input");
+    this._parametre["forumFlood"] = new Parametre("forumFlood", "Flood", "input");
+    this._parametre["partageFlood"] = new Parametre(
+      "partageFlood",
+      "Partager mes floods avec l'alliance",
+      "checkbox",
+      true,
+    );
     // parametres armée
     this._parametre["methodeFlood"] = new Parametre(
       "methodeFlood",

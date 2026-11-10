@@ -19,7 +19,7 @@ Les options qui touchent au comportement de l'extension :
 
 > ![Onglet Utilitaire](assets/wiki/parametre-utilitaire.png)
 
-Cet onglet expose deux champs : les **identifiants des sections cachées du forum d'alliance** que Toolzzz utilise comme stockage partagé pour les fonctionnalités d'utilitaire d'alliance (commandes, infos membres, rangs, coordonnées).
+Cet onglet expose les **identifiants des sections cachées du forum d'alliance** que Toolzzz utilise comme stockage partagé pour les fonctionnalités d'utilitaire d'alliance (commandes, infos membres, rangs, coordonnées, floods en cours), et la case **Partager mes floods avec l'alliance**. Cochée par défaut, elle note tes floods sur terrain de chasse dans la section `Toolzzz_Flood` (voir [SDC — Floods en cours](SDC-Floods-en-cours)).
 
 Tu n'as **pas besoin de remplir ces champs à la main** dans la majorité des cas — Toolzzz les auto-détecte quand tu visites le forum de ton alliance, à condition que les sections existent. Les sections sont créées par le chef d'alliance via le bouton **Préparer le forum pour un SDC** sur la page forum d'alliance (voir [SDC — Commandes de ressources](SDC-Commandes-de-ressources)).
 

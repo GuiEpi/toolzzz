@@ -4,7 +4,7 @@ Le **SDC** (Système de Commandement) permet à une alliance d'organiser ses **c
 
 Toute la donnée est stockée dans une **section cachée du forum d'alliance** (`Toolzzz_Commande`) : chaque commande est un sujet du forum, chaque livraison un message dedans. Rien ne sort du jeu — Toolzzz ne transmet aucune donnée à un serveur externe, et les droits d'accès sont ceux du forum de ton alliance.
 
-Le SDC a un second volet, l'annuaire partagé des membres — voir [SDC — Infos membres](SDC-Infos-membres).
+Le SDC a deux autres volets : l'annuaire partagé des membres (voir [SDC — Infos membres](SDC-Infos-membres)) et les floods en cours de l'alliance (voir [SDC — Floods en cours](SDC-Floods-en-cours)).
 
 ## Mise en place (une fois par alliance)
 
@@ -12,7 +12,7 @@ C'est le **chef d'alliance** qui initialise le SDC :
 
 1. Va sur le **forum d'alliance**.
 2. Clique sur l'icône Toolzzz en haut des catégories, puis **Préparer le forum pour un SDC**.
-3. Les sections cachées `Toolzzz_Commande` et `Toolzzz_Membre` sont créées et protégées automatiquement.
+3. Les sections cachées `Toolzzz_Commande`, `Toolzzz_Membre` et `Toolzzz_Flood` sont créées et protégées automatiquement.
 
 > ![Préparer le forum pour un SDC](assets/wiki/sdc-preparer-forum.png)
 

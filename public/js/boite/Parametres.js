@@ -37,7 +37,7 @@ class BoiteParametre extends Boite {
     /**
      *
      */
-    this._paramUtilitaire = ["forumCommande", "forumMembre"];
+    this._paramUtilitaire = ["forumCommande", "forumMembre", "forumFlood", "partageFlood"];
     /**
      *
      */
@@ -186,7 +186,8 @@ class BoiteParametre extends Boite {
     $("#o_tabsParametre2").append(`
       <p class='left reduce gras' style='margin-left:10px;'>Saisissez les identifiants des sujets de votre utilitaire<span class="cliquable2" style="font-size:0.8em; font-weight:normal;" onclick="spoilerId('o_paramUtilitaireInfo');"> En savoir plus ?</span></p>
       <div id='o_paramUtilitaireInfo' class='o_marginT15 left reduce' style='display:none; max-width:500px; word-wrap:break-word; margin-left:auto; margin-right:auto;'>
-        <p>Ces deux champs pointent vers les sections cachées du forum d'alliance (<b>Toolzzz_Commande</b> et <b>Toolzzz_Membre</b>, ou les anciens noms <b>Outiiil_Commande</b>/<b>Outiiil_Membre</b> si l'alliance a préparé son forum à l'époque d'Outiiil) qui servent de stockage partagé pour les fonctionnalités d'utilitaire d'alliance : assignations d'attaques, ordres collectifs, et coordonnées des membres (colonnes Tdt / Retour dans la liste des membres).</p>
+        <p>Ces champs pointent vers les sections cachées du forum d'alliance (<b>Toolzzz_Commande</b>, <b>Toolzzz_Membre</b> et <b>Toolzzz_Flood</b>, ou les anciens noms <b>Outiiil_Commande</b>/<b>Outiiil_Membre</b> si l'alliance a préparé son forum à l'époque d'Outiiil) qui servent de stockage partagé pour les fonctionnalités d'utilitaire d'alliance : assignations d'attaques, ordres collectifs, coordonnées des membres (colonnes Tdt / Retour dans la liste des membres) et floods en cours (onglet Floods).</p>
+        <p>Quand la section <b>Toolzzz_Flood</b> existe, chaque flood que tu lances sur un terrain de chasse y est noté dans ton sujet, pour que l'alliance le voie dans l'onglet Floods. Décoche <em>Partager mes floods avec l'alliance</em> pour ne plus rien y écrire.</p>
         <p>Tu n'as <b>pas besoin de les remplir à la main</b> dans la majorité des cas. L'extension les auto-détecte quand tu visites le forum de ton alliance, à condition que les sections existent. C'est le chef d'alliance qui les crée via le bouton <em>Préparer le forum pour un SDC</em> dans le forum.</p>
         <p>Modifie ici <b>uniquement si</b> l'auto-détection a échoué, après un reset des paramètres, ou si ton chef t'a communiqué les IDs directement.</p>
       </div>

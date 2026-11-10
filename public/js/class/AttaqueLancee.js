@@ -105,6 +105,7 @@ class AttaqueLancee {
     }
     liste.push(capture);
     AttaqueLancee.sauvegarder(liste);
+    if (capture.id) FloodPartage.publier();
   }
   /**
    * Extrait les lignes « Vous allez attaquer » / « Des renforts arrivent »
@@ -237,23 +238,25 @@ class AttaqueLancee {
     // les pages qui listent les attaques en cours les listent toutes : une
     // capture liée dont la ligne a disparu correspond à une attaque annulée.
     // Elle rend le terrain qu'elle aurait pris aux attaques lancées après elle.
-    liste
-      .filter((a) => a.id && !lignes.some((l) => l.id == a.id))
-      .forEach((annulee) => {
-        let prise = annulee.terrainDepart - annulee.terrainCible;
-        if (prise > 0)
-          liste
-            .filter(
-              (a) =>
-                a.cible == annulee.cible && a.lancee > annulee.lancee && a.terrainDepart != null,
-            )
-            .forEach((a) => (a.terrainDepart += prise));
-        modifie = true;
-      });
+    let annulees = liste.filter((a) => a.id && !lignes.some((l) => l.id == a.id));
+    annulees.forEach((annulee) => {
+      let prise = annulee.terrainDepart - annulee.terrainCible;
+      if (prise > 0)
+        liste
+          .filter(
+            (a) => a.cible == annulee.cible && a.lancee > annulee.lancee && a.terrainDepart != null,
+          )
+          .forEach((a) => (a.terrainDepart += prise));
+      modifie = true;
+    });
     liste = liste.filter((a) => !a.id || lignes.some((l) => l.id == a.id));
     TroupesDehors.synchroniserAttaques(lignes);
     if (AttaqueLancee.recalculerTerrains(liste)) modifie = true;
     if (modifie) AttaqueLancee.sauvegarder(liste);
+    // partage avec l'alliance (Toolzzz_Flood) : annulations des floods déjà
+    // publiés, puis floods tout juste liés
+    FloodPartage.annuler(annulees.filter((a) => a.partage).map((a) => a.id));
+    FloodPartage.publier();
     return liste;
   }
   /**

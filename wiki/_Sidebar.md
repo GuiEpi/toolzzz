@@ -19,6 +19,7 @@
 - [Carte d'alliance](Carte-d-alliance)
 - [SDC — Commandes de ressources](SDC-Commandes-de-ressources)
 - [SDC — Infos membres](SDC-Infos-membres)
+- [SDC — Floods en cours](SDC-Floods-en-cours)
 - [Courbes de coûts](Courbes-de-couts)
 - [Enrichissements de pages](Enrichissements-de-pages)
 

@@ -15,6 +15,8 @@
  */
 const FORUM_SECTION_COMMANDE = ["Toolzzz_Commande", "Outiiil_Commande"];
 const FORUM_SECTION_MEMBRE = ["Toolzzz_Membre", "Outiiil_Membre"];
+// pas d'ancien nom : la section est apparue avec Toolzzz
+const FORUM_SECTION_FLOOD = ["Toolzzz_Flood"];
 
 /**
  * Classe de fonction pour la page /alliance.php?forum_menu.
@@ -212,6 +214,11 @@ class PageForum {
       monProfil.parametre["forumMembre"].valeur = $memSpan.attr("class").match(/\d+/)[0];
       monProfil.parametre["forumMembre"].sauvegarde();
     }
+    let $floodSpan = PageForum.trouverSectionForum(element, FORUM_SECTION_FLOOD);
+    if (!monProfil.parametre["forumFlood"].valeur && $floodSpan.length) {
+      monProfil.parametre["forumFlood"].valeur = $floodSpan.attr("class").match(/\d+/)[0];
+      monProfil.parametre["forumFlood"].sauvegarde();
+    }
     // selon la section ACTIVE on ajoute les outils necessaires
     let actif = $(element).find("span[class^='forum'][class$='ligne_paire']").html();
     if (FORUM_SECTION_COMMANDE.includes(actif)) {
@@ -309,6 +316,111 @@ class PageForum {
     return false;
   }
   /**
+   * Noms des sections présentes dans le forum, lus sur une page fraîche du
+   * forum et non sur celle affichée : elle peut dater (section créée depuis
+   * par un autre chef) ou ne plus montrer la liste des catégories.
+   *
+   * @private
+   * @method _sectionsExistantes
+   * @return {Promise<Function>} (noms) => true si l'un des noms existe
+   */
+  _sectionsExistantes() {
+    let affichee = $("#cat_forum span[class^='forum']").text();
+    return Promise.resolve($.get(location.origin + "/alliance.php?forum_menu")).then((html) => {
+      let page = Utils.parseHtml(html);
+      // sans liste des catégories on ne peut rien affirmer : on ne crée rien
+      if (!page.find("span[class^='forum']").length && !affichee)
+        throw new Error("liste des sections introuvable");
+      return (noms) =>
+        noms.some(
+          (n) => affichee.includes(n) || PageForum.trouverSectionForum(page, [n]).length > 0,
+        );
+    });
+  }
+  /**
+   * Crée une section cachée du SDC sous son nom Toolzzz. On ne peut pas créer
+   * directement une section cachée : on la crée puis on la cache. L'id de la
+   * nouvelle section est enregistré dans les paramètres.
+   *
+   * @private
+   * @method _creerSectionCachee
+   * @param {String} nom nom de la section
+   * @param {String} parametre paramètre qui garde son id
+   * @return {Promise<Boolean>} true si la section est créée et cachée
+   */
+  _creerSectionCachee(nom, parametre) {
+    return Promise.resolve(this.creerSection(nom)).then((data) => {
+      let response = Utils.parseHtml(Utils.parseHtml(data).find("cmd:eq(1)").html() || ""),
+        idCat = $(response).find(`input[value='${nom}']`).parent().attr("id").match(/\d+/)[0];
+      monProfil.parametre[parametre].valeur = idCat;
+      monProfil.parametre[parametre].sauvegarde();
+      return Promise.resolve(this.modifierSection(nom, idCat, "cache")).then(() => true);
+    });
+  }
+  /**
+   * Prépare le forum pour le SDC : crée seulement les sections qui manquent,
+   * sous leur nom Toolzzz. Une section déjà présente, sous son nom Toolzzz ou
+   * son ancien nom Outiiil, n'est jamais recréée.
+   *
+   * @private
+   * @method _preparerSdc
+   */
+  _preparerSdc() {
+    const SECTIONS = [
+      { noms: FORUM_SECTION_COMMANDE, parametre: "forumCommande", libelle: "commande" },
+      { noms: FORUM_SECTION_MEMBRE, parametre: "forumMembre", libelle: "membre" },
+      { noms: FORUM_SECTION_FLOOD, parametre: "forumFlood", libelle: "flood" },
+    ];
+    return this._sectionsExistantes().then(
+      (existe) => {
+        let manquantes = SECTIONS.filter((s) => !existe(s.noms));
+        if (!manquantes.length) {
+          $.toast({
+            ...TOAST_INFO,
+            text: "Le forum est déjà prêt : toutes les sections du SDC existent.",
+          });
+          return;
+        }
+        // une à la fois, dans l'ordre
+        let creees = [],
+          echecs = [];
+        return manquantes
+          .reduce(
+            (suite, s) =>
+              suite.then(() =>
+                this._creerSectionCachee(s.noms[0], s.parametre).then(
+                  () => creees.push(s.libelle),
+                  () => echecs.push(s.libelle),
+                ),
+              ),
+            Promise.resolve(),
+          )
+          .then(() => {
+            let pluriel = (l) => (l.length > 1 ? "s" : "");
+            if (creees.length)
+              $.toast({
+                ...TOAST_SUCCESS,
+                text:
+                  `Section${pluriel(creees)} ${creees.join(", ")} créée${pluriel(creees)}.` +
+                  (manquantes.length < SECTIONS.length ? " Les autres existaient déjà." : ""),
+              });
+            if (echecs.length)
+              $.toast({
+                ...TOAST_ERROR,
+                text: `La création de la section ${echecs.join(", ")} a échoué. Recharge le forum avant de réessayer : elle a peut-être été créée sans être cachée.`,
+              });
+            if (creees.length) setTimeout(() => location.reload(), 1500);
+          });
+      },
+      () => {
+        $.toast({
+          ...TOAST_ERROR,
+          text: "Impossible de lire la liste des sections du forum : rien n'a été créé.",
+        });
+      },
+    );
+  }
+  /**
    *
    */
   optionAdmin() {
@@ -330,88 +442,11 @@ class PageForum {
       );
       // Creation de l'utilitaire
       $("#o_creerUtilitaire").click((e) => {
-        // une fois par page : les vérifications d'existence lisent la page, qui
-        // n'est pas mise à jour, et un double clic créait les sections en double
+        // un clic à la fois : un double clic lançait deux préparations qui
+        // ne voyaient pas encore les sections créées par l'autre
         if ($(e.currentTarget).data("fait")) return false;
         $(e.currentTarget).data("fait", true).css({ opacity: 0.5, cursor: "default" });
-        // On ne crée la nouvelle section Toolzzz que si ni Toolzzz_* ni Outiiil_*
-        // n'existent déjà — pour ne pas dédoubler le stockage dans une alliance
-        // qui a déjà ses sections sous l'ancien nom.
-        let cmdExiste = FORUM_SECTION_COMMANDE.some(
-          (n) => $(`#cat_forum span:contains(${n})`).length,
-        );
-        if (!cmdExiste) {
-          let nomCmd = FORUM_SECTION_COMMANDE[0];
-          this.creerSection(nomCmd).then(
-            (data) => {
-              let response = Utils.parseHtml(Utils.parseHtml(data).find("cmd:eq(1)").html() || "");
-              let idCat = $(response)
-                .find(`input[value='${nomCmd}']`)
-                .parent()
-                .attr("id")
-                .match(/\d+/)[0];
-              // on ne peut pas creer directement une section caché donc on cache aprés
-              this.modifierSection(nomCmd, idCat, "cache").then(
-                (data) => {
-                  $.toast({
-                    ...TOAST_SUCCESS,
-                    text: "La section commande a été correctement créée.",
-                  });
-                },
-                (jqXHR, textStatus, errorThrown) => {
-                  $.toast({
-                    ...TOAST_ERROR,
-                    text: "Une erreur réseau a été rencontrée lors de la protection de la section commande.",
-                  });
-                },
-              );
-            },
-            (jqXHR, textStatus, errorThrown) => {
-              $.toast({
-                ...TOAST_ERROR,
-                text: "Une erreur réseau a été rencontrée lors de la création de la section commande.",
-              });
-            },
-          );
-        } else $.toast({ ...TOAST_WARNING, text: "Section commande est déjà créée !" });
-        // creation de la section membre pour les membres de l'alliance
-        let memExiste = FORUM_SECTION_MEMBRE.some(
-          (n) => $(`#cat_forum span:contains(${n})`).length,
-        );
-        if (!memExiste) {
-          let nomMem = FORUM_SECTION_MEMBRE[0];
-          this.creerSection(nomMem).then(
-            (data) => {
-              let response = Utils.parseHtml(Utils.parseHtml(data).find("cmd:eq(1)").html() || "");
-              let idCat = $(response)
-                .find(`input[value='${nomMem}']`)
-                .parent()
-                .attr("id")
-                .match(/\d+/)[0];
-              // on ne peut pas creer directement une section caché donc on cache aprés
-              this.modifierSection(nomMem, idCat, "cache").then(
-                (data) => {
-                  $.toast({
-                    ...TOAST_SUCCESS,
-                    text: "La section membre a été correctement créée.",
-                  });
-                },
-                (jqXHR, textStatus, errorThrown) => {
-                  $.toast({
-                    ...TOAST_ERROR,
-                    text: "Une erreur réseau a été rencontrée lors de la protection de la section membre.",
-                  });
-                },
-              );
-            },
-            (jqXHR, textStatus, errorThrown) => {
-              $.toast({
-                ...TOAST_ERROR,
-                text: "Une erreur réseau a été rencontrée lors de la création de la section membre.",
-              });
-            },
-          );
-        } else $.toast({ ...TOAST_WARNING, text: "Section membre est déjà créée !" });
+        this._preparerSdc();
         return false;
       });
       // Preparation d'une guerre

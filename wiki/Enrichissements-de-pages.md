@@ -79,7 +79,7 @@ C'est l'une des pages les plus enrichies par Toolzzz.
 
 ## Forum
 
-- Bouton **Préparer le forum pour un SDC** (Système de Commandement) : crée automatiquement les sections cachées `Toolzzz_Commande` et `Toolzzz_Membre` qui servent de stockage partagé pour les fonctionnalités d'utilitaire d'alliance. **Réservé aux chefs d'alliance**.
+- Bouton **Préparer le forum pour un SDC** (Système de Commandement) : crée automatiquement les sections cachées `Toolzzz_Commande`, `Toolzzz_Membre` et `Toolzzz_Flood` qui servent de stockage partagé pour les fonctionnalités d'utilitaire d'alliance. **Réservé aux chefs d'alliance**.
 - Dans la section `Toolzzz_Commande`, les chefs disposent d'un **sélecteur pour changer l'état des commandes** (validation de la file du SDC) — voir [SDC — Commandes de ressources](SDC-Commandes-de-ressources).
 - Voir [Boîte Paramètres → Utilitaire](Boite-Parametres#onglet-utilitaire) pour le contexte.
 

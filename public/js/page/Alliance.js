@@ -63,11 +63,13 @@ class PageAlliance {
       this.traitementMembre();
       this.carte();
       this.ongletCarte();
+      new PageFloods().executer();
     } else if ($("#alliance").length) {
       let observer = new MutationObserver((mutationsList) => {
         this.traitementMembre();
         this.carte();
         this.ongletCarte();
+        new PageFloods().executer();
         observer.disconnect();
       });
       observer.observe($("#alliance")[0], { childList: true });
@@ -663,7 +665,7 @@ class PageAlliance {
   ongletCarte() {
     if (!$("#o_ongletCarte").length) return this;
     const showCarte = () => {
-      $("#alliance").hide();
+      $("#alliance, #o_floodsAlliance").hide();
       $("#o_carteAlliance").show();
     };
     $("#o_ongletCarte").click((e) => {
