@@ -9,7 +9,7 @@ Sur la page de la Reine (où tu lances tes pontes) :
 - Une colonne **Terminé le** est ajoutée au tableau des pondes en cours, affichant la **date et l'heure exacte de fin** de chaque pond (au lieu du compteur relatif natif).
 - Au clic sur l'icône d'une unité, ses **stats avec bonus de recherche** s'affichent (vie ajustée Bouclier, dégâts attaque/défense ajustés Armes).
 - Les inputs et le slider du formulaire de ponte sont **corrigés** pour les comptes non-C+ (chez qui le natif est buggé).
-- Le nombre de chaque unité compte **toute ton armée**, y compris les troupes parties en chasse ou en attaque, à condition qu'elles aient été lancées depuis ce navigateur avec Toolzzz.
+- Le nombre de chaque unité compte **toute ton armée**, y compris les troupes parties en chasse ou en attaque, à condition qu'elles aient été lancées depuis ce navigateur avec Toolzzz. Le nombre d'ouvrières compte aussi celles parties avec tes convois en cours, que le jeu retire de l'entête le temps du trajet : Toolzzz les retrouve sur la page Convois, quel que soit le navigateur d'où le convoi est parti. Un convoi que tu reçois ne te prend aucune ouvrière.
 
 > ![Slider de ponte corrigé pour non-C+](assets/wiki/reine-slider-compte-plus-like.png)
 

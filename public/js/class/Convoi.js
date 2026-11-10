@@ -9,6 +9,42 @@
  * @class Convoi
  */
 class Convoi {
+  /**
+   * Ressources portées par une ouvrière : 10, plus 5 % par niveau d'Étable à
+   * pucerons (formule du script de commerce.php).
+   *
+   * @static
+   * @method capaciteOuvriere
+   */
+  static capaciteOuvriere() {
+    return 10 * (1 + 0.05 * (monProfil.niveauConstruction[11] || 0));
+  }
+  /**
+   * Ouvrières parties avec les convois que liste commerce.php (tous ceux en
+   * cours). Seuls les convois envoyés (« Vous allez livrer ») en prennent :
+   * un convoi reçu voyage avec les ouvrières de l'expéditeur. Le jeu
+   * n'affiche pas leur nombre, on le déduit de la charge : une ouvrière par
+   * lot de ressources qu'elle peut porter.
+   *
+   * @static
+   * @method ouvrieresEnRoute
+   * @param {jQuery} racine document (ou fragment) de commerce.php
+   * @return {Integer}
+   */
+  static ouvrieresEnRoute(racine) {
+    let entier = (t) => parseInt(String(t).replace(/\D/g, "")) || 0,
+      capacite = Convoi.capaciteOuvriere();
+    return racine
+      .find("strong")
+      .toArray()
+      .map((elt) =>
+        $(elt)
+          .text()
+          .match(/Vous allez livrer\s*([\d\s]+?)\s*et\s*([\d\s]+?)\s*à/),
+      )
+      .filter(Boolean)
+      .reduce((total, m) => total + Math.ceil((entier(m[1]) + entier(m[2])) / capacite), 0);
+  }
   constructor(parametres) {
     /**
      * id du convoi

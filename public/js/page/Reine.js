@@ -243,20 +243,27 @@ class PageReine {
    * Affiche le nombre d'unités possédées à côté de leur nom (dans un span
    * après le <h2>, pas dedans, pour qu'il reste petit), en version courte
    * (12,3k, 1,5M, 2G… cf. Utils.nombreCourt) avec le nombre exact au survol.
-   * Les ouvrières viennent de l'entête, l'armée d'Armee.php plus les
+   * Les ouvrières viennent de l'entête, plus celles parties en convoi
+   * (cf. Convoi.ouvrieresEnRoute), l'armée d'Armee.php plus les
    * troupes parties en chasse ou en attaque (cf. TroupesDehors), qu'Armee.php
    * ne montre pas : on resynchronise leur registre avec les listes du jeu.
    * @method nombreUnites
    */
   nombreUnites() {
     let afficher = (index, nombre) => {
-      $("h2")
-        .filter((i, elt) => $(elt).text().trim() == NOM_UNITE[index])
-        .after(
-          `<span class="o_nbUnite" title="${numeral(nombre).format()} ${nombre > 1 ? NOM_UNITES[index] : NOM_UNITE[index]}">${Utils.nombreCourt(nombre)}</span>`,
-        );
+      let titre = $("h2").filter((i, elt) => $(elt).text().trim() == NOM_UNITE[index]);
+      // les ouvrières sont réaffichées une fois les convois connus
+      titre.next(".o_nbUnite").remove();
+      titre.after(
+        `<span class="o_nbUnite" title="${numeral(nombre).format()} ${nombre > 1 ? NOM_UNITES[index] : NOM_UNITE[index]}">${Utils.nombreCourt(nombre)}</span>`,
+      );
     };
     afficher(0, Utils.ouvrieres || 0);
+    // l'entête ne compte pas les ouvrières parties en convoi
+    $.ajax({ url: location.origin + "/commerce.php" }).then((html) => {
+      let enRoute = Convoi.ouvrieresEnRoute(Utils.parseHtml(html));
+      if (enRoute) afficher(0, (Utils.ouvrieres || 0) + enRoute);
+    });
     let armee = new Armee();
     Promise.all([armee.getArmee(), $.ajax({ url: location.origin + "/Ressources.php" })]).then(
       ([htmlArmee, htmlRessources]) => {
