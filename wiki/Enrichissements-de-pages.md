@@ -106,7 +106,7 @@ C'est l'une des pages les plus enrichies par Toolzzz.
 
 - L'onglet **Carte** dans le menu d'alliance.
 - L'onglet **Coûts** dans le menu colonie.
-- **Tooltip enrichi** sur le bandeau de ressources Nourriture / Matériaux : capacité maximale et place libre au survol.
+- **Tooltip enrichi** sur le bandeau de ressources Nourriture / Matériaux : capacité maximale, place libre, production du jour et **date à laquelle l'entrepôt sera plein**, à la seconde près (l'heure du retour des ouvrières qui le remplira). Pratique pour ne pas recevoir un convoi dans un entrepôt déjà plein. Si la production est négative, par exemple quand l'armée mange plus que la récolte, c'est la date à laquelle le stock sera vide qui s'affiche. La production compte la champignonnière et la consommation de l'armée.
 
 > ![Tooltip enrichi sur le bandeau de ressources](assets/wiki/custom-tooltip-boite-infos.png)
 

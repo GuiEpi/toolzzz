@@ -548,6 +548,25 @@ const DATEPICKER_OPTION = {
         if (type === "Matériaux") return monProfil.niveauConstruction[2];
         return undefined;
       };
+      // Quand l'entrepôt sera plein, au rythme de production du moment (issue
+      // #36), ou vide si la production est négative (armée qui mange plus
+      // que la récolte). Avec l'heure du retour des ouvrières, l'heure tombe
+      // pile sur le retour qui remplit l'entrepôt, à la seconde.
+      const texteRemplissage = ({ cle, value, max }, production) => {
+        const prod = production[cle],
+          signe = prod > 0 ? "+" : prod < 0 ? "−" : "",
+          ligneProd = `Production : ${signe}${numeral(Math.abs(prod)).format()} / jour`,
+          quand = (secondes) => {
+            const date = moment().add(secondes, "s");
+            return `${date.format(production.retour == null ? "ddd D MMM à HH[h]mm" : "ddd D MMM à HH[h]mm[m]ss[s]")} (dans ${Utils.intToTime(Math.ceil(secondes))})`;
+          };
+        if (value >= max) return `${ligneProd}<br/><b style="color:#c0392b">Entrepôt plein</b>`;
+        if (prod > 0)
+          return `${ligneProd}<br/><b>Plein le ${quand(Utils.delaiStock(max - value, prod, production.retour))}</b>`;
+        if (prod < 0 && value > 0)
+          return `${ligneProd}<br/><b style="color:#c0392b">Vide le ${quand(Utils.delaiStock(value, prod, production.retour))}</b>`;
+        return ligneProd;
+      };
       $(".tooltip_boite_info").each(function () {
         const $td = $(this);
         const original = $td.attr("title") || $td.attr("data-tooltip-original-title");
@@ -564,9 +583,12 @@ const DATEPICKER_OPTION = {
             ? "Matériaux"
             : "Stock";
         const niveau = niveauEntrepot(type);
-        let html;
+        let html,
+          // de quoi annoncer quand l'entrepôt sera plein (ou vide)
+          remplissage = null;
         if (niveau !== undefined) {
           const max = maxEntrepot(niveau);
+          remplissage = { cle: type === "Nourriture" ? "nourriture" : "materiaux", value, max };
           const restant = Math.max(0, max - value);
           const percentReel = max > 0 ? Math.round((value / max) * 1000) / 10 : 0;
           html = `<b>${type}</b><br/>Actuel : ${numeral(value).format()}<br/>Maximum : ${numeral(max).format()} (${percentReel}%)<br/><b style="color:#27ae60">Place libre : ${numeral(restant).format()}</b>`;
@@ -583,18 +605,36 @@ const DATEPICKER_OPTION = {
         // fn par défaut retourne attr("title") = "" → pas de rendu).
         $td.attr("title", "");
         $td.attr("data-tooltip-original-title", "");
+        const placer = () => {
+          const offset = $td.offset();
+          $tip.css({
+            top: offset.top + $td.outerHeight() / 2 - $tip.outerHeight() / 2,
+            left: offset.left + $td.outerWidth() + 10,
+          });
+        };
         $td
           .on("mouseenter.toolzzzInfo", () => {
-            $tip.find(".ui-tooltip-content").html(html);
+            $tip
+              .data("o_survol", $td[0])
+              .find(".ui-tooltip-content")
+              .html(
+                html +
+                  (remplissage
+                    ? `<br/><span class='o_infoRemplissage'><em>Production : calcul…</em></span>`
+                    : ""),
+              );
             $tip.show();
-            const offset = $td.offset();
-            $tip.css({
-              top: offset.top + $td.outerHeight() / 2 - $tip.outerHeight() / 2,
-              left: offset.left + $td.outerWidth() + 10,
+            placer();
+            if (!remplissage) return;
+            Utils.chargerProduction().then((production) => {
+              // la souris a pu quitter le stock entre-temps
+              if (!production || $tip.data("o_survol") !== $td[0] || !$tip.is(":visible")) return;
+              $tip.find(".o_infoRemplissage").html(texteRemplissage(remplissage, production));
+              placer();
             });
           })
           .on("mouseleave.toolzzzInfo", () => {
-            $tip.hide();
+            $tip.removeData("o_survol").hide();
           });
       });
 

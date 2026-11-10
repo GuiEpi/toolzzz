@@ -439,15 +439,77 @@ class Utils {
     // le Compte+ affiche déjà ce délai
     if (Utils.comptePlus) return;
     // la page Ressources est à jour, le tooltip de la boite info pas toujours (et absent sur mobile)
-    let repli = () => {
-      let production = Utils.productionParJour();
+    Utils.chargerProduction(true).then((production) => {
       if (production) Utils._afficherDelais(production);
-    };
-    $.ajax({ url: location.origin + "/Ressources.php" }).then((html) => {
-      let production = Utils.productionRessources(html);
-      if (production) Utils._afficherDelais(production);
-      else repli();
-    }, repli);
+    });
+  }
+  /**
+   * Production par jour, lue sur Ressources.php (à jour), sinon dans le
+   * tooltip de la boite info. Gardée 5 minutes pour l'onglet : l'infobulle
+   * des stocks s'en sert sur toutes les pages sans recharger Ressources.php
+   * à chaque survol.
+   *
+   * @static
+   * @method chargerProduction
+   * @param {Boolean} forcer relire Ressources.php même si la valeur est récente
+   * @return {Promise<Object|null>} {nourriture, materiaux, retour} comme productionRessources
+   */
+  static chargerProduction(forcer = false) {
+    const CLE = "outiiil_production";
+    let memo = null;
+    try {
+      memo = JSON.parse(sessionStorage.getItem(CLE));
+    } catch (e) {
+      memo = null;
+    }
+    if (!forcer && memo && Date.now() - memo.t < 5 * 60 * 1000)
+      return Promise.resolve({
+        nourriture: memo.nourriture,
+        materiaux: memo.materiaux,
+        // les ouvrières reviennent toutes les 30 minutes : prochain retour
+        // après celui mémorisé
+        retour:
+          memo.retourA == null
+            ? null
+            : ((((memo.retourA - Date.now()) / 1000) % 1800) + 1800) % 1800,
+      });
+    let repli = () => Utils.productionParJour();
+    return Promise.resolve($.ajax({ url: location.origin + "/Ressources.php" }))
+      .then((html) => Utils.productionRessources(html) || repli(), repli)
+      .then((production) => {
+        if (production)
+          try {
+            sessionStorage.setItem(
+              CLE,
+              JSON.stringify({
+                t: Date.now(),
+                nourriture: production.nourriture,
+                materiaux: production.materiaux,
+                retourA: production.retour == null ? null : Date.now() + production.retour * 1000,
+              }),
+            );
+          } catch (e) {
+            console.warn("outiiil: sessionStorage write failed", e);
+          }
+        return production;
+      });
+  }
+  /**
+   * Secondes avant qu'un stock atteigne une quantité, au rythme d'une
+   * production par jour (négative pour un stock qui baisse). Les ouvrières
+   * rapportent 1/48 de la production du jour toutes les 30 minutes : avec
+   * l'heure du prochain retour, le résultat tombe sur un retour.
+   *
+   * @static
+   * @method delaiStock
+   * @param {Number} ecart quantité à gagner (ou à perdre), positive
+   * @param {Number} production par jour, non nulle
+   * @param {Number|null} retour secondes avant le prochain retour, si connu
+   * @return {Number} secondes
+   */
+  static delaiStock(ecart, production, retour) {
+    let p = Math.abs(production);
+    return retour == null ? (ecart / p) * 86400 : retour + (Math.ceil((ecart * 48) / p) - 1) * 1800;
   }
   /**
    * Production par jour calculée depuis la page Ressources, comme son script
@@ -543,10 +605,7 @@ class Utils {
           message = `Entrepôt de ${nom == "nourriture" ? "nourriture" : "matériaux"} trop petit`;
         else if (production[nom] <= 0) message ||= "Jamais au rythme de production actuel";
         else {
-          let attente =
-            retour == null
-              ? ((cout - r.stock) / production[nom]) * 86400
-              : retour + (Math.ceil(((cout - r.stock) * 48) / production[nom]) - 1) * 1800;
+          let attente = Utils.delaiStock(cout - r.stock, production[nom], retour);
           manques.push({ nom: nom, cout: cout, stock: r.stock, prod: production[nom], attente });
           secondes = Math.max(secondes, attente);
         }
