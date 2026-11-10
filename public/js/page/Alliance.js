@@ -1161,37 +1161,86 @@ class PageAlliance {
         <div>${cases(pseudos, "o_filtreJoueur", null)}</div>`,
     );
     $("#o_carteFiltres").html(html).show();
-    // état initial des cases depuis la sélection mémorisée
-    let poser = (classe, valeurs, exclus) =>
-      $("." + classe).each((i, elt) => {
-        $(elt).prop("checked", exclus.indexOf(valeurs[$(elt).data("i")]) == -1);
-      });
-    poser("o_filtreGrade", grades, this._filtres.grades);
-    poser("o_filtreRang", rangs, this._filtres.rangs);
-    poser("o_filtreJoueur", pseudos, this._filtres.joueurs);
-    let afficherMasques = () => {
-      let libelle = (n) => (n ? `(${n} masqué${n > 1 ? "s" : ""})` : "");
-      $("#o_filtreGradesMasques").text(libelle(this._filtres.grades.length));
-      $("#o_filtreRangsMasques").text(libelle(this._filtres.rangs.length));
-      $("#o_filtreJoueursMasques").text(libelle(this._filtres.joueurs.length));
-    };
-    afficherMasques();
-    let appliquer = () => {
-      let lire = (classe, valeurs) =>
-        $("." + classe)
-          .filter((i, elt) => !elt.checked)
-          .map((i, elt) => valeurs[$(elt).data("i")])
-          .get();
+    // Les joueurs font foi : une case de grade ou de rang ne fait que cocher
+    // ou décocher ses membres, et son état se déduit du leur (partiel quand
+    // seule une partie est affichée). Les anciennes sélections mémorisaient
+    // aussi des grades et des rangs masqués : on les reporte sur leurs membres.
+    // Les rangs ne sont convertis qu'une fois le SDC chargé, sans quoi on ne
+    // saurait pas qui les porte et le filtre serait perdu.
+    let f = this._filtres,
+      masques = new Set(f.joueurs),
+      sdcCharge = !!this._utilitaire.alliance;
+    membres.forEach((m) => {
+      let rang = this._rangSdcDe(m.pseudo);
+      if (
+        f.grades.indexOf(this._gradeDe(m.pseudo)) != -1 ||
+        (sdcCharge && rang && f.rangs.indexOf(rang) != -1)
+      )
+        masques.add(m.pseudo);
+    });
+    if (f.grades.length || (sdcCharge && f.rangs.length)) {
       this._filtres = {
-        grades: lire("o_filtreGrade", grades),
-        rangs: lire("o_filtreRang", rangs),
-        joueurs: lire("o_filtreJoueur", pseudos),
+        grades: [],
+        rangs: sdcCharge ? [] : f.rangs,
+        joueurs: [...masques],
       };
       this._sauverFiltres();
-      afficherMasques();
+    }
+    let membresDe = (valeur, accesseur) => pseudos.filter((p) => accesseur.call(this, p) == valeur),
+      caseJoueur = (p) => $(".o_filtreJoueur").filter((i, elt) => pseudos[$(elt).data("i")] === p),
+      // nombre de groupes entièrement masqués d'une section
+      synchroniser = (classe, valeurs, accesseur) => {
+        let vides = 0;
+        $("." + classe).each((i, elt) => {
+          let liste = membresDe(valeurs[$(elt).data("i")], accesseur),
+            visibles = liste.filter((p) => !masques.has(p)).length;
+          if (!visibles) vides++;
+          $(elt)
+            .prop("checked", visibles == liste.length)
+            .prop("indeterminate", visibles > 0 && visibles < liste.length);
+        });
+        return vides;
+      };
+    let rafraichir = () => {
+      masques = new Set(this._filtres.joueurs);
+      $(".o_filtreJoueur").each((i, elt) => {
+        $(elt).prop("checked", !masques.has(pseudos[$(elt).data("i")]));
+      });
+      let libelle = (n) => (n ? `(${n} masqué${n > 1 ? "s" : ""})` : "");
+      $("#o_filtreGradesMasques").text(
+        libelle(synchroniser("o_filtreGrade", grades, this._gradeDe)),
+      );
+      $("#o_filtreRangsMasques").text(
+        libelle(synchroniser("o_filtreRang", rangs, this._rangSdcDe)),
+      );
+      $("#o_filtreJoueursMasques").text(libelle(masques.size));
+    };
+    rafraichir();
+    let appliquer = () => {
+      this._filtres = {
+        grades: [],
+        rangs: this._filtres.rangs,
+        joueurs: $(".o_filtreJoueur")
+          .filter((i, elt) => !elt.checked)
+          .map((i, elt) => pseudos[$(elt).data("i")])
+          .get(),
+      };
+      this._sauverFiltres();
+      rafraichir();
       this._dessinerCarte(this._filtrerMembres(this._carteMembres), this._carteMembres.length);
     };
-    $("#o_carteFiltres input[type=checkbox]").on("change", appliquer);
+    // une case de groupe (re)coche ou décoche tous ses membres
+    let groupe = (classe, valeurs, accesseur) =>
+      $("." + classe).on("change", (e) => {
+        let coche = e.currentTarget.checked;
+        membresDe(valeurs[$(e.currentTarget).data("i")], accesseur).forEach((p) =>
+          caseJoueur(p).prop("checked", coche),
+        );
+        appliquer();
+      });
+    groupe("o_filtreGrade", grades, this._gradeDe);
+    groupe("o_filtreRang", rangs, this._rangSdcDe);
+    $(".o_filtreJoueur").on("change", appliquer);
     $("#o_carteFiltres .o_filtreVoir").click((e) => {
       let cible = $("#" + $(e.currentTarget).data("cible"));
       cible.toggle();

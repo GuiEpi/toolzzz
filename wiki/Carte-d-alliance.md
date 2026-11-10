@@ -35,9 +35,11 @@ La carte est interactive (basée sur Highcharts) :
 
 Sous les boutons, un bloc de filtres permet de choisir qui apparaît sur la carte. Chaque section est repliée par défaut, clique sur _Afficher la liste_ pour la déplier. Le titre d'une section indique combien d'entrées y sont masquées, pour qu'un filtre actif reste visible même section fermée.
 
-- **Grades affichés** — une case par grade de l'alliance, avec le nombre de membres concernés. Décoche un grade pour retirer tous ses membres de la carte. Pratique pour ne garder que les passeurs, ou pour sortir les VIP d'une carte qui sert à préparer une attaque. Les grades les plus portés sont en tête de liste. Un grade long est raccourci pour garder les cases alignées, son libellé complet reste visible au survol. Si chaque membre a un grade différent, Toolzzz te renvoie vers la liste des joueurs, plus adaptée.
+- **Grades affichés** — une case par grade de l'alliance, avec le nombre de membres concernés. Décoche un grade pour décocher tous ses membres dans la liste des joueurs, recoche-le pour les remettre. Pratique pour ne garder que les passeurs, ou pour sortir les VIP d'une carte qui sert à préparer une attaque. Les grades les plus portés sont en tête de liste. Un grade long est raccourci pour garder les cases alignées, son libellé complet reste visible au survol. Si chaque membre a un grade différent, Toolzzz te renvoie vers la liste des joueurs, plus adaptée.
 - **Rangs SDC affichés** — même principe, sur les rangs saisis dans le [SDC](SDC-Infos-membres). Cette section n'apparaît que si ton alliance en utilise. Un membre sans rang saisi n'est jamais masqué par ce filtre.
 - **Joueurs** — la liste complète des membres, pour cocher ou décocher un joueur en particulier. Les liens _Tout cocher_ et _Tout décocher_ font le tri en un clic.
+
+Les trois sections restent synchronisées : c'est la liste des joueurs qui décide qui est affiché, et une case de grade ou de rang reflète l'état de ses membres. Elle est cochée s'ils sont tous affichés, décochée si aucun ne l'est, et en état partiel (un tiret) si seule une partie l'est, par exemple quand tu as décoché un seul passeur.
 
 Le titre de la carte rappelle combien de membres sont affichés sur l'effectif total, et l'export pour le forum reprend exactement la même sélection.
 
