@@ -137,8 +137,9 @@ class PageCommerce {
     listeConvoi.sort((a, b) => {
       return moment(a.exp).diff(moment(b.exp));
     });
-    // Verification si les données sont deja enregistrées
-    if (listeConvoi.length) this.saveConvoi(listeConvoi);
+    // la page liste tous les convois en cours : une liste vide (dernier
+    // convoi annulé ou rentré) doit aussi être enregistrée
+    this.saveConvoi(listeConvoi);
     return this;
   }
   /**
@@ -149,16 +150,17 @@ class PageCommerce {
    * @param {Array} liste des convois en cours.
    */
   saveConvoi(liste) {
+    let actuel = this._boiteComptePlus.convoi || [];
     if (
-      !this._boiteComptePlus.hasOwnProperty("convoi") ||
-      this._boiteComptePlus.convoi.length != liste.length ||
-      this._boiteComptePlus.convoi[0]["cible"] != liste[0]["cible"] ||
-      (liste[0]["exp"].diff(this._boiteComptePlus.convoi[0]["exp"], "s") > 1 &&
-        !Utils.comptePlus &&
-        $("#boiteComptePlus").length)
+      actuel.length != liste.length ||
+      (liste.length &&
+        (actuel[0]["cible"] != liste[0]["cible"] ||
+          (liste[0]["exp"].diff(actuel[0]["exp"], "s") > 1 &&
+            !Utils.comptePlus &&
+            $("#boiteComptePlus").length)))
     ) {
       this._boiteComptePlus.convoi = liste;
-      this._boiteComptePlus.startConvoi = moment();
+      this._boiteComptePlus.startConvoi = liste.length ? moment() : 0;
       this._boiteComptePlus.sauvegarder().majConvoi();
     }
     return this;

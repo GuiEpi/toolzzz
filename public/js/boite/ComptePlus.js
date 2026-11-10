@@ -537,6 +537,7 @@ class BoiteComptePlus {
       this._compteARebours("Unite", this._startPonte, this._ponte[0].exp, "_ponte");
     } else {
       $("#o_resteUnite").html("<span class='red_light'>Aucune ponte</span>");
+      $("#boiteComptePlus table tr:eq(0)").attr("title", "Aller sur Reine");
       Utils.arreterTime("o_tempsUnite");
       $("#o_tempsUnite").text("");
       $("#o_progressUnite").progressbar({ value: 0 }).removeClass("highlight_success");
@@ -612,6 +613,7 @@ class BoiteComptePlus {
       this._compteARebours("Attaque", this._startAttaque, this._attaque[0].exp, "_attaque");
     } else {
       $("#o_resteAttaque").text("Aucune attaque");
+      $("#boiteComptePlus table tr:eq(4)").attr("title", "Aller sur Armée");
       Utils.arreterTime("o_tempsAttaque");
       $("#o_tempsAttaque").text("");
       $("#o_progressAttaque").progressbar({ value: 0 }).removeClass("highlight_success");
@@ -640,7 +642,9 @@ class BoiteComptePlus {
       $("#boiteComptePlus table tr:eq(5)").attr("title", table);
       this._compteARebours("Convoi", this._startConvoi, this._convoi[0].exp, "_convoi");
     } else {
-      $("#o_resteConvoi").text("Aucune convoi");
+      $("#o_resteConvoi").text("Aucun convoi");
+      // sans quoi l'infobulle garde la liste des convois terminés ou annulés
+      $("#boiteComptePlus table tr:eq(5)").attr("title", "Aller sur Convoi");
       Utils.arreterTime("o_tempsConvoi");
       $("#o_tempsConvoi").text("");
       $("#o_progressConvoi").progressbar({ value: 0 }).removeClass("highlight_success");
