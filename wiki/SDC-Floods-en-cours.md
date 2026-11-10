@@ -31,3 +31,14 @@ L'onglet **Floods**, à côté de **Carte** dans le menu d'alliance, lit le suje
 - **TdC de la cible (estimé)** — le terrain de la cible avant et après chaque flood. Toolzzz enchaîne tous les floods de l'alliance sur une même cible par ordre d'arrivée, en partant du terrain relevé au lancement du premier : chaque flood prend son nombre d'unités, dans la limite de 20 % du terrain qu'il reste à la cible.
 
 Le tableau est chargé à l'ouverture de l'onglet. Le bouton **Actualiser** le recharge.
+
+## Dans les lanceurs de flood
+
+Le **Lanceur de flood** de la page Attaquer et le [Multi-flood](Outils-d-attaque#onglet-multi-flood) se servent de ces floods en vol pour pré-remplir les terrains **à l'arrivée** de tes attaques, au lieu des terrains actuels :
+
+- **Le terrain de la cible** — son terrain de profil, moins ce que vont lui prendre les floods de l'alliance qui la touchent avant toi.
+- **Ton terrain** — ton terrain actuel, plus ce que vont te rapporter tes floods déjà en vol (lancés depuis n'importe quel navigateur équipé de Toolzzz), moins ce que te prennent les floods d'alliés sur toi.
+
+Le calcul optimisé part donc des bonnes valeurs. Un résumé sous le formulaire indique ce qui a été compté, par exemple « Cible −640 000 (2 floods de Pierre, Paul) · toi +50 000 (1 flood à toi) ». Les champs restent modifiables : une valeur saisie à la main n'est jamais écrasée.
+
+Les floods des joueurs sans Toolzzz et les attaques ennemies ne sont pas connus, et ne sont donc pas comptés. Tes propres floods sont pris en compte même si la section `Toolzzz_Flood` n'existe pas, tant qu'ils sont partis depuis ce navigateur.

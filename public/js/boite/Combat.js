@@ -807,6 +807,10 @@ class BoiteCombat extends Boite {
     this._mfCibles = [];
     // mon terrain quand les attaques arriveront, si saisi (null = actuel)
     this._mfTerrainAtt = null;
+    // le même, estimé d'après les floods en vol (null = aucun ne compte)
+    this._mfTerrainAttAuto = null;
+    // résumé de cette estimation, sous le formulaire
+    this._mfTexteImpact = "";
     // armée et attaques en cours chargées depuis Armee.php
     this._mfDisponible = null;
     this._mfEnCours = 0;
@@ -835,6 +839,7 @@ class BoiteCombat extends Boite {
       this._mfDisponible = Math.max(0, this._mfArmee.getSommeUnite() - Armee.reserveFlood());
       this._mfRenderForm();
       this.simulerMultiFlood();
+      this._mfMajImpacts();
     });
   }
   /**
@@ -888,7 +893,59 @@ class BoiteCombat extends Boite {
    * @method _mfTerrainCible
    */
   _mfTerrainCible(cible) {
-    return cible.terrainImpact ?? cible.terrain;
+    return cible.terrainImpact ?? cible.terrainImpactAuto ?? cible.terrain;
+  }
+  /**
+   * Mon terrain quand les attaques arriveront : celui saisi, sinon celui
+   * estimé d'après les floods en vol, sinon l'actuel.
+   *
+   * @private
+   * @method _mfTerrainMoi
+   */
+  _mfTerrainMoi() {
+    return this._mfTerrainAtt ?? this._mfTerrainAttAuto ?? Utils.terrain;
+  }
+  /**
+   * Estime les terrains à l'arrivée d'après les floods en vol de l'alliance
+   * (Toolzzz_Flood) et les miens : celui de chaque cible à l'arrivée de mes
+   * attaques, et le mien à l'arrivée sur la première cible. Les valeurs
+   * saisies à la main restent prioritaires.
+   *
+   * @private
+   * @method _mfMajImpacts
+   */
+  _mfMajImpacts() {
+    if (!this._mfCibles.length) {
+      this._mfTerrainAttAuto = null;
+      if (this._mfTexteImpact) {
+        this._mfTexteImpact = "";
+        this._mfRenderForm();
+      }
+      return;
+    }
+    FloodPartage.chargerAlliance().then(
+      (r) => {
+        let maintenant = Date.now(),
+          cibles = [...this._mfCibles].sort((a, b) => a.tempsParcours - b.tempsParcours),
+          impacts = cibles.map((c) => ({
+            cible: c.pseudo,
+            t: FloodPartage.terrainsAImpact(
+              r.floods,
+              c.pseudo,
+              c.terrain,
+              maintenant + c.tempsParcours * 1000,
+            ),
+          }));
+        cibles.forEach((c, i) => {
+          c.terrainImpactAuto = impacts[i].t.cible != c.terrain ? impacts[i].t.cible : null;
+        });
+        this._mfTerrainAttAuto = impacts[0].t.moi != Utils.terrain ? impacts[0].t.moi : null;
+        this._mfTexteImpact = FloodPartage.texteImpacts(impacts, impacts[0].t);
+        this._mfRenderForm();
+        this.simulerMultiFlood();
+      },
+      () => {},
+    );
   }
   /**
    * Rend le tableau-formulaire au look natif :
@@ -937,7 +994,7 @@ class BoiteCombat extends Boite {
               ${pseudoRow}
             </tr>
             <tr>
-              <td><input type="text" id="o_mfTerrainAtt" value="${this._mfTerrainAtt ?? Utils.terrain}" title="Votre terrain quand vos attaques arriveront (actuel : ${numeral(Utils.terrain).format()} cm²). À changer si vous savez qu'on vous touche avant."/></td>
+              <td><input type="text" id="o_mfTerrainAtt" value="${this._mfTerrainMoi()}" title="Votre terrain quand vos attaques arriveront (actuel : ${numeral(Utils.terrain).format()} cm²). À changer si vous savez qu'on vous touche avant."/></td>
               <td class="right">Terrain</td>
               ${terrainRow}
             </tr>
@@ -948,7 +1005,8 @@ class BoiteCombat extends Boite {
             </tr>
           </tbody>
         </table>
-        <p class="reduce">${creneaux} créneau${creneaux > 1 ? "x" : ""} d'attaque libre${creneaux > 1 ? "s" : ""} sur ${monProfil.niveauRecherche[6] + 1}</p>`);
+        <p class="reduce">${creneaux} créneau${creneaux > 1 ? "x" : ""} d'attaque libre${creneaux > 1 ? "s" : ""} sur ${monProfil.niveauRecherche[6] + 1}</p>
+        ${this._mfTexteImpact ? `<p class="reduce left">${this._mfTexteImpact}</p>` : ""}`);
     this._mfBindForm();
   }
   /**
@@ -989,12 +1047,14 @@ class BoiteCombat extends Boite {
       this._mfCibles = this._mfCibles.filter((c) => c.pseudo !== pseudo);
       this._mfRenderForm();
       this.simulerMultiFlood();
+      this._mfMajImpacts();
     });
     $("#o_mfTerrainAtt")
       .spinner({ min: 0, numberFormat: "i" })
       .on("change spinstop", (e) => {
         let valeur = numeral($(e.currentTarget).val()).value();
-        this._mfTerrainAtt = valeur > 0 && valeur != Utils.terrain ? valeur : null;
+        this._mfTerrainAtt =
+          valeur > 0 && valeur != (this._mfTerrainAttAuto ?? Utils.terrain) ? valeur : null;
         this.simulerMultiFlood();
       });
     // terrain de la cible à l'arrivée des attaques — recalcul à chaque changement
@@ -1005,7 +1065,8 @@ class BoiteCombat extends Boite {
           cible = this._mfCibles.find((c) => c.pseudo === $el.data("pseudo")),
           valeur = numeral($el.val()).value();
         if (!cible) return;
-        cible.terrainImpact = valeur > 0 && valeur != cible.terrain ? valeur : null;
+        cible.terrainImpact =
+          valeur > 0 && valeur != (cible.terrainImpactAuto ?? cible.terrain) ? valeur : null;
         this.simulerMultiFlood();
       });
   }
@@ -1101,6 +1162,7 @@ class BoiteCombat extends Boite {
     this._mfCibles.push(cible);
     this._mfRenderForm();
     this.simulerMultiFlood();
+    this._mfMajImpacts();
     // première cible : on peut maintenant compter les attaques en cours comme le jeu
     if (this._mfCibles.length == 1)
       this._mfCompterEnCours().then(() => {
@@ -1122,7 +1184,7 @@ class BoiteCombat extends Boite {
   simulerMultiFlood() {
     if (!this._mfArmee) this._mfArmee = new Armee();
     let cibles = [...this._mfCibles].sort((a, b) => a.tempsParcours - b.tempsParcours),
-      mfTerrain = this._mfTerrainAtt ?? Utils.terrain,
+      mfTerrain = this._mfTerrainMoi(),
       unites = this._mfDisponible ?? 0,
       creneaux = this._mfCreneaux(),
       resultats = [];

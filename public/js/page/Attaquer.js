@@ -52,6 +52,7 @@ class PageAttaquer {
         this.ajouterOption();
         // ajoute des outils de floods
         this.formulaireFlood();
+        this.terrainsImpact();
       });
     }
     if (!Utils.comptePlus) this.plus();
@@ -261,6 +262,33 @@ class PageAttaquer {
     $("#o_supprimeAttaque").click((e) => {
       this.supprimerAttaque();
     });
+  }
+  /**
+   * Pré-remplit mon terrain et celui de la cible avec leur valeur estimée à
+   * l'arrivée du flood, d'après les floods en vol de l'alliance
+   * (Toolzzz_Flood) et les miens. Une valeur déjà modifiée à la main n'est
+   * pas écrasée.
+   *
+   * @private
+   * @method terrainsImpact
+   */
+  terrainsImpact() {
+    let arrivee = Date.now() + monProfil.getTempsParcours2(this._cible) * 1000,
+      tdcA = Utils.terrain,
+      tdcB = this._cible.terrain;
+    FloodPartage.chargerAlliance().then(
+      (r) => {
+        let t = FloodPartage.terrainsAImpact(r.floods, this._cible.pseudo, tdcB, arrivee),
+          texte = FloodPartage.texteImpact(t, this._cible.pseudo);
+        if (!texte) return;
+        if ($("#o_floodTDCA").spinner("value") == tdcA) $("#o_floodTDCA").spinner("value", t.moi);
+        if ($("#o_floodTDCB").spinner("value") == tdcB) $("#o_floodTDCB").spinner("value", t.cible);
+        $("#o_floodImpact").remove();
+        $("#o_simulationFlood").after(`<p id='o_floodImpact' class='reduce left'>${texte}</p>`);
+        this.preparerFlood($("#o_floodTDCA").spinner("value"), $("#o_floodTDCB").spinner("value"));
+      },
+      () => {},
+    );
   }
   /**
    * Lance une simulation si les données saisies sont correctes.
