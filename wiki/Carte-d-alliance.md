@@ -53,8 +53,6 @@ Sous la carte, la section **Chaîne entre plus proches voisins** calcule l'ordre
 - **Ordre** — _Le plus court_ calcule la chaîne. _SDC (rang puis priorité)_ suit plutôt les rangs et priorités saisis par les chefs dans le [SDC](SDC-Infos-membres) : rangs par ordre alphabétique, puis priorités décroissantes (la priorité 1 est le bout de la chaîne), et les membres sans priorité (chasseurs…) à la fin. Pratique pour vérifier qu'une chaîne prévue colle aux positions, et comparer son temps cumulé à celui de la chaîne calculée. Cette option n'est disponible que si des rangs ont été saisis.
 - **Tracer sur la carte** — relie les membres dans l'ordre de la chaîne et numérote les points. Les liens habituels entre voisins sont masqués tant que la chaîne est tracée.
 - **Tableau** — pour chaque étape, le joueur (avec son rang SDC et sa priorité s'il en a), sa position, à qui il envoie et le temps de trajet, avec le temps cumulé et la plus longue étape.
-- **Copier pour le forum** — copie la chaîne, une étape par ligne.
-- **Numéroter dans le SDC** (chefs uniquement) — écrit la place de chacun dans la chaîne affichée comme priorité de sa fiche SDC, rang par rang en partant de la fin : le dernier passeur de la chaîne devient Passeur 1, celui d'avant Passeur 2, etc. Par exemple, ne coche que les passeurs, laisse _Le plus court_, puis numérote. Le rang n'est pas modifié, les membres sans rang SDC sont ignorés, et une confirmation liste les fiches qui vont changer avant d'écrire quoi que ce soit.
 
 Les temps sont ceux du jeu **sans amélioration de Vitesse d'attaque**, puisque chaque membre envoie avec son propre niveau. L'ordre, le départ et le tracé sont mémorisés par alliance et par serveur.
 
