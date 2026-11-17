@@ -375,11 +375,11 @@ class FloodPartage {
    * @param {String} cible pseudo de la cible
    * @param {Integer} terrainCible terrain actuel de la cible (profil)
    * @param {Integer} arrivee timestamp (ms) de l'arrivée de mon flood
-   * @return {Object} {cible, moi, surCible: [{lanceur, prise}], pourMoi: [{lanceur, cible, prise}]}
+   * @return {Object} {cible, moi, surCible: [{lanceur, prise}], gainsCible: [{cible, prise}], pourMoi: [{lanceur, cible, prise}]}
    */
   static terrainsAImpact(floods, cible, terrainCible, arrivee) {
     let moi = monProfil.pseudo,
-      r = { cible: terrainCible, moi: Utils.terrain, surCible: [], pourMoi: [] };
+      r = { cible: terrainCible, moi: Utils.terrain, surCible: [], gainsCible: [], pourMoi: [] };
     floods
       .filter((f) => f.arrivee < arrivee)
       .sort((a, b) => a.arrivee - b.arrivee)
@@ -393,7 +393,11 @@ class FloodPartage {
           prise = -FloodPartage.prise(f.unites ?? FloodPartage.priseEstimee(f), r.moi);
         } else if (f.lanceur == moi) prise = FloodPartage.priseEstimee(f);
         // la cible floode elle aussi (membre de l'alliance) : elle gagne
-        if (f.lanceur == cible && f.cible != cible) r.cible += FloodPartage.priseEstimee(f);
+        if (f.lanceur == cible && f.cible != cible) {
+          let gain = FloodPartage.priseEstimee(f);
+          r.cible += gain;
+          if (gain) r.gainsCible.push({ cible: f.cible, prise: gain });
+        }
         if (f.lanceur == moi || f.cible == moi) {
           r.moi += prise;
           if (prise) r.pourMoi.push({ lanceur: f.lanceur, cible: f.cible, prise: prise });
@@ -430,6 +434,10 @@ class FloodPartage {
       if (t.surCible.length)
         parties.push(
           `${esc(cible)} ${signe(-somme(t.surCible))} (${floods(t.surCible.length)} de ${qui(t.surCible)})`,
+        );
+      if (t.gainsCible.length)
+        parties.push(
+          `${esc(cible)} ${signe(somme(t.gainsCible))} (${floods(t.gainsCible.length)} de ${esc(cible)} sur ${[...new Set(t.gainsCible.map((x) => esc(x.cible)))].join(", ")})`,
         );
     });
     if (gains.length) parties.push(`toi ${signe(somme(gains))} (${floods(gains.length)} à toi)`);
