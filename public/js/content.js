@@ -429,6 +429,24 @@ const DATEPICKER_OPTION = {
     // Chargement du language francais
     numeral.locale("fr");
     moment.locale("fr");
+    // Spinners jQuery UI au format "i" : Globalize le délègue à
+    // toLocaleString(), donc à la langue du navigateur ("1,234" en anglais,
+    // "1’234" en suisse), que numeral relit en français (virgule = décimale) :
+    // au-delà de 9 999, la saisie au clavier retombait à 1. Format et lecture
+    // passent par numeral, comme le reste de Toolzzz.
+    let spinnerFormat = $.ui.spinner.prototype._format,
+      spinnerParse = $.ui.spinner.prototype._parse;
+    $.ui.spinner.prototype._format = function (value) {
+      if (this.options.numberFormat !== "i" || value === "" || value === null)
+        return spinnerFormat.call(this, value);
+      return numeral(value).format("0,0");
+    };
+    $.ui.spinner.prototype._parse = function (val) {
+      if (this.options.numberFormat !== "i" || typeof val !== "string")
+        return spinnerParse.call(this, val);
+      let valeur = numeral(val).value();
+      return val === "" || valeur === null || isNaN(valeur) ? null : valeur;
+    };
     Highcharts.setOptions({
       lang: {
         months: MOIS_FR,
