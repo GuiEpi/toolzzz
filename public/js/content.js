@@ -483,7 +483,7 @@ const DATEPICKER_OPTION = {
           .parent()
           .after(
             `<li><a id='o_ongletCarte' class='boutonCarte' href='alliance.php?Membres#carte'><span></span>Carte</a></li>` +
-              `<li><a id='o_ongletFloods' class='boutonEnnemies' href='alliance.php?Membres#floods'><span></span>Floods</a></li>`,
+              `<li><a id='o_ongletFloods' class='boutonArmee' href='alliance.php?Membres#floods'><span></span>Floods</a></li>`,
           );
       }
 
