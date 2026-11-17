@@ -13,7 +13,7 @@ Colle un rapport de chasse complet (ou plusieurs à la suite) dans le grand cham
 - **Le terrain conquis** (en cases) si applicable.
 - **Le temps de chasse** total.
 
-Si tu colles plusieurs rapports d'affilée (par exemple en sélectionnant tout le contenu d'une conversation Messagerie qui contient une suite de retours de chasse), Toolzzz fait automatiquement un **bilan cumulé** : total XP, total pertes par unité, total terrain.
+Si tu colles plusieurs rapports d'affilée (par exemple en sélectionnant tout le contenu d'une conversation Messagerie qui contient une suite de retours de chasse), Toolzzz fait automatiquement un **bilan cumulé** : total XP, total pertes par unité, total terrain. Un rapport illisible (mal copié, tronqué) est signalé par son numéro et ignoré : les autres sont quand même analysés.
 
 C'est l'outil typique pour faire ton bilan de session de chasse en fin de soirée sans recompter à la main.
 

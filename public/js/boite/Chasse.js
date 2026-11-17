@@ -121,32 +121,39 @@ class BoiteChasse extends Boite {
    */
   analyse() {
     $("#o_tabsChasse1").append(
-      "<textarea id='o_rcChasse' class='o_maxWidth' placeholder='Rapport(s) de chasse(s)...'></textarea><div class='o_marginT15'><table  id='o_resultatChasse' class='o_maxWidth'></table></div>",
+      "<textarea id='o_rcChasse' class='o_maxWidth' placeholder='Colle un ou plusieurs rapports de chasse à la suite : chacun est analysé, et le bilan les additionne.'></textarea><p id='o_rcChasseErreur' class='reduce red' style='display:none;'></p><div class='o_marginT15'><table  id='o_resultatChasse' class='o_maxWidth'></table></div>",
     );
 
     $("#o_rcChasse").on("input", (e) => {
-      // on recup les chasses à analyser
-      let chasses = e.currentTarget.value.split("nourriture"),
+      // un rapport commence par ses troupes : on découpe là (une chasse ratée
+      // ne se termine pas par la nourriture ramenée)
+      let morceaux = e.currentTarget.value
+          .split(/(?=Troupes en attaque\s*:)/)
+          .filter((m) => /Troupes en attaque\s*:/.test(m)),
         bilan = new Chasse(""),
-        chasse = null,
-        erreur = false,
+        lues = 0,
+        illisibles = [],
         html =
           "<tr class='gras'><td colspan='2'>Avant</td><td colspan='2'>Evolution</td><td colspan='2'>Résultat</td></tr>";
       // on nettoie l'ancien affichage
       $("#o_resultatChasse").html("");
-      for (let i = 0; i < chasses.length; i++) {
-        if (chasses[i]) {
-          chasse = new Chasse(chasses[i]);
-          if (chasse.analyse()) {
-            html += chasse.toHTMLBoite(false);
-            bilan.ajoute(chasse);
-          } else {
-            $.toast({ ...TOAST_WARNING, text: "Le rapport de chasse ne peut pas être analysé." });
-            erreur = true;
-          }
-        }
-      }
-      if (!erreur) {
+      morceaux.forEach((morceau, i) => {
+        let chasse = new Chasse(morceau);
+        // un rapport illisible n'empêche pas d'analyser les autres
+        if (chasse.analyse()) {
+          html += chasse.toHTMLBoite(false);
+          bilan.ajoute(chasse);
+          lues++;
+        } else illisibles.push(i + 1);
+      });
+      $("#o_rcChasseErreur")
+        .toggle(illisibles.length > 0)
+        .text(
+          illisibles.length == 1
+            ? `Le rapport n°${illisibles[0]} n'a pas pu être analysé, il est ignoré.`
+            : `Les rapports n°${illisibles.join(", ")} n'ont pas pu être analysés, ils sont ignorés.`,
+        );
+      if (lues) {
         $("#o_resultatChasse").append(html);
         this.afficherBilan(bilan);
       }

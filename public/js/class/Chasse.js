@@ -131,12 +131,8 @@ class Chasse {
    * @method analyse
    */
   analyse() {
-    let motCle = new Array("Troupes en attaque : ", "et en tue");
-    if (
-      motCle.some((substring) => {
-        return this._rc.includes(substring);
-      })
-    ) {
+    // les troupes sont indispensables (elles sont découpées juste après)
+    if (this._rc.includes("Troupes en attaque : ")) {
       this._armeeAv.parseArmee(this._rc.split("Troupes en attaque : ")[1].split(".")[0]);
       this._armeePe = this.retirePerte(this._armeeAv);
       this._armeeAp = this.ajouteXP(this._armeePe);
