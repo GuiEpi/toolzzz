@@ -9,6 +9,10 @@
  * @class PageCommerce
  * @constructor
  */
+// nombre de convois que « Tout annuler » n'a pas pu annuler, signalé après
+// rechargement
+const CLE_CONVOI_ANNULATION_ECHEC = "outiiil_convoiAnnulationEchec";
+
 class PageCommerce {
   constructor(boiteComptePlus) {
     /**
@@ -24,10 +28,18 @@ class PageCommerce {
    *
    */
   executer() {
+    // convois en cours, lus une fois avant toute modification de la page
+    this._convois = PageCommerce.lireConvois();
     // ajout d'information
+    let capacite = Convoi.capaciteOuvriere(),
+      ouvrieres = PageCommerce.ouvrieresDisponibles(),
+      dispo = ouvrieres
+        ? `<br/>Ouvrières disponibles : <strong>${numeral(ouvrieres.disponibles).format()}</strong> (${numeral(ouvrieres.total).format()} − ${numeral(ouvrieres.terrain).format()} sur le terrain de chasse), soit <strong>${numeral(Math.floor(ouvrieres.disponibles * capacite)).format()}</strong> ressources transportables.`
+        : "";
     $("form table").append(
-      `<tr class='centre'><td colspan=6>Info : Niveau d'étable <strong>${monProfil.niveauConstruction[11]}</strong>, 1 ouvrière peut transporter : <strong>${10 + monProfil.niveauConstruction[11] / 2}</strong> ressources.</td></tr>`,
+      `<tr class='centre'><td colspan=6>Info : Niveau d'étable <strong>${monProfil.niveauConstruction[11]}</strong>, 1 ouvrière peut transporter : <strong>${numeral(capacite).format("0[.]0")}</strong> ressources.${dispo}</td></tr>`,
     );
+    this.tableauConvois();
     // ajout des boutons pour arrondir les quantités
     $("#bouton_nourriture_max").html(
       `Nourriture donnée <span id="o_arrondirNou" class="gras small">arrondir...</span>`,
@@ -111,28 +123,14 @@ class PageCommerce {
       delay: 0,
       minLength: 3,
     });
-    // sauvegarde des convois
-    let listeConvoi = new Array(),
-      nombres = new Array();
-    $("#centre > strong").each((i, elt) => {
-      // Affichage du retour des convois
-      if ($(elt).next().text().indexOf("Retour") == -1)
-        $(elt).after(
-          `<span class='small'>- Retour le ${Utils.roundMinute(Utils.timeToInt($(elt).text().split("dans")[1].trim())).format("D MMM YYYY à HH[h]mm")}</span>`,
-        );
-      nombres = $(elt)
-        .text()
-        .replace(/ /g, "")
-        .split("dans")[0]
-        .match(/^\d+|\d+\b|\d+(?=\w)/g);
-      listeConvoi.push({
-        cible: $(elt).find("a").text(),
-        sens: $(elt).text().includes("livrer"),
-        nou: nombres[0],
-        mat: nombres[1],
-        exp: moment().add(Utils.timeToInt($(elt).text().split("dans")[1].trim()), "s"),
-      });
-    });
+    // sauvegarde des convois (le retour est affiché dans le tableau)
+    let listeConvoi = this._convois.map((c) => ({
+      cible: c.joueur,
+      sens: c.sens,
+      nou: c.nourriture,
+      mat: c.materiaux,
+      exp: c.fin,
+    }));
     // tri les convois par ordre d'arrivée
     listeConvoi.sort((a, b) => {
       return moment(a.exp).diff(moment(b.exp));
@@ -141,6 +139,201 @@ class PageCommerce {
     // convoi annulé ou rentré) doit aussi être enregistrée
     this.saveConvoi(listeConvoi);
     return this;
+  }
+  /**
+   * Ouvrières pouvant partir en convoi, d'après le script de la page
+   * (max_ouvriere, terrain) : celles qui ne sont pas sur le terrain de
+   * chasse. Celles déjà parties en convoi ne sont plus comptées par le jeu.
+   *
+   * @static
+   * @method ouvrieresDisponibles
+   * @return {Object|null} {total, terrain, disponibles}
+   */
+  static ouvrieresDisponibles() {
+    let html =
+        $("script")
+          .toArray()
+          .map((s) => s.textContent)
+          .find((t) => t.includes("max_ouvriere")) || "",
+      lire = (nom) => {
+        let m = html.match(new RegExp(`var ${nom}\\s*=\\s*(\\d+)`));
+        return m ? parseInt(m[1]) : null;
+      },
+      total = lire("max_ouvriere") ?? Utils.ouvrieres,
+      terrain = lire("terrain") ?? Utils.terrain;
+    if (isNaN(total) || isNaN(terrain)) return null;
+    return { total: total, terrain: terrain, disponibles: Math.max(0, total - terrain) };
+  }
+  /**
+   * Lignes « Convois en cours » du jeu :
+   * `<strong>- Vous allez livrer N [img] et M [img] à <a>Pseudo</a> dans 9H 38m 20s</strong> - <a>Annuler</a><br/>`.
+   * Pour un convoi envoyé, « dans » est le retour des ouvrières (aller-retour).
+   *
+   * @static
+   * @method lireConvois
+   * @return {Array} [{elt, envoi, sens, joueur, nourriture, materiaux, ouvrieres, secondes, fin}]
+   */
+  static lireConvois() {
+    let entier = (t) => parseInt(String(t).replace(/\D/g, "")) || 0,
+      capacite = Convoi.capaciteOuvriere();
+    return $("#centre > strong")
+      .toArray()
+      .filter((elt) => $(elt).find("a").length && /dans/.test($(elt).text()))
+      .map((elt) => {
+        let texte = $(elt).text(),
+          [charge, duree] = texte.split(/\bdans\b/),
+          nombres = charge.replace(/\s/g, "").match(/\d+/g) || [],
+          envoi = /Vous allez livrer/.test(texte),
+          nourriture = entier(nombres[0]),
+          materiaux = entier(nombres[1]),
+          secondes = Utils.timeToInt(duree.trim());
+        return {
+          elt: elt,
+          envoi: envoi,
+          sens: texte.includes("livrer"),
+          joueur: $(elt).find("a").first().text().trim(),
+          nourriture: nourriture,
+          materiaux: materiaux,
+          ouvrieres: envoi ? Math.ceil((nourriture + materiaux) / capacite) : 0,
+          secondes: secondes,
+          fin: moment().add(secondes, "s"),
+        };
+      });
+  }
+  /**
+   * Remplace les lignes « Convois en cours » du jeu par un tableau, avec une
+   * copie pour le forum. Le lien Annuler du jeu est déplacé dans le tableau.
+   *
+   * @private
+   * @method tableauConvois
+   */
+  tableauConvois() {
+    let convois = [...this._convois].sort((a, b) => a.secondes - b.secondes);
+    if (!convois.length) return this;
+    let esc = (t) => $("<div>").text(t).html(),
+      lien = (p) => `<a href='Membre.php?Pseudo=${encodeURIComponent(p)}'>${esc(p)}</a>`,
+      somme = (cle) => convois.reduce((s, c) => s + c[cle], 0),
+      html = `<div id='o_convoisEnCours' class='boite_amelioration simulateur centre'>
+        <h2>Convois en cours</h2>
+        <table class='o_attaquesLancees o_maxWidth centre' cellspacing='0'>
+        <thead><tr><th></th><th>Joueur</th><th>${IMG_POMME}</th><th>${IMG_MAT}</th><th>Ouvrières</th><th>Dans</th><th>Le*</th><th></th></tr></thead>
+        <tbody>`;
+    convois.forEach((c, i) => {
+      html += `<tr${i % 2 ? " class='ligne_paire'" : ""}>
+        <td>${c.envoi ? "Envoi à" : "Reçu de"}</td><td>${lien(c.joueur)}</td>
+        <td class='right'>${numeral(c.nourriture).format()}</td>
+        <td class='right'>${numeral(c.materiaux).format()}</td>
+        <td class='right'>${c.envoi ? numeral(c.ouvrieres).format() : "-"}</td>
+        <td id='o_convoiReste${i}'></td>
+        <td>${Utils.roundMinute(c.secondes).format("D MMM [à] HH[h]mm")}</td>
+        <td id='o_convoiAnnuler${i}'></td></tr>`;
+    });
+    html += `<tr class='gras'><td colspan='2'>${convois.length} convoi${convois.length > 1 ? "s" : ""}</td>
+        <td class='right'>${numeral(somme("nourriture")).format()}</td>
+        <td class='right'>${numeral(somme("materiaux")).format()}</td>
+        <td class='right'>${numeral(somme("ouvrieres")).format()}</td><td colspan='3'></td></tr>
+        <tr class='reduce'><td colspan='8'><em>* : pour un envoi, retour de tes ouvrières (aller-retour). Les ouvrières sont déduites de la charge, le jeu ne les affiche pas.</em></td></tr>
+        </tbody></table>
+        <button type='button' id='o_convoisCopier' class='o_marginT15 o_button'>Copier pour le forum</button>
+        <button type='button' id='o_convoisToutAnnuler' class='o_marginT15 o_button f_error' style='display:none;'>Tout annuler</button>
+      </div>`;
+    $("#centre > h3:contains('Convois en cours')").first().after(html);
+    // lignes natives : le lien Annuler passe dans le tableau, le reste est
+    // masqué (la ligne reste en place pour plus() et le C+)
+    convois.forEach((c, i) => {
+      let n = c.elt.nextSibling;
+      while (n && !(n.nodeType == 1 && n.tagName == "BR")) {
+        let suivant = n.nextSibling;
+        if (n.nodeType == 1 && n.tagName == "A" && /annuler=/.test(n.getAttribute("href") || ""))
+          $(n).appendTo(`#o_convoiAnnuler${i}`);
+        else if (n.nodeType == 3) n.remove();
+        else $(n).hide();
+        n = suivant;
+      }
+      if (n) $(n).hide();
+      $(c.elt).hide();
+      Utils.decreaseTime(c.secondes, "o_convoiReste" + i, {
+        aZero: () => $("#o_convoiReste" + i).text(c.envoi ? "rentré" : "arrivé"),
+      });
+    });
+    this.toutAnnulerConvois();
+    let clipboard = new Clipboard("#o_convoisCopier", {
+      text: () => PageCommerce.formatForum(convois),
+    });
+    clipboard.on("success", () => {
+      $.toast({ ...TOAST_SUCCESS, text: "Les convois ont été copiés dans le presse papier." });
+    });
+    clipboard.on("error", () => {
+      $.toast({ ...TOAST_ERROR, text: "Une erreur a été rencontrée, la copie a échoué." });
+    });
+    return this;
+  }
+  /**
+   * Bouton « Tout annuler » : appelle l'un après l'autre les liens Annuler
+   * du jeu déplacés dans le tableau, puis recharge la page. La dernière
+   * réponse dit quels convois sont encore là ; leur nombre est signalé après
+   * rechargement.
+   *
+   * @private
+   * @method toutAnnulerConvois
+   */
+  toutAnnulerConvois() {
+    let liens = () => $("#o_convoisEnCours a[href*='annuler=']").toArray(),
+      echecs = sessionStorage.getItem(CLE_CONVOI_ANNULATION_ECHEC);
+    if (echecs) {
+      sessionStorage.removeItem(CLE_CONVOI_ANNULATION_ECHEC);
+      $.toast({
+        ...TOAST_WARNING,
+        text: `${echecs} convoi${echecs > 1 ? "s n'ont" : " n'a"} pas pu être annulé${echecs > 1 ? "s" : ""}.`,
+      });
+    }
+    if (liens().length < 2) return this;
+    $("#o_convoisToutAnnuler")
+      .show()
+      .click(() => {
+        let encore = liens();
+        if (!encore.length || !confirm(`Annuler les ${encore.length} convois en cours ?`)) return;
+        $("#o_convoisToutAnnuler").prop("disabled", true).text("Annulation…");
+        let id = (href) => (href.match(/annuler=(\d+)/) || [])[1];
+        encore
+          .reduce((suite, a) => suite.then(() => $.get($(a).attr("href"))), Promise.resolve())
+          .then((html) => {
+            let restants = new Set(
+                Utils.parseHtml(html)
+                  .find("a[href*='commerce.php?annuler=']")
+                  .toArray()
+                  .map((a) => id($(a).attr("href"))),
+              ),
+              nb = encore.filter((a) => restants.has(id($(a).attr("href")))).length;
+            if (nb) sessionStorage.setItem(CLE_CONVOI_ANNULATION_ECHEC, nb);
+          })
+          // navigation GET et non reload() : la page peut être la réponse du
+          // POST d'envoi d'un convoi, un reload le relancerait
+          .finally(() => location.replace(location.pathname));
+      });
+    return this;
+  }
+  /**
+   * Texte à coller sur le forum : un convoi par ligne, puis le total.
+   *
+   * @static
+   * @method formatForum
+   */
+  static formatForum(convois) {
+    let lignes = convois.map((c) => {
+        let charge = `${numeral(c.nourriture).format()} nourriture et ${numeral(c.materiaux).format()} matériaux`,
+          quand = Utils.roundMinute(Math.max(0, c.fin.diff(moment(), "s"))).format(
+            "DD/MM [à] HH[h]mm",
+          );
+        return c.envoi
+          ? `- ${charge} à [player]${c.joueur}[/player], retour le ${quand}`
+          : `- ${charge} de [player]${c.joueur}[/player], le ${quand}`;
+      }),
+      total = (cle) => numeral(convois.reduce((s, c) => s + c[cle], 0)).format();
+    return (
+      `Convois en cours de ${monProfil.pseudo} :\n${lignes.join("\n")}\n` +
+      `Total : ${total("nourriture")} nourriture et ${total("materiaux")} matériaux`
+    );
   }
   /**
    * Sauvegarde les convois en cours.

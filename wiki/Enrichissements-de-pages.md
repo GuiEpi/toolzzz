@@ -65,6 +65,8 @@ C'est l'une des pages les plus enrichies par Toolzzz.
 ## Commerce (Convoi)
 
 - **Info capacité d'étable** : affiche combien de ressources peut transporter une ouvrière à ton niveau d'Étable.
+- **Ouvrières disponibles** : tes ouvrières moins celles sur le terrain de chasse, c'est-à-dire celles qui peuvent partir en convoi, et la quantité de ressources qu'elles peuvent porter.
+- **Tableau des convois en cours** à la place de la liste du jeu : joueur, nourriture, matériaux, ouvrières parties (déduites de la charge), compte à rebours, heure de retour et lien Annuler, avec une ligne de total. Le bouton **Copier pour le forum** copie la liste prête à coller, et **Tout annuler** annule tous les convois d'un coup.
 - Boutons **Arrondir** sur les champs Nourriture et Matériaux : arrondit la quantité au multiple exact de la capacité d'ouvrière, pour éviter de gaspiller la place du convoi.
 - **Recalcul automatique** du nombre d'ouvrières quand tu modifies les ressources.
 - Si le SDC est en place, le **tableau des commandes de l'alliance** et le bouton **Commander** apparaissent ici — voir la page dédiée [SDC — Commandes de ressources](SDC-Commandes-de-ressources).
