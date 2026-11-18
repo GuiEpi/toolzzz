@@ -314,26 +314,31 @@ class PageCommerce {
     return this;
   }
   /**
-   * Texte à coller sur le forum : un convoi par ligne, puis le total.
+   * Texte à coller sur le forum : un convoi par ligne, au format des lignes
+   * du jeu.
    *
    * @static
    * @method formatForum
    */
   static formatForum(convois) {
-    let lignes = convois.map((c) => {
-        let charge = `${numeral(c.nourriture).format()} nourriture et ${numeral(c.materiaux).format()} matériaux`,
-          quand = Utils.roundMinute(Math.max(0, c.fin.diff(moment(), "s"))).format(
-            "DD/MM [à] HH[h]mm",
-          );
+    return convois
+      .map((c) => {
+        let secondes = Math.max(0, c.fin.diff(moment(), "s")),
+          charge = `${numeral(c.nourriture).format()} nourritures et ${numeral(c.materiaux).format()} materiaux`,
+          // durée comme le jeu : heures cumulées en majuscule (« 26H 5m 51s »)
+          duree = [
+            Math.floor(secondes / 3600) ? `${Math.floor(secondes / 3600)}H` : "",
+            `${Math.floor((secondes % 3600) / 60)}m`,
+            `${secondes % 60}s`,
+          ]
+            .filter(Boolean)
+            .join(" "),
+          fin = `dans ${duree} - Retour le ${Utils.roundMinute(secondes).format("D MMM [à] HH[h]mm")}`;
         return c.envoi
-          ? `- ${charge} à [player]${c.joueur}[/player], retour le ${quand}`
-          : `- ${charge} de [player]${c.joueur}[/player], le ${quand}`;
-      }),
-      total = (cle) => numeral(convois.reduce((s, c) => s + c[cle], 0)).format();
-    return (
-      `Convois en cours de ${monProfil.pseudo} :\n${lignes.join("\n")}\n` +
-      `Total : ${total("nourriture")} nourriture et ${total("materiaux")} matériaux`
-    );
+          ? `Vous allez livrer ${charge} à ${c.joueur} ${fin}`
+          : `Vous allez recevoir ${charge} de ${c.joueur} ${fin}`;
+      })
+      .join("\n");
   }
   /**
    * Sauvegarde les convois en cours.
