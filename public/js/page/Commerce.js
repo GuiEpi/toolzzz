@@ -270,9 +270,9 @@ class PageCommerce {
   }
   /**
    * Bouton « Tout annuler » : appelle l'un après l'autre les liens Annuler
-   * du jeu déplacés dans le tableau, puis recharge la page. La dernière
-   * réponse dit quels convois sont encore là ; leur nombre est signalé après
-   * rechargement.
+   * du jeu, chacun relu dans la réponse précédente (jeton renouvelé), puis
+   * recharge la page. La dernière réponse dit quels convois sont encore là ;
+   * leur nombre est signalé après rechargement.
    *
    * @private
    * @method toutAnnulerConvois
@@ -296,7 +296,22 @@ class PageCommerce {
         $("#o_convoisToutAnnuler").prop("disabled", true).text("Annulation…");
         let id = (href) => (href.match(/annuler=(\d+)/) || [])[1];
         encore
-          .reduce((suite, a) => suite.then(() => $.get($(a).attr("href"))), Promise.resolve())
+          // le jeu change le jeton t= de ses liens après chaque annulation :
+          // celui d'un lien de la page est refusé (sans message) dès la
+          // deuxième. Chaque annulation prend le lien de la réponse précédente.
+          .reduce(
+            (suite, a) =>
+              suite.then((html) => {
+                let href = $(a).attr("href"),
+                  frais = html
+                    ? Utils.parseHtml(html)
+                        .find(`a[href*='annuler=${id(href)}&']`)
+                        .attr("href")
+                    : null;
+                return $.get(frais || href);
+              }),
+            Promise.resolve(null),
+          )
           .then((html) => {
             let restants = new Set(
                 Utils.parseHtml(html)
@@ -340,6 +355,7 @@ class PageCommerce {
       })
       .join("\n");
   }
+
   /**
    * Sauvegarde les convois en cours.
    *
