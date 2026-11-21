@@ -658,6 +658,13 @@ const DATEPICKER_OPTION = {
       });
 
       let uri = location.pathname,
+        // le jeu ajoute à certains liens un paramètre jt=… (ex. le chat
+        // d'alliance : alliance.php?jt=2.5f22…) : ignoré pour reconnaître la page
+        recherche = location.search
+          .replace(/^\?/, "")
+          .split("&")
+          .filter((p) => p && !p.startsWith("jt="))
+          .join("&"),
         page = null;
       // Routing
       switch (true) {
@@ -695,7 +702,7 @@ const DATEPICKER_OPTION = {
           page = new PageMessagerie();
           page.executer();
           break;
-        case uri == "/alliance.php" && location.search == "":
+        case uri == "/alliance.php" && recherche == "":
         case uri == "/chat.php":
           page = new PageChat();
           page.executer();
@@ -724,7 +731,7 @@ const DATEPICKER_OPTION = {
           page = new PageAttaquer(boiteComptePlus);
           page.executer();
           break;
-        case uri == "/ennemie.php" && location.search == "":
+        case uri == "/ennemie.php" && recherche == "":
           // Affichage des temps de trajet
           $("#tabEnnemie tr:eq(0) th:eq(5)").after("<th class='centre'>Temps</th>");
           $("#tabEnnemie tr:gt(0)").each((i, elt) => {
