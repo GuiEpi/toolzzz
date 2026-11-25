@@ -20,9 +20,10 @@ class Armee {
      */
     this._unite = new Array(14).fill(0);
     if (parametres.hasOwnProperty("unite"))
-      for (let i = 0; i < 14; i++)
-        if (parametres.unite.hasOwnProperty(NOM_UNITE[i + 1]))
-          this._unite[i] = parametres.unite[NOM_UNITE[i + 1]];
+      for (const nom in parametres.unite) {
+        const index = indexUnite(nom);
+        if (index > 0) this._unite[index - 1] = parametres.unite[nom];
+      }
     /**
      * Sauvegarde du nombre de JSN pour le lancement des chasses.
      *
@@ -116,7 +117,9 @@ class Armee {
             .each((i2, elt2) => {
               // id du jeu : (nombre,'uniteX',lieu)
               if (lieu && !($(elt2).attr("id") || "").endsWith("," + lieu + ")")) return;
-              this._unite[NOM_UNITE.indexOf(label) - 1] += parseInt(
+              const index = indexUnite(label);
+              if (index < 1) return;
+              this._unite[index - 1] += parseInt(
                 $(elt2)
                   .text()
                   .replace(/[^0-9]/g, ""),

@@ -75,6 +75,27 @@ const NOM_UNITES = [
   "Tueuses",
   "Tueuses d’élites",
 ];
+/**
+ * Rang d'une unité d'après son nom tel que le jeu l'écrit, sans tenir compte de
+ * l'apostrophe (’ ou '), de la casse, des accents ni des espaces : le jeu a déjà
+ * changé l'écriture des unités d'élite, ce qui les faisait passer pour absentes.
+ *
+ * @param {String} nom nom lu dans la page
+ * @param {Array} liste NOM_UNITE (singulier) ou NOM_UNITES (pluriel)
+ * @return {Integer} indice dans la liste, -1 si inconnu
+ */
+function indexUnite(nom, liste = NOM_UNITE) {
+  const normaliser = (texte) =>
+    String(texte)
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[’‘`´ʼ]/g, "'")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+  const cible = normaliser(nom);
+  return liste.findIndex((n) => normaliser(n) == cible);
+}
 const NOM_RAC_UNITE = [
   "Ouvrière",
   "JSN",
