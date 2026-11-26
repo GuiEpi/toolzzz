@@ -250,8 +250,7 @@ class PageForum {
       $.toast({ ...TOAST_ERROR, text: "L'identifiant du sujet pour les commandes est érroné." });
     else {
       let commande = null;
-      $("<div/>")
-        .append(response)
+      Utils.parseHtml(response)
         .find("#form_cat tr:gt(0)")
         .each((i, elt) => {
           let titreSujet = $(elt).find("td:eq(1)").text().trim(),
@@ -288,8 +287,7 @@ class PageForum {
       $.toast({ ...TOAST_ERROR, text: "L'identifiant du sujet pour les membres est érroné." });
     else {
       let joueurs = {};
-      $("<div/>")
-        .append(response)
+      Utils.parseHtml(response)
         .find("#form_cat tr:gt(0)")
         .each((i, elt) => {
           let titreSujet = $(elt).find("td:eq(1)").text().trim(),

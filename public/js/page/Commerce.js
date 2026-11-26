@@ -498,8 +498,7 @@ class PageCommerce {
               let convoi = null,
                 message = "",
                 nombres = new Array();
-              $("<div/>")
-                .append(response)
+              Utils.parseHtml(response)
                 .find(".messageForum")
                 .each((i, elt) => {
                   message = $(elt).text();
