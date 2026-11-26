@@ -811,6 +811,10 @@ class BoiteCombat extends Boite {
     this._mfTerrainAttAuto = null;
     // résumé de cette estimation, sous le formulaire
     this._mfTexteImpact = "";
+    // lecture des floods en vol en cours : le lancement attend son résultat
+    this._mfImpactsEnCours = false;
+    // numéro de la dernière lecture lancée : seule elle (cibles à jour) compte
+    this._mfLectureImpacts = 0;
     // armée et attaques en cours chargées depuis Armee.php
     this._mfDisponible = null;
     this._mfEnCours = 0;
@@ -916,6 +920,8 @@ class BoiteCombat extends Boite {
    */
   _mfMajImpacts() {
     if (!this._mfCibles.length) {
+      this._mfImpactsEnCours = false;
+      this._mfLectureImpacts++;
       this._mfTerrainAttAuto = null;
       if (this._mfTexteImpact) {
         this._mfTexteImpact = "";
@@ -923,8 +929,17 @@ class BoiteCombat extends Boite {
       }
       return;
     }
+    let lecture = ++this._mfLectureImpacts,
+      fin = () => {
+        if (this._mfLectureImpacts != lecture) return false;
+        this._mfImpactsEnCours = false;
+        return true;
+      };
+    this._mfImpactsEnCours = true;
+    this.simulerMultiFlood();
     FloodPartage.chargerAlliance().then(
       (r) => {
+        if (!fin()) return;
         let maintenant = Date.now(),
           cibles = [...this._mfCibles].sort((a, b) => a.tempsParcours - b.tempsParcours),
           impacts = cibles.map((c) => ({
@@ -944,7 +959,9 @@ class BoiteCombat extends Boite {
         this._mfRenderForm();
         this.simulerMultiFlood();
       },
-      () => {},
+      () => {
+        if (fin()) this.simulerMultiFlood();
+      },
     );
   }
   /**
@@ -1294,7 +1311,12 @@ class BoiteCombat extends Boite {
       cibles = resultats.filter((r) => r.attaques.length).length,
       troupes = attaques.reduce((s, a) => s + a.troupes, 0),
       prise = attaques.reduce((s, a) => s + a.prise, 0);
-    $("#o_mfLancer").prop("disabled", !attaques.length);
+    $("#o_mfLancer").prop("disabled", !attaques.length || this._mfImpactsEnCours);
+    // le calcul peut encore changer : les floods en vol de l'alliance arrivent
+    if (attaques.length && this._mfImpactsEnCours) {
+      $("#o_mfRecap").html("<em>Chargement des floods en vol de l'alliance…</em>");
+      return;
+    }
     if (!attaques.length) {
       let msg = "";
       if (this._mfDisponible == null) msg = "Chargement de votre armée…";
