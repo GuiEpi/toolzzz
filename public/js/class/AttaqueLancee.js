@@ -255,7 +255,7 @@ class AttaqueLancee {
     if (modifie) AttaqueLancee.sauvegarder(liste);
     // partage avec l'alliance (Toolzzz_Flood) : annulations des floods déjà
     // publiés, puis floods tout juste liés
-    FloodPartage.annuler(annulees.filter((a) => a.partage).map((a) => a.id));
+    FloodPartage.annuler(annulees.filter((a) => a.partage));
     FloodPartage.publier();
     return liste;
   }

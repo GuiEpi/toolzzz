@@ -513,6 +513,12 @@ const DATEPICKER_OPTION = {
       let boiteRadar = new BoiteRadar();
       boiteRadar.afficher();
 
+      // Floods lancés mais pas encore notés sur le forum (page quittée pendant
+      // l'attente du groupe, ou erreur réseau) : publiés dès la page suivante,
+      // quelle qu'elle soit. Aucune requête quand il n'y a rien en attente.
+      if (AttaqueLancee.charger().some((a) => a.id && !a.partage && FloodPartage.estFlood(a)))
+        FloodPartage.publier();
+
       // Onglet "Carte" dans le menu d'alliance — injecté sur toutes les pages
       // tant que le joueur a une alliance (présence du lien Membres = preuve).
       // Lien réel vers ?Membres#carte : sur cette page, PageAlliance intercepte

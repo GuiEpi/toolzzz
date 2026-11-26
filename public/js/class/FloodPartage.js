@@ -4,9 +4,11 @@
 
 /**
  * Partage des floods en cours avec l'alliance, via la section cachée
- * Toolzzz_Flood du forum : un sujet par joueur (titre = pseudo), un message
- * par flood lancé, et un message d'annulation quand le flood est annulé dans
- * le délai du jeu.
+ * Toolzzz_Flood du forum (ou celle que l'alliance tenait déjà à la main) : un
+ * sujet par cible (titre = le pseudo floodé), où chacun note ses floods sur
+ * elle. Les floods lancés ensemble sur une même cible partent dans un seul
+ * message, et leur annulation dans le délai du jeu dans un message
+ * d'annulation.
  *
  * Seuls les floods capturés par AttaqueLancee sont partagés (lancés depuis ce
  * navigateur), et seulement sur terrain de chasse. Le message est publié une
@@ -16,10 +18,12 @@
  * l'onglet Floods :
  *   TZF1|id|cible|arrivée (ms)|terrain avant|terrain après|unités
  *   TZF1-ANNULE|id
+ * Un message groupé porte une ligne technique par flood. Le lanceur est
+ * l'auteur du message : les anciens sujets par lanceur (titre = son pseudo,
+ * Toolzzz 3.19 et avant) se lisent de la même façon.
  *
  * @class FloodPartage
  */
-const CLE_FLOOD_SUJET = "outiiil_floodSujet";
 const MARQUEUR_FLOOD = "TZF1";
 const MARQUEUR_FLOOD_ANNULE = "TZF1-ANNULE";
 // dernière recherche de la section quand son id n'est pas connu
@@ -28,8 +32,17 @@ const CLE_FLOOD_DETECTION = "outiiil_floodDetection";
 const DELAI_DETECTION_FLOOD = 6 * 3600 * 1000;
 // durée (ms) pendant laquelle les floods lus sur le forum sont réutilisés
 const DUREE_CACHE_FLOODS = 90 * 1000;
+// floods en vol déjà lus, par sujet : un sujet dont la cellule « Dernier
+// message » n'a pas changé n'est pas rouvert
+const CLE_FLOOD_SUJETS_LUS = "outiiil_floodSujetsLus";
 // part maximale du terrain de la cible prise par une attaque
 const PRISE_MAX_FLOOD = 0.2;
+// écart maximal (ms) entre deux lancements sur une même cible pour les noter
+// dans un même message (le flood optimisé envoie ses attaques à ~1 s d'écart)
+const ECART_GROUPE_FLOOD = 20 * 1000;
+// attente (ms) après le dernier lancement d'un groupe avant de le publier,
+// pour que les attaques suivantes du même flood le rejoignent
+const ATTENTE_GROUPE_FLOOD = 6 * 1000;
 
 class FloodPartage {
   /**
@@ -85,14 +98,12 @@ class FloodPartage {
     return FloodPartage._file;
   }
   /**
-   * Clé du sujet mémorisé : par serveur, alliance et section (une section
-   * recréée a d'autres sujets).
-   */
-  static _cleSujet() {
-    return `${CLE_FLOOD_SUJET}_${Utils.serveur}_${Utils.alliance}_${monProfil.parametre["forumFlood"].valeur}`;
-  }
-  /**
-   * Lit la section et renvoie les sujets {id, titre}.
+   * Lit la section et renvoie les sujets {id, titre, cible, dernier, nonLu} :
+   * - cible : le pseudo en tête du titre, avant un éventuel « / » (une section
+   *   tenue à la main ajoute des infos : « Ragnar / 592 / 52 / ⇄ / 5 ») ;
+   * - dernier : le texte de la cellule « Dernier message », qui change à
+   *   chaque nouveau message du sujet ;
+   * - nonLu : le jeu marque le sujet « Non lu » pour ce joueur.
    *
    * @param {Object} data réponse xajax de callGetForum
    * @return {Array|null} null si la section est inaccessible
@@ -101,8 +112,9 @@ class FloodPartage {
     let reponse = $(data).find("cmd:eq(1)").text();
     if (!reponse || reponse.includes("Vous n'avez pas accès à ce forum.")) return null;
     let sujets = [];
-    $("<div/>")
-      .append(reponse)
+    // DOMParser (Utils.parseHtml) plutôt qu'un append dans la page : le HTML
+    // reste inerte, sans charger les images ni exécuter les scripts
+    Utils.parseHtml(reponse)
       .find("#form_cat tr:gt(0)")
       .each((i, elt) => {
         let titre = $(elt).find("td:eq(1)").text().trim(),
@@ -111,60 +123,118 @@ class FloodPartage {
           id =
             $(elt).find("input[name='topic[]']").val() ||
             ($(elt).find("a.topic_forum").attr("onclick") || "").match(/\d+/)?.[0];
-        if (titre && id) sujets.push({ id: id, titre: titre });
+        if (titre && id)
+          sujets.push({
+            id: id,
+            titre: titre,
+            cible: FloodPartage.cibleSujet(titre),
+            dernier: $(elt).find("td").last().text().trim(),
+            nonLu: $(elt)
+              .find("img[alt]")
+              .is((i, img) => /non lu/i.test(img.alt)),
+          });
       });
     return sujets;
   }
   /**
-   * Id du sujet du joueur dans la section, ou null s'il n'existe pas encore.
+   * Pseudo en tête d'un titre de sujet, en minuscules pour comparer.
    */
-  static _trouverSujet(forum) {
-    let memo = localStorage.getItem(FloodPartage._cleSujet());
-    if (memo) return Promise.resolve(memo);
+  static cibleSujet(titre) {
+    return titre.split("/")[0].trim().toLowerCase();
+  }
+  /**
+   * Id du sujet intitulé `titre` dans la section, ou null s'il n'existe pas
+   * encore. Seul le pseudo en tête du titre compte, sans la casse : une
+   * section tenue à la main les écrit à sa façon (« Ragnar / 592 / ⇄ »). Relu à chaque publication,
+   * sans mémoriser l'id : un chef a pu supprimer le sujet entre-temps (le
+   * message partirait alors dans le vide).
+   */
+  static _trouverSujet(forum, titre) {
     return Promise.resolve(forum.consulterSection(monProfil.parametre["forumFlood"].valeur)).then(
       (data) => {
         let sujets = FloodPartage.lireSection(data);
-        if (sujets === null) throw new Error("section Toolzzz_Flood inaccessible");
-        let sujet = sujets.find((s) => s.titre == monProfil.pseudo);
-        if (sujet) localStorage.setItem(FloodPartage._cleSujet(), sujet.id);
+        if (sujets === null) throw new Error("section flood inaccessible");
+        let sujet = sujets.find((s) => s.cible == FloodPartage.cibleSujet(titre));
         return sujet ? sujet.id : null;
       },
     );
   }
   /**
-   * Publie un message dans le sujet du joueur, en créant le sujet au besoin
-   * (le message devient alors son premier message).
+   * Publie un message dans le sujet `titre`, en le créant au besoin (le
+   * message devient alors son premier message).
    */
-  static _poster(message) {
+  static _poster(message, titre) {
     let forum = new PageForum();
-    return FloodPartage._trouverSujet(forum).then((id) => {
+    return FloodPartage._trouverSujet(forum, titre).then((id) => {
       if (id) return forum.envoyerMessage(id, encodeURIComponent(message));
-      return Promise.resolve(
-        forum.creerSujet(monProfil.pseudo, message, monProfil.parametre["forumFlood"].valeur),
-      ).then(() => FloodPartage._trouverSujet(forum));
+      return forum.creerSujet(titre, message, monProfil.parametre["forumFlood"].valeur);
     });
   }
   /**
-   * Texte du message d'un flood.
+   * Range des captures en groupes de floods lancés ensemble sur une même
+   * cible : par cible, en ordre de lancement, un écart de plus de
+   * ECART_GROUPE_FLOOD entre deux lancements ouvre un nouveau groupe. Un
+   * flood relancé plus tard sur la même cible a donc son propre message.
+   *
+   * @param {Array} captures
+   * @return {Array} groupes (tableaux de captures)
    */
-  static message(capture) {
-    let nb = Object.values(capture.unite).reduce((s, n) => s + (n || 0), 0),
-      arrivee = moment(capture.arrivee),
+  static grouper(captures) {
+    let groupes = [];
+    [...captures]
+      .sort((a, b) => (a.lancee || 0) - (b.lancee || 0))
+      .forEach((c) => {
+        let groupe = groupes.find(
+          (g) =>
+            g[0].cible == c.cible &&
+            (c.lancee || 0) - (g[g.length - 1].lancee || 0) <= ECART_GROUPE_FLOOD,
+        );
+        if (groupe) groupe.push(c);
+        else groupes.push([c]);
+      });
+    return groupes;
+  }
+  /**
+   * Texte du message d'un groupe de floods sur une même cible : une ligne
+   * lisible pour tout le groupe, puis une ligne technique par flood.
+   *
+   * @param {Array|Object} captures groupe (ou une seule capture)
+   */
+  static message(captures) {
+    let groupe = [].concat(captures).sort((a, b) => a.arrivee - b.arrivee),
+      nbUnites = (c) => Object.values(c.unite).reduce((s, n) => s + (n || 0), 0),
+      nb = groupe.reduce((s, c) => s + nbUnites(c), 0),
+      premier = groupe[0],
+      dernier = groupe[groupe.length - 1],
+      heure = (c) => moment(c.arrivee).format("D MMM à HH[h]mm[m]ss[s]"),
+      arrivee =
+        groupe.length > 1
+          ? `${groupe.length} attaques, arrivées du ${heure(premier)} au ${
+              moment(dernier.arrivee).isSame(premier.arrivee, "day")
+                ? moment(dernier.arrivee).format("HH[h]mm[m]ss[s]")
+                : heure(dernier)
+            }`
+          : `arrivée le ${heure(premier)}`,
+      // terrain avant la première et après la dernière (estimation enchaînée)
       terrain =
-        capture.terrainDepart != null
-          ? `, TdC de la cible ~${numeral(capture.terrainDepart).format()} → ~${numeral(capture.terrainCible).format()} cm²`
+        premier.terrainDepart != null && dernier.terrainCible != null
+          ? `, TdC de la cible ~${numeral(premier.terrainDepart).format()} → ~${numeral(dernier.terrainCible).format()} cm²`
           : "";
     return (
-      `Flood de ${numeral(nb).format()} unités sur [player]${capture.cible}[/player], arrivée le ${arrivee.format("D MMM à HH[h]mm[m]ss[s]")}${terrain}\n` +
-      [
-        MARQUEUR_FLOOD,
-        capture.id,
-        capture.cible,
-        capture.arrivee,
-        capture.terrainDepart ?? "",
-        capture.terrainCible ?? "",
-        nb,
-      ].join("|")
+      `Flood de ${numeral(nb).format()} unités sur [player]${premier.cible}[/player], ${arrivee}${terrain}\n` +
+      groupe
+        .map((c) =>
+          [
+            MARQUEUR_FLOOD,
+            c.id,
+            c.cible,
+            c.arrivee,
+            c.terrainDepart ?? "",
+            c.terrainCible ?? "",
+            nbUnites(c),
+          ].join("|"),
+        )
+        .join("\n")
     );
   }
   /**
@@ -182,79 +252,113 @@ class FloodPartage {
     });
   }
   /**
+   * Relance de la publication quand un groupe attend la fin de son flood.
+   */
+  static _minuterie = null;
+  /**
    * @private
    */
   static _publierEnAttente() {
-    let aPublier = AttaqueLancee.charger().filter(
-      (a) => a.id && !a.partage && FloodPartage.estFlood(a) && a.arrivee > Date.now(),
-    );
-    return aPublier.reduce(
-      (suite, capture) =>
-        suite.then(() => {
-          // marqué avant l'envoi : un autre onglet qui synchronise en même
-          // temps ne le publie pas une seconde fois
-          FloodPartage._marquer(capture.id, true);
-          return Promise.resolve(FloodPartage._poster(FloodPartage.message(capture))).catch((e) => {
-            FloodPartage._marquer(capture.id, false);
-            throw e;
-          });
-        }),
-      Promise.resolve(),
-    );
+    let maintenant = Date.now(),
+      enAttente = AttaqueLancee.charger().filter(
+        (a) => a.id && !a.partage && FloodPartage.estFlood(a) && a.arrivee > maintenant,
+      ),
+      // un groupe dont le dernier lancement est trop récent attend : les
+      // attaques suivantes du même flood vont le rejoindre
+      recent = (g) => maintenant - (g[g.length - 1].lancee || 0) < ATTENTE_GROUPE_FLOOD,
+      groupes = FloodPartage.grouper(enAttente);
+    if (groupes.some(recent)) {
+      clearTimeout(FloodPartage._minuterie);
+      FloodPartage._minuterie = setTimeout(() => FloodPartage.publier(), ATTENTE_GROUPE_FLOOD);
+    }
+    return groupes
+      .filter((g) => !recent(g))
+      .reduce(
+        (suite, groupe) =>
+          suite.then(() => {
+            let ids = groupe.map((c) => c.id);
+            // marqués avant l'envoi : un autre onglet qui synchronise en même
+            // temps ne les publie pas une seconde fois
+            FloodPartage._marquer(ids, true);
+            return Promise.resolve(
+              FloodPartage._poster(FloodPartage.message(groupe), groupe[0].cible),
+            ).catch((e) => {
+              FloodPartage._marquer(ids, false);
+              throw e;
+            });
+          }),
+        Promise.resolve(),
+      );
   }
   /**
-   * Signale l'annulation de floods déjà partagés.
+   * Signale l'annulation de floods déjà partagés, un message par sujet.
    *
-   * @param {Array} ids ids d'attaque annulés
+   * @param {Array} captures captures des attaques annulées
    */
-  static annuler(ids) {
-    if (!ids.length || !FloodPartage.actif()) return;
+  static annuler(captures) {
+    if (!captures.length || !FloodPartage.actif()) return;
+    let parSujet = {};
+    captures.forEach((c) => (parSujet[c.cible] = parSujet[c.cible] || []).push(c));
     return FloodPartage._enFile(() =>
-      ids.reduce(
-        (suite, id) =>
-          suite.then(() => FloodPartage._poster(`Flood annulé.\n${MARQUEUR_FLOOD_ANNULE}|${id}`)),
+      Object.entries(parSujet).reduce(
+        (suite, [titre, liste]) =>
+          suite.then(() =>
+            FloodPartage._poster(
+              `${liste.length > 1 ? `${liste.length} floods annulés` : "Flood annulé"} sur [player]${liste[0].cible}[/player].\n` +
+                liste.map((c) => `${MARQUEUR_FLOOD_ANNULE}|${c.id}`).join("\n"),
+              titre,
+            ),
+          ),
         Promise.resolve(),
       ),
     );
   }
   /**
-   * Note dans la capture qu'elle a été partagée.
+   * Note dans les captures qu'elles ont été partagées.
+   *
+   * @param {Array} ids ids d'attaque
    */
-  static _marquer(id, partage) {
+  static _marquer(ids, partage) {
     let liste = AttaqueLancee.charger(),
-      capture = liste.find((a) => a.id == id);
-    if (!capture) return;
-    capture.partage = partage;
+      captures = liste.filter((a) => ids.some((id) => a.id == id));
+    if (!captures.length) return;
+    captures.forEach((c) => (c.partage = partage));
     AttaqueLancee.sauvegarder(liste);
   }
   /**
    * Extrait les floods d'un sujet (réponse xajax de callGetTopic).
    *
    * @param {Object} data
-   * @param {String} titre titre du sujet (pseudo), lanceur par défaut
+   * @param {String} titre titre du sujet (pseudo) : le lanceur quand l'auteur
+   *   d'un message est illisible, sauf si le flood vise ce pseudo (sujet par cible)
    * @return {Object} {floods: [{id, lanceur, cible, arrivee, terrainDepart, terrainCible, unites}], annules: Set}
    */
   static lireSujet(data, titre) {
     let reponse = $(data).find("cmd:eq(1)").text(),
       floods = [],
       annules = new Set();
-    $("<div/>")
-      .append(reponse)
+    Utils.parseHtml(reponse)
       .find(".messageForum")
       .each((i, elt) => {
         let texte = $(elt).text(),
-          auteur = $(elt).prev().find("a").first().text().trim() || titre;
-        for (let m of texte.matchAll(/TZF1-ANNULE\|(\d+)/g)) annules.add(auteur + "#" + m[1]);
-        for (let m of texte.matchAll(/TZF1\|(\d+)\|([^|\n]+)\|(\d+)\|(\d*)\|(\d*)\|(\d*)/g))
+          auteur = $(elt).prev().find("a").first().text().trim();
+        for (let m of texte.matchAll(/TZF1-ANNULE\|(\d+)/g))
+          annules.add((auteur || titre) + "#" + m[1]);
+        for (let m of texte.matchAll(/TZF1\|(\d+)\|([^|\n]+)\|(\d+)\|(\d*)\|(\d*)\|(\d*)/g)) {
+          let cible = m[2].trim(),
+            lanceur =
+              auteur || (cible.toLowerCase() == FloodPartage.cibleSujet(titre) ? "" : titre);
+          if (!lanceur) continue;
           floods.push({
             id: m[1],
-            lanceur: auteur,
-            cible: m[2].trim(),
+            lanceur: lanceur,
+            cible: cible,
             arrivee: parseInt(m[3]),
             terrainDepart: m[4] ? parseInt(m[4]) : null,
             terrainCible: m[5] ? parseInt(m[5]) : null,
             unites: m[6] ? parseInt(m[6]) : null,
           });
+        }
       });
     return { floods: floods, annules: annules };
   }
@@ -321,20 +425,35 @@ class FloodPartage {
         (data) => {
           let sujets = FloodPartage.lireSection(data),
             faits = 0;
-          if (sujets === null) throw new Error("section Toolzzz_Flood inaccessible");
-          progres(0, sujets.length);
+          if (sujets === null) throw new Error("section flood inaccessible");
+          // seuls les sujets qui ont un nouveau message depuis la dernière
+          // lecture sont rouverts (« Dernier message » changé, ou « Non lu ») :
+          // les autres reprennent ce qui en avait été lu. Le « Non lu » seul ne
+          // suffit pas : il s'éteint quand le joueur ouvre le sujet au forum.
+          let lus = FloodPartage._sujetsLus(),
+            aOuvrir = sujets.filter(
+              (s) => s.nonLu || !lus[s.id] || lus[s.id].dernier != s.dernier || !s.dernier,
+            );
+          progres(0, aOuvrir.length);
           return Promise.all(
             sujets.map((s) =>
-              Promise.resolve(forum.consulterSujet(s.id))
-                .then((d) => FloodPartage.lireSujet(d, s.titre))
-                .catch(() => ({ floods: [], annules: new Set(), erreur: true }))
-                .then((r) => {
-                  progres(++faits, sujets.length);
-                  return r;
-                }),
+              !aOuvrir.includes(s)
+                ? {
+                    sujet: s,
+                    floods: lus[s.id].floods,
+                    annules: new Set(lus[s.id].annules),
+                  }
+                : Promise.resolve(forum.consulterSujet(s.id))
+                    .then((d) => ({ sujet: s, ...FloodPartage.lireSujet(d, s.titre) }))
+                    .catch(() => ({ sujet: s, floods: [], annules: new Set(), erreur: true }))
+                    .then((r) => {
+                      progres(++faits, aOuvrir.length);
+                      return r;
+                    }),
             ),
           ).then((resultats) => {
             let annules = new Set(resultats.flatMap((r) => [...r.annules]));
+            FloodPartage._memoriserSujetsLus(resultats);
             return {
               section: true,
               erreurs: resultats.filter((r) => r.erreur).length,
@@ -346,6 +465,51 @@ class FloodPartage {
         },
       );
     });
+  }
+  /**
+   * Clé des sujets lus : par serveur, alliance et section.
+   */
+  static _cleSujetsLus() {
+    return `${CLE_FLOOD_SUJETS_LUS}_${Utils.serveur}_${Utils.alliance}_${monProfil.parametre["forumFlood"].valeur}`;
+  }
+  /**
+   * Sujets déjà lus : {id: {dernier, floods, annules}}.
+   */
+  static _sujetsLus() {
+    try {
+      return JSON.parse(localStorage.getItem(FloodPartage._cleSujetsLus())) || {};
+    } catch (e) {
+      return {};
+    }
+  }
+  /**
+   * Mémorise ce qui a été lu de chaque sujet, réduit aux floods encore en vol
+   * et à leurs annulations : la mémoire ne grossit pas avec les sujets. Un
+   * sujet illisible n'est pas mémorisé, il sera rouvert.
+   *
+   * @param {Array} resultats [{sujet, floods, annules, erreur}]
+   */
+  static _memoriserSujetsLus(resultats) {
+    let maintenant = Date.now(),
+      enVol = (floods) => floods.filter((f) => f.arrivee > maintenant),
+      // une annulation peut être notée dans un autre sujet que son flood
+      // (lanceur passé de la 3.19 au rangement par cible entre les deux) :
+      // on garde celles d'un flood en vol de n'importe quel sujet
+      clesEnVol = new Set(
+        resultats.flatMap((r) => enVol(r.floods).map((f) => f.lanceur + "#" + f.id)),
+      ),
+      lus = {};
+    resultats
+      .filter((r) => !r.erreur)
+      .forEach(
+        (r) =>
+          (lus[r.sujet.id] = {
+            dernier: r.sujet.dernier,
+            floods: enVol(r.floods),
+            annules: [...r.annules].filter((a) => clesEnVol.has(a)),
+          }),
+      );
+    localStorage.setItem(FloodPartage._cleSujetsLus(), JSON.stringify(lus));
   }
   /**
    * Terrain pris par un flood sur une cible qui a `terrain` à son arrivée :
